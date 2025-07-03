@@ -1,114 +1,49 @@
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import React from 'react';
 
-export default function SettingsPage() {
+function SettingsPage() {
   return (
-    <div className="mx-auto w-full max-w-4xl">
-      <h1 className="text-3xl font-semibold mb-6">Settings</h1>
-      <Tabs defaultValue="system">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="system">System</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
-        </TabsList>
-        <TabsContent value="system">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Settings</CardTitle>
-              <CardDescription>
-                Manage general system settings.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="site-name">Site Name</Label>
-                <Input id="site-name" defaultValue="Lumen" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="timezone">Timezone</Label>
-                <Select>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select a timezone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="gmt-5">Eastern Time (ET)</SelectItem>
-                        <SelectItem value="gmt-6">Central Time (CT)</SelectItem>
-                        <SelectItem value="gmt-7">Mountain Time (MT)</SelectItem>
-                        <SelectItem value="gmt-8">Pacific Time (PT)</SelectItem>
-                    </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button>Save Changes</Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notifications</CardTitle>
-              <CardDescription>
-                Manage how you receive notifications.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="email-bookings" defaultChecked />
-                    <Label htmlFor="email-bookings">Email notifications for new bookings</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="email-users" />
-                    <Label htmlFor="email-users">Email notifications for new user sign-ups</Label>
-                </div>
-                 <div className="flex items-center space-x-2">
-                    <Checkbox id="email-updates" defaultChecked />
-                    <Label htmlFor="email-updates">Receive product updates and newsletters</Label>
-                </div>
-            </CardContent>
-            <CardFooter>
-              <Button>Save Changes</Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        <TabsContent value="appearance">
-          <Card>
-            <CardHeader>
-              <CardTitle>Appearance</CardTitle>
-              <CardDescription>
-                Customize the look and feel of the admin panel.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-               <div className="space-y-2">
-                <Label>Theme</Label>
-                <p className="text-sm text-muted-foreground">The theme is managed by your system preferences.</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="logo">Custom Logo</Label>
-                <Input id="logo" type="file" />
-                 <p className="text-sm text-muted-foreground">Upload a custom logo to be displayed in the header.</p>
-              </div>
-            </CardContent>
-             <CardFooter>
-              <Button>Save Changes</Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+    <>
+      <h1 className="text-2xl font-bold text-gray-800 mb-8">Settings</h1>
+      <div className="bg-white rounded-2xl shadow p-8 max-w-2xl mx-auto">
+        <div className="mb-8">
+          <div className="font-semibold text-lg mb-2">THEME SETTING</div>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-gray-700">Theme</span>
+            <select className="border border-gray-200 rounded px-3 py-1 text-sm">
+              <option>System theme</option>
+              <option>Light</option>
+              <option>Dark</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-gray-700">Customize UI</span>
+            <button className="flex items-center gap-1 px-3 py-1 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50">
+              <span>Edit</span>
+            </button>
+          </div>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-gray-700">Receive New Recommendations</span>
+            <input type="checkbox" className="form-checkbox h-5 w-5 text-cyan-600" />
+          </div>
+        </div>
+        <div className="mb-4">
+          <div className="font-semibold text-lg mb-2">ACCOUNT SETTINGS</div>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-gray-700">Update Password</span>
+            <button className="px-3 py-1 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50">Update</button>
+          </div>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-gray-700">Sign in with Google</span>
+            <button className="px-3 py-1 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50">Unlink Account</button>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-700">Delete Account</span>
+            <button className="px-3 py-1 bg-red-500 text-white rounded text-sm font-semibold hover:bg-red-600">Delete Account</button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }
+
+export default SettingsPage;

@@ -1,99 +1,43 @@
-import { MoreHorizontal } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import React from 'react';
+import { StatusBadge } from '@/components/status-badge';
 
 const bookings = [
-    { id: "BK001", customer: "John Doe", court: "Tennis Court 1", date: "2024-07-20", time: "10:00 AM", status: "Confirmed", amount: "$50.00" },
-    { id: "BK002", customer: "Jane Smith", court: "Basketball Court", date: "2024-07-21", time: "02:00 PM", status: "Pending", amount: "$75.00" },
-    { id: "BK003", customer: "Mike Johnson", court: "Tennis Court 2", date: "2024-07-21", time: "04:00 PM", status: "Cancelled", amount: "$50.00" },
-    { id: "BK004", customer: "Emily Davis", court: "Padel Court 1", date: "2024-07-22", time: "09:00 AM", status: "Confirmed", amount: "$40.00" },
-    { id: "BK005", customer: "Chris Brown", court: "Basketball Court", date: "2024-07-22", time: "11:00 AM", status: "Confirmed", amount: "$75.00" },
-]
-
-const statusVariant = (status: string) => {
-    if (status === 'Confirmed') return 'default'
-    if (status === 'Pending') return 'secondary'
-    if (status === 'Cancelled') return 'destructive'
-    return 'outline'
-}
+  { user: 'Amit Kumar', court: 'East Court', date: 'Apr 30, 2025', time: '5:00 PM', status: 'Confirmed' },
+  { user: 'Sneha M.', court: 'West Court', date: 'Apr 30, 2025', time: '7:00 PM', status: 'Pending' },
+  { user: 'Robert Fox', court: 'Center Court', date: 'May 01, 2025', time: '6:00 PM', status: 'Cancelled' },
+];
 
 
-export default function BookingsPage() {
+function BookingsPage() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Bookings</CardTitle>
-        <CardDescription>Manage your bookings here.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Booking ID</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Court</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bookings.map((booking) => (
-              <TableRow key={booking.id}>
-                <TableCell className="font-medium">{booking.id}</TableCell>
-                <TableCell>{booking.customer}</TableCell>
-                <TableCell>{booking.court}</TableCell>
-                <TableCell>{booking.date}</TableCell>
-                <TableCell>{booking.time}</TableCell>
-                <TableCell>
-                  <Badge variant={statusVariant(booking.status)}>{booking.status}</Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">Cancel</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
+    <>
+        <h1 className="text-2xl font-bold text-gray-800 mb-8">Bookings</h1>
+        <div className="bg-white rounded-2xl shadow p-8 max-w-3xl mx-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-gray-500 border-b">
+                <th className="py-2 px-2 text-left font-medium">User</th>
+                <th className="py-2 px-2 text-left font-medium">Court</th>
+                <th className="py-2 px-2 text-left font-medium">Date</th>
+                <th className="py-2 px-2 text-left font-medium">Time</th>
+                <th className="py-2 px-2 text-left font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bookings.map((b, i) => (
+                <tr key={i} className="border-b last:border-0">
+                  <td className="py-2 px-2">{b.user}</td>
+                  <td className="py-2 px-2">{b.court}</td>
+                  <td className="py-2 px-2">{b.date}</td>
+                  <td className="py-2 px-2">{b.time}</td>
+                  <td className="py-2 px-2"><StatusBadge status={b.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+    </>
+  );
 }
+
+export default BookingsPage;
