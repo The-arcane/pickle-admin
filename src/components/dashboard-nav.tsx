@@ -22,21 +22,19 @@ export function DashboardNav() {
     <SidebarMenu>
       {navItems.map((item) => (
         <SidebarMenuItem key={item.href}>
-          <Link href={item.href} legacyBehavior passHref>
-            <SidebarMenuButton
-              isActive={pathname === item.href}
-              className={cn(
-                'w-full justify-start',
-                pathname === item.href && "bg-card text-primary border border-primary hover:bg-card"
-              )}
-              asChild
-            >
-              <a>
-                <item.icon className="mr-2 h-4 w-4" />
-                <span>{item.label}</span>
-              </a>
-            </SidebarMenuButton>
-          </Link>
+          <SidebarMenuButton
+            asChild
+            isActive={pathname === item.href}
+            className={cn(
+              'w-full justify-start',
+              pathname === item.href && "bg-card text-primary border border-primary hover:bg-card"
+            )}
+          >
+            <Link href={item.href}>
+              <item.icon className="mr-2 h-4 w-4" />
+              <span>{item.label}</span>
+            </Link>
+          </SidebarMenuButton>
         </SidebarMenuItem>
       ))}
     </SidebarMenu>
