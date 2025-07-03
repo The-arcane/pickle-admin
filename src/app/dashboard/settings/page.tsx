@@ -1,49 +1,61 @@
-import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
-function SettingsPage() {
+export default function SettingsPage() {
   return (
-    <>
-      <h1 className="text-2xl font-bold text-gray-800 mb-8">Settings</h1>
-      <div className="bg-white rounded-2xl shadow p-8 max-w-2xl mx-auto">
-        <div className="mb-8">
-          <div className="font-semibold text-lg mb-2">THEME SETTING</div>
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-gray-700">Theme</span>
-            <select className="border border-gray-200 rounded px-3 py-1 text-sm">
-              <option>System theme</option>
-              <option>Light</option>
-              <option>Dark</option>
-            </select>
-          </div>
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-gray-700">Customize UI</span>
-            <button className="flex items-center gap-1 px-3 py-1 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50">
-              <span>Edit</span>
-            </button>
-          </div>
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-gray-700">Receive New Recommendations</span>
-            <input type="checkbox" className="form-checkbox h-5 w-5 text-cyan-600" />
-          </div>
-        </div>
-        <div className="mb-4">
-          <div className="font-semibold text-lg mb-2">ACCOUNT SETTINGS</div>
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-gray-700">Update Password</span>
-            <button className="px-3 py-1 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50">Update</button>
-          </div>
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-gray-700">Sign in with Google</span>
-            <button className="px-3 py-1 border border-gray-200 rounded text-sm text-gray-700 hover:bg-gray-50">Unlink Account</button>
+    <Card className="max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle>Settings</CardTitle>
+        <CardDescription>Manage your account and theme settings.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-8">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Theme</h3>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="theme-select">Theme</Label>
+            <Select defaultValue="system">
+              <SelectTrigger id="theme-select" className="w-[180px]">
+                <SelectValue placeholder="Select theme" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">Light</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+                <SelectItem value="system">System</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-gray-700">Delete Account</span>
-            <button className="px-3 py-1 bg-red-500 text-white rounded text-sm font-semibold hover:bg-red-600">Delete Account</button>
+            <Label>Customize UI</Label>
+            <Button variant="outline">Edit</Button>
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="recommendations-switch">Receive New Recommendations</Label>
+            <Switch id="recommendations-switch" />
           </div>
         </div>
-      </div>
-    </>
+
+        <Separator />
+
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Account</h3>
+          <div className="flex items-center justify-between">
+            <Label>Update Password</Label>
+            <Button variant="outline">Update</Button>
+          </div>
+          <div className="flex items-center justify-between">
+            <Label>Sign in with Google</Label>
+            <Button variant="outline">Unlink Account</Button>
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="text-destructive">Delete Account</Label>
+            <Button variant="destructive">Delete Account</Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
-
-export default SettingsPage;

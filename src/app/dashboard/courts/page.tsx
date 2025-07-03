@@ -1,4 +1,18 @@
-import React from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
 
 const courts = [
@@ -14,36 +28,39 @@ const courts = [
   { name: 'Court H – SpeedLane Court', venue: 'Uniworld Pickleball Complex', type: 'Indoor', maxPlayers: 'Single', status: 'Open' },
 ];
 
-function CourtListPage() {
+export default function CourtListPage() {
   return (
-    <>
-      <h1 className="text-2xl font-bold text-gray-800 mb-8">Court Management</h1>
-      <div className="bg-white rounded-2xl shadow p-8 max-w-5xl mx-auto">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="text-gray-500 border-b">
-              <th className="py-2 px-2 text-left font-medium">Court</th>
-              <th className="py-2 px-2 text-left font-medium">Venue</th>
-              <th className="py-2 px-2 text-left font-medium">Court Type</th>
-              <th className="py-2 px-2 text-left font-medium">Max Players</th>
-              <th className="py-2 px-2 text-left font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {courts.map((c, i) => (
-              <tr key={i} className="border-b last:border-0">
-                <td className="py-2 px-2">{c.name}</td>
-                <td className="py-2 px-2">{c.venue}</td>
-                <td className="py-2 px-2">{c.type}</td>
-                <td className="py-2 px-2">{c.maxPlayers}</td>
-                <td className="py-2 px-2"><StatusBadge status={c.status} /></td>
-              </tr>
+    <Card>
+      <CardHeader>
+        <CardTitle>Courts</CardTitle>
+        <CardDescription>Manage your court listings and availability.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Court</TableHead>
+              <TableHead>Venue</TableHead>
+              <TableHead>Court Type</TableHead>
+              <TableHead>Max Players</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {courts.map((court, index) => (
+              <TableRow key={index}>
+                <TableCell className="font-medium">{court.name}</TableCell>
+                <TableCell>{court.venue}</TableCell>
+                <TableCell>{court.type}</TableCell>
+                <TableCell>{court.maxPlayers}</TableCell>
+                <TableCell>
+                  <StatusBadge status={court.status} />
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
-
-export default CourtListPage;

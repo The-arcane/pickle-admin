@@ -1,4 +1,19 @@
-import React from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
 
 const users = [
@@ -8,37 +23,43 @@ const users = [
   { name: 'Courtney Henry', email: 'courtney.henry@email.com', status: 'Active', avatar: 'https://randomuser.me/api/portraits/women/13.jpg' },
 ];
 
-function UsersPage() {
+export default function UsersPage() {
   return (
-    <>
-      <h1 className="text-2xl font-bold text-gray-800 mb-8">Users</h1>
-      <div className="bg-white rounded-2xl shadow p-8 max-w-3xl mx-auto">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="text-gray-500 border-b">
-              <th className="py-2 px-2 text-left font-medium">User</th>
-              <th className="py-2 px-2 text-left font-medium">Email</th>
-              <th className="py-2 px-2 text-left font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u, i) => (
-              <tr key={i} className="border-b last:border-0">
-                <td className="py-2 px-2 flex items-center gap-2">
-                  <img src={u.avatar} alt={u.name} className="w-8 h-8 rounded-full object-cover border border-gray-200" />
-                  <span>{u.name}</span>
-                </td>
-                <td className="py-2 px-2">{u.email}</td>
-                <td className="py-2 px-2">
-                  <StatusBadge status={u.status} />
-                </td>
-              </tr>
+    <Card>
+      <CardHeader>
+        <CardTitle>Users</CardTitle>
+        <CardDescription>Manage your users and their permissions.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>User</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((user, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{user.name}</span>
+                  </div>
+                </TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>
+                  <StatusBadge status={user.status} />
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
-
-export default UsersPage;
