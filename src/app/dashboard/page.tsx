@@ -42,16 +42,10 @@ export default function DashboardPage() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold mb-1 flex items-center gap-2">
-            Welcome Back, Amit! <span className="text-2xl">👋</span>
-          </h1>
-          <p className="text-muted-foreground text-sm">Your PickleballBot is running smoothly today.</p>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Here&apos;s a snapshot of your facility&apos;s activity.</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">Customize UI</Button>
-          <Button variant="outline">Edit Message</Button>
-          <Button>Manage Courts</Button>
-        </div>
+        <Button>+ New Booking</Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">

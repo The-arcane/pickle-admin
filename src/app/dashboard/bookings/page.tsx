@@ -1,9 +1,7 @@
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   Table,
@@ -23,37 +21,42 @@ const bookings = [
 
 export default function BookingsPage() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Bookings</CardTitle>
-        <CardDescription>A list of all recent bookings.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Court</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bookings.map((booking, index) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium">{booking.user}</TableCell>
-                <TableCell>{booking.court}</TableCell>
-                <TableCell>{booking.date}</TableCell>
-                <TableCell>{booking.time}</TableCell>
-                <TableCell>
-                  <StatusBadge status={booking.status} />
-                </TableCell>
+    <>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Bookings</h1>
+          <p className="text-muted-foreground">A list of all recent bookings.</p>
+        </div>
+        <Button>Add Booking</Button>
+      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Court</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead>Status</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {bookings.map((booking, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-medium">{booking.user}</TableCell>
+                  <TableCell>{booking.court}</TableCell>
+                  <TableCell>{booking.date}</TableCell>
+                  <TableCell>{booking.time}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={booking.status} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
   );
 }

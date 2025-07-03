@@ -1,9 +1,7 @@
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import {
   Table,
@@ -30,37 +28,42 @@ const courts = [
 
 export default function CourtListPage() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Courts</CardTitle>
-        <CardDescription>Manage your court listings and availability.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Court</TableHead>
-              <TableHead>Venue</TableHead>
-              <TableHead>Court Type</TableHead>
-              <TableHead>Max Players</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {courts.map((court, index) => (
-              <TableRow key={index}>
-                <TableCell className="font-medium">{court.name}</TableCell>
-                <TableCell>{court.venue}</TableCell>
-                <TableCell>{court.type}</TableCell>
-                <TableCell>{court.maxPlayers}</TableCell>
-                <TableCell>
-                  <StatusBadge status={court.status} />
-                </TableCell>
+    <>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Courts</h1>
+          <p className="text-muted-foreground">Manage your court listings and availability.</p>
+        </div>
+        <Button>Add Court</Button>
+      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Court</TableHead>
+                <TableHead>Venue</TableHead>
+                <TableHead>Court Type</TableHead>
+                <TableHead>Max Players</TableHead>
+                <TableHead>Status</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {courts.map((court, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-medium">{court.name}</TableCell>
+                  <TableCell>{court.venue}</TableCell>
+                  <TableCell>{court.type}</TableCell>
+                  <TableCell>{court.maxPlayers}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={court.status} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
   );
 }
