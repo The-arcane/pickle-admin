@@ -13,15 +13,35 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
+import { createServer } from '@/lib/supabase/server';
 
-const users = [
-  { name: 'Amit Kumar', email: 'amit.kumar@email.com', status: 'Active', avatar: 'https://randomuser.me/api/portraits/men/10.jpg' },
-  { name: 'Sneha M.', email: 'sneha.m@email.com', status: 'Active', avatar: 'https://randomuser.me/api/portraits/women/11.jpg' },
-  { name: 'Robert Fox', email: 'robert.fox@email.com', status: 'Inactive', avatar: 'https://randomuser.me/api/portraits/men/12.jpg' },
-  { name: 'Courtney Henry', email: 'courtney.henry@email.com', status: 'Active', avatar: 'https://randomuser.me/api/portraits/women/13.jpg' },
-];
+const getInitials = (name: string) => {
+  if (!name) return '';
+  const names = name.split(' ').filter(Boolean);
+  if (names.length > 1) {
+    return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+  }
+  return names[0]?.substring(0, 2).toUpperCase() ?? '';
+};
 
-export default function UsersPage() {
+export default async function UsersPage() {
+  const supabase = createServer();
+  const { data: usersData, error } = await supabase
+    .from('user')
+    .select('name, email, profile_image_url, is_deleted');
+
+  if (error) {
+    console.error('Error fetching users:', error);
+  }
+  
+  const users = usersData?.map(user => ({
+    name: user.name,
+    email: user.email,
+    status: user.is_deleted ? 'Inactive' : 'Active',
+    avatar: user.profile_image_url,
+    initials: getInitials(user.name),
+  })) || [];
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -47,8 +67,8 @@ export default function UsersPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
+                        <AvatarFallback>{user.initials}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium">{user.name}</span>
                     </div>

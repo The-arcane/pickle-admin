@@ -11,22 +11,31 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { StatusBadge } from '@/components/status-badge';
+import { createServer } from '@/lib/supabase/server';
 
-const courts = [
-  { name: 'Pickleball Court 01', venue: 'Uniworld Pickleball Complex', type: 'Indoor', maxPlayers: 'Single', status: 'Open' },
-  { name: 'Court A – Smash Zone', venue: 'SmashArena Sports Club', type: 'Outdoor', maxPlayers: 'Dabal', status: 'Closed' },
-  { name: 'Court B – Paddle Peak', venue: 'The Paddle Hub', type: 'Indoor', maxPlayers: 'Single', status: 'Maintenance' },
-  { name: 'Badminton Court 01', venue: 'NetZone Playgrounds', type: 'Outdoor', maxPlayers: 'Dabal', status: 'Open' },
-  { name: 'Court C – Rally Deck', venue: 'Uniworld Pickleball Complex', type: 'Indoor', maxPlayers: 'Single', status: 'Open' },
-  { name: 'Court D – Net Square', venue: 'AceCourt Athletic Center', type: 'Indoor', maxPlayers: 'Single', status: 'Closed' },
-  { name: 'Court E – PowerPlay Court', venue: 'Uniworld Pickleball Complex', type: 'Indoor', maxPlayers: 'Double', status: 'Open' },
-  { name: 'Court F – East Wing Arena', venue: 'Urban Rally Grounds', type: 'Outdoor', maxPlayers: 'Single', status: 'Maintenance' },
-  { name: 'Court G – SpinSide Court', venue: 'The Paddle Hub', type: 'Indoor', maxPlayers: 'Single', status: 'Open' },
-  { name: 'Court H – SpeedLane Court', venue: 'Uniworld Pickleball Complex', type: 'Indoor', maxPlayers: 'Single', status: 'Open' },
-];
+export default async function CourtListPage() {
+  const supabase = createServer();
+  const { data, error } = await supabase
+    .from('courts')
+    .select('name, organisations(name), sports(name, max_players)');
 
-export default function CourtListPage() {
+  if (error) {
+    console.error('Error fetching courts:', error);
+  }
+
+  const courts =
+    data?.map((court) => {
+      const organisation = court.organisations;
+      const sport = court.sports;
+
+      return {
+        name: court.name,
+        venue: typeof organisation === 'object' && organisation !== null && 'name' in organisation ? (organisation as any).name : 'N/A',
+        type: typeof sport === 'object' && sport !== null && 'name' in sport ? (sport as any).name : 'N/A',
+        maxPlayers: typeof sport === 'object' && sport !== null && 'max_players' in sport ? (sport as any).max_players : 'N/A',
+      };
+    }) || [];
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -45,7 +54,6 @@ export default function CourtListPage() {
                 <TableHead>Venue</TableHead>
                 <TableHead>Court Type</TableHead>
                 <TableHead>Max Players</TableHead>
-                <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -55,9 +63,6 @@ export default function CourtListPage() {
                   <TableCell>{court.venue}</TableCell>
                   <TableCell>{court.type}</TableCell>
                   <TableCell>{court.maxPlayers}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={court.status} />
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -5,18 +5,42 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
 import { Calendar, BarChartHorizontal, Clock, MessageSquare } from 'lucide-react';
+import { createServer } from '@/lib/supabase/server';
 
-const bookings = [
-  { user: 'Courtney Henry', court: 'East Court', date: 'Apr 30, 2025', time: '5:00 PM', status: 'Confirmed', avatar: 'https://randomuser.me/api/portraits/women/1.jpg' },
-  { user: 'Guy Hawkins', court: 'East Court', date: 'Apr 30, 2025', time: '5:00 PM', status: 'Confirmed', avatar: 'https://randomuser.me/api/portraits/men/2.jpg' },
-  { user: 'Robert Fox', court: 'West Court', date: 'Apr 30, 2025', time: '7:00 PM', status: 'Pending', avatar: 'https://randomuser.me/api/portraits/men/3.jpg' },
-  { user: 'Jacob Jones', court: 'Center Court', date: 'May 01, 2025', time: '6:00 PM', status: 'Confirmed', avatar: 'https://randomuser.me/api/portraits/men/4.jpg' },
-  { user: 'Albert Flores', court: 'West Court', date: 'Apr 30, 2025', time: '7:00 PM', status: 'Pending', avatar: 'https://randomuser.me/api/portraits/men/5.jpg' },
-  { user: 'Marvin McKinney', court: 'East Court', date: 'Apr 30, 2025', time: '9:00 PM', status: 'Cancelled', avatar: 'https://randomuser.me/api/portraits/men/6.jpg' },
-  { user: 'Dianne Russell', court: 'Center Court', date: 'Apr 30, 2025', time: '9:00 PM', status: 'Cancelled', avatar: 'https://randomuser.me/api/portraits/women/7.jpg' },
-  { user: 'Devon Lane', court: 'East Court', date: 'Apr 30, 2025', time: '9:00 PM', status: 'Cancelled', avatar: 'https://randomuser.me/api/portraits/men/8.jpg' },
-];
+// 0: Cancelled, 1: Confirmed, 2: Pending
+const statusMap: { [key: number]: string } = {
+  0: 'Cancelled',
+  1: 'Confirmed',
+  2: 'Pending',
+};
 
+const formatTime = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+};
+  
+const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+};
+
+const getInitials = (name: string) => {
+    if (!name) return '';
+    const names = name.split(' ').filter(Boolean);
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return names[0]?.substring(0, 2).toUpperCase() ?? '';
+};
+  
 const stats = [
   { label: "Today's Bookings", value: 12, icon: Calendar },
   { label: 'Total Revenue', value: '₹18,200', icon: BarChartHorizontal },
@@ -37,7 +61,35 @@ const feedback = {
   user: 'Sneha M.'
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = createServer();
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('status, user:user_id(name, profile_image_url), courts:court_id(name), timeslots:timeslot_id(date, start_time)')
+    .limit(8);
+
+  if (error) {
+    console.error('Error fetching recent bookings:', error);
+  }
+
+  const bookings =
+    data?.map((booking) => {
+      const user = booking.user;
+      const court = booking.courts;
+      const timeslot = booking.timeslots;
+      const userName = typeof user === 'object' && user !== null && 'name' in user ? (user as any).name : 'N/A';
+
+      return {
+        user: userName,
+        court: typeof court === 'object' && court !== null && 'name' in court ? (court as any).name : 'N/A',
+        date: typeof timeslot === 'object' && timeslot !== null && 'date' in timeslot ? formatDate((timeslot as any).date) : 'N/A',
+        time: typeof timeslot === 'object' && timeslot !== null && 'start_time' in timeslot ? formatTime((timeslot as any).start_time) : 'N/A',
+        status: statusMap[booking.status] ?? 'Unknown',
+        avatar: typeof user === 'object' && user !== null && 'profile_image_url' in user ? (user as any).profile_image_url as string | null : null,
+        initials: getInitials(userName),
+      };
+    }) || [];
+
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -100,8 +152,8 @@ export default function DashboardPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={b.avatar} alt={b.user} />
-                          <AvatarFallback>{b.user.charAt(0)}</AvatarFallback>
+                          <AvatarImage src={b.avatar ?? undefined} alt={b.user} />
+                          <AvatarFallback>{b.initials}</AvatarFallback>
                         </Avatar>
                         <span className="font-medium">{b.user}</span>
                       </div>
