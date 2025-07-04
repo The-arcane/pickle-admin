@@ -32,14 +32,14 @@ export default async function EditCourtPage({ params }: { params: { id: string }
       venue_name: courtData.organisations?.name || 'N/A',
       venue_address: courtData.organisations?.address || '',
       sports_type: courtData.sports?.name || 'N/A',
-      max_players: courtData.sports?.max_players || 0,
-      audience_capacity: 7850, // Mock data
-      court_type: ['Indoor', 'VIP'], // Mock data
-      tags: ['Indoor', 'VIP'], // Mock data
-      equipment_rental: true, // Mock data
-      description: 'Pickelball Academy is a renowned sports facility situated in Ladha Sarai Village, Delhi with a commitment to providing high-quality services, we offers a range of amenities and equipment to support athletes in their treining and development.', // Mock data
-      labels: ['Label', 'Label', 'Label', 'Label'], // Mock data
-      facilities: ['Water', 'Restrooms'], // Mock data
+      max_players: courtData.sports?.max_players || 4,
+      audience_capacity: 7850,
+      court_type: ['Indoor'],
+      tags: ['Indoor'],
+      equipment_rental: true,
+      description: 'Pickelball Academy is a renowned sports facility situated in Ladha Sarai Village, Delhi with a commitment to providing high-quality services, we offers a range of amenities and equipment to support athletes in their treining and development.',
+      labels: ['Label', 'Label', 'Label', 'Label'],
+      facilities: ['Water', 'Restrooms'],
     };
   }
   

@@ -56,6 +56,9 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         if (!isAdding && court) {
             formData.append('id', court.id.toString());
         }
+        // Note: For now, we are not appending the array/boolean values to formData
+        // as the backend actions are not yet set up to receive them.
+        // This can be added later when the DB schema and actions are updated.
         const result = await action(formData);
         if (result?.error) {
             toast({
@@ -75,187 +78,171 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     };
 
     return (
-        <Tabs defaultValue="court-info">
-            <form action={handleFormAction} className="grid flex-1 items-start gap-4 lg:grid-cols-3 xl:grid-cols-4">
-                <div className="grid auto-rows-max items-start gap-4 lg:col-span-1">
+        <Tabs defaultValue="court-info" orientation="vertical" className="w-full">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="col-span-1">
                     <Card>
                         <CardHeader>
                             <CardTitle>Customize</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <TabsList className="grid w-full grid-cols-1 h-auto">
-                                <TabsTrigger value="court-info" className="justify-start">Court Info</TabsTrigger>
-                                <TabsTrigger value="availability" className="justify-start">Availability</TabsTrigger>
-                                <TabsTrigger value="booking-rules" className="justify-start">Booking Rules</TabsTrigger>
-                                <TabsTrigger value="pricing" className="justify-start">Pricing & Add-ons</TabsTrigger>
-                                <TabsTrigger value="visibility" className="justify-start">Visibility & Settings</TabsTrigger>
+                            <TabsList className="grid w-full grid-cols-1 h-auto bg-transparent p-0">
+                                <TabsTrigger value="court-info" className="justify-start data-[state=active]:bg-muted data-[state=active]:text-primary data-[state=active]:font-semibold">Court Info</TabsTrigger>
+                                <TabsTrigger value="availability" className="justify-start data-[state=active]:bg-muted data-[state=active]:text-primary data-[state=active]:font-semibold">Availability</TabsTrigger>
+                                <TabsTrigger value="booking-rules" className="justify-start data-[state=active]:bg-muted data-[state=active]:text-primary data-[state=active]:font-semibold">Booking Rules</TabsTrigger>
+                                <TabsTrigger value="pricing" className="justify-start data-[state=active]:bg-muted data-[state=active]:text-primary data-[state=active]:font-semibold">Pricing & Add-ons</TabsTrigger>
+                                <TabsTrigger value="visibility" className="justify-start data-[state=active]:bg-muted data-[state=active]:text-primary data-[state=active]:font-semibold">Visibility & Settings</TabsTrigger>
                             </TabsList>
                         </CardContent>
                     </Card>
                 </div>
                 
-                <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 xl:col-span-3">
-                    <TabsContent value="court-info" className="mt-0">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Court Info</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-8">
-                                <div className="space-y-2">
-                                    <Label htmlFor="name">Court Name</Label>
-                                    <Input id="name" name="name" value={courtName} onChange={e => setCourtName(e.target.value)} placeholder="e.g., Center Court" />
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-3">
+                    <form action={handleFormAction}>
+                        <TabsContent value="court-info" className="mt-0">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Court Info</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-8">
                                     <div className="space-y-2">
-                                        <Label htmlFor="organisation_id">Venue Name</Label>
-                                        <Select name="organisation_id" value={organisationId} onValueChange={setOrganisationId}>
-                                            <SelectTrigger><SelectValue placeholder="Select venue" /></SelectTrigger>
+                                        <Label htmlFor="name">Court Name</Label>
+                                        <Input id="name" name="name" value={courtName} onChange={e => setCourtName(e.target.value)} placeholder="e.g., Court A" />
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="organisation_id">Venue Name</Label>
+                                            <Select name="organisation_id" value={organisationId} onValueChange={setOrganisationId}>
+                                                <SelectTrigger><SelectValue placeholder="Select venue" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {organisations.map(org => <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="address">Address</Label>
+                                            <Input id="address" name="address" value={address} readOnly placeholder="Venue address"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                        <Label htmlFor="sport_id">Sports Type</Label>
+                                        <Select name="sport_id" value={sportId} onValueChange={setSportId}>
+                                            <SelectTrigger><SelectValue placeholder="Select sport" /></SelectTrigger>
                                             <SelectContent>
-                                                {organisations.map(org => <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>)}
+                                                {sports.map(sport => <SelectItem key={sport.id} value={sport.id.toString()}>{sport.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </div>
+
                                     <div className="space-y-2">
-                                        <Label htmlFor="address">Address</Label>
-                                        <Input id="address" name="address" value={address} readOnly placeholder="Venue address"/>
+                                        <Label>Court Type</Label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {courtTypeOptions.map(type => (
+                                                <Button key={type} type="button" variant={selectedCourtTypes.includes(type) ? 'default' : 'outline'} onClick={() => toggleSelection(type, selectedCourtTypes, setSelectedCourtTypes)}>{type}</Button>
+                                            ))}
+                                            <Button type="button" variant="outline" size="icon"><Plus className="h-4 w-4"/></Button>
+                                        </div>
                                     </div>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                    <Label htmlFor="sport_id">Sports Type</Label>
-                                    <Select name="sport_id" value={sportId} onValueChange={setSportId}>
-                                        <SelectTrigger><SelectValue placeholder="Select sport" /></SelectTrigger>
-                                        <SelectContent>
-                                            {sports.map(sport => <SelectItem key={sport.id} value={sport.id.toString()}>{sport.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
 
-                                <div className="space-y-2">
-                                    <Label>Court Type</Label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {courtTypeOptions.map(type => (
-                                            <Button key={type} type="button" variant={selectedCourtTypes.includes(type) ? 'default' : 'outline'} onClick={() => toggleSelection(type, selectedCourtTypes, setSelectedCourtTypes)}>{type}</Button>
-                                        ))}
-                                        <Button type="button" variant="outline" size="icon"><Plus className="h-4 w-4"/></Button>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="max_players">Max Players</Label>
+                                            <Input id="max_players" name="max_players" type="number" value={maxPlayers} onChange={e => setMaxPlayers(Number(e.target.value))} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="audience_capacity">Audience Capacity</Label>
+                                            <Input id="audience_capacity" name="audience_capacity" type="number" value={audienceCapacity} onChange={e => setAudienceCapacity(Number(e.target.value))} />
+                                        </div>
                                     </div>
-                                </div>
 
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                     <div className="space-y-2">
-                                        <Label htmlFor="max_players">Max Players</Label>
-                                        <Input id="max_players" name="max_players" type="number" value={maxPlayers} onChange={e => setMaxPlayers(Number(e.target.value))} />
-                                    </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="audience_capacity">Audience Capacity</Label>
-                                        <Input id="audience_capacity" name="audience_capacity" type="number" value={audienceCapacity} onChange={e => setAudienceCapacity(Number(e.target.value))} />
+                                        <Label>Tags</Label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {tagOptions.map(tag => (
+                                                <Button key={tag} type="button" variant={selectedTags.includes(tag) ? 'default' : 'outline'} onClick={() => toggleSelection(tag, selectedTags, setSelectedTags)}>{tag}</Button>
+                                            ))}
+                                            <Button type="button" variant="outline" size="icon"><Plus className="h-4 w-4"/></Button>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="space-y-2">
-                                    <Label>Tags</Label>
-                                    <div className="flex flex-wrap gap-2">
-                                         {tagOptions.map(tag => (
-                                            <Button key={tag} type="button" variant={selectedTags.includes(tag) ? 'default' : 'outline'} onClick={() => toggleSelection(tag, selectedTags, setSelectedTags)}>{tag}</Button>
-                                        ))}
-                                        <Button type="button" variant="outline" size="icon"><Plus className="h-4 w-4"/></Button>
+                                    <div className="flex items-center justify-between rounded-lg border p-4">
+                                        <Label htmlFor="equipment_rental" className="text-base font-medium">Equipment Rental Available</Label>
+                                        <Switch id="equipment_rental" checked={equipmentRental} onCheckedChange={setEquipmentRental}/>
                                     </div>
-                                </div>
 
-                                <div className="flex items-center justify-between rounded-lg border p-4">
-                                    <Label htmlFor="equipment_rental" className="text-base font-medium">Equipment Rental Available</Label>
-                                    <Switch id="equipment_rental" checked={equipmentRental} onCheckedChange={setEquipmentRental}/>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="description">Court Description/Overview</Label>
-                                    <Textarea id="description" name="description" value={description} onChange={e => setDescription(e.target.value)} rows={4}/>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <Label>More Info</Label>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {labels.map((label, index) => (
-                                            <div key={index} className="space-y-1">
-                                                <Input value={label} readOnly />
-                                            </div>
-                                        ))}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="description">Court Description/Overview</Label>
+                                        <Textarea id="description" name="description" value={description} onChange={e => setDescription(e.target.value)} rows={4}/>
                                     </div>
-                                    <Button type="button" variant="outline" className="w-full">
-                                        <Plus className="mr-2 h-4 w-4" /> Add New
-                                    </Button>
-                                </div>
-                                
-                                <div className="space-y-4">
-                                    <Label>Facility</Label>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        {facilityOptions.map(facility => (
-                                            <div key={facility.id} className="flex items-center gap-2">
-                                                <Checkbox id={facility.id} checked={selectedFacilities.includes(facility.id)} onCheckedChange={(checked) => {
-                                                    const list = checked ? [...selectedFacilities, facility.id] : selectedFacilities.filter(f => f !== facility.id);
-                                                    setSelectedFacilities(list);
-                                                }} />
-                                                <facility.icon className="h-4 w-4 text-muted-foreground" />
-                                                <Label htmlFor={facility.id} className="text-sm font-normal">{facility.label}</Label>
-                                            </div>
-                                        ))}
+
+                                    <div className="space-y-4">
+                                        <Label>More Info</Label>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {labels.map((label, index) => (
+                                                <div key={index} className="space-y-1">
+                                                    <Input value={label} readOnly />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <Button type="button" variant="outline" className="w-full">
+                                            <Plus className="mr-2 h-4 w-4" /> Add New
+                                        </Button>
                                     </div>
-                                </div>
+                                    
+                                    <div className="space-y-4">
+                                        <Label>Facility</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {facilityOptions.map(facility => (
+                                                <div key={facility.id} className="flex items-center gap-2">
+                                                    <Checkbox id={facility.id} checked={selectedFacilities.includes(facility.id)} onCheckedChange={(checked) => {
+                                                        const list = checked ? [...selectedFacilities, facility.id] : selectedFacilities.filter(f => f !== facility.id);
+                                                        setSelectedFacilities(list);
+                                                    }} />
+                                                    <facility.icon className="h-4 w-4 text-muted-foreground" />
+                                                    <Label htmlFor={facility.id} className="text-sm font-normal">{facility.label}</Label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="availability" className="mt-0">
+                            <Card>
+                                <CardHeader><CardTitle>Availability</CardTitle></CardHeader>
+                                <CardContent><p className="text-muted-foreground">Define when the court is open for bookings. This feature is coming soon.</p></CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="booking-rules" className="mt-0">
+                            <Card>
+                                <CardHeader><CardTitle>Booking Rules</CardTitle></CardHeader>
+                                <CardContent><p className="text-muted-foreground">Set rules for advance bookings, cancellations, etc. This feature is coming soon.</p></CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="pricing" className="mt-0">
+                            <Card>
+                                <CardHeader><CardTitle>Pricing & Add-ons</CardTitle></CardHeader>
+                                <CardContent><p className="text-muted-foreground">Manage court pricing and optional add-ons. This feature is coming soon.</p></CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="visibility" className="mt-0">
+                            <Card>
+                                <CardHeader><CardTitle>Visibility & Settings</CardTitle></CardHeader>
+                                <CardContent><p className="text-muted-foreground">Control who can see and book this court. This feature is coming soon.</p></CardContent>
+                            </Card>
+                        </TabsContent>
 
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="availability" className="mt-0">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Availability</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-muted-foreground">Define when the court is open for bookings. This feature is coming soon.</p>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="booking-rules" className="mt-0">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Booking Rules</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-muted-foreground">Set rules for advance bookings, cancellations, etc. This feature is coming soon.</p>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="pricing" className="mt-0">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Pricing & Add-ons</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-muted-foreground">Manage court pricing and optional add-ons. This feature is coming soon.</p>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="visibility" className="mt-0">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Visibility & Settings</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-muted-foreground">Control who can see and book this court. This feature is coming soon.</p>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <div className="flex items-center justify-end gap-2">
-                        <Link href="/dashboard/courts" passHref>
-                            <Button variant="outline" type="button">Cancel</Button>
-                        </Link>
-                        <Button type="submit">Save</Button>
-                    </div>
+                        <div className="flex items-center justify-end gap-2 mt-8">
+                            <Link href="/dashboard/courts" passHref>
+                                <Button variant="outline" type="button">Cancel</Button>
+                            </Link>
+                            <Button type="submit">Save</Button>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </Tabs>
     );
-
-    
+}
