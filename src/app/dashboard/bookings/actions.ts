@@ -54,7 +54,6 @@ export async function getTimeslots(courtId: number, date: Date, bookingIdToExclu
     const supabase = createServer();
     const dateString = formatISO(date, { representation: 'date' });
 
-    // 1. Get all timeslots for the selected court.
     const { data: allTimeslots, error: timeslotsError } = await supabase
         .from('timeslots')
         .select('id, start_time, end_time, date')
@@ -67,31 +66,5 @@ export async function getTimeslots(courtId: number, date: Date, bookingIdToExclu
         return [];
     }
     
-    if (!allTimeslots || allTimeslots.length === 0) {
-        return [];
-    }
-
-    const timeslotIds = allTimeslots.map(ts => ts.id);
-
-    // 2. Get all bookings for these timeslots on the given date, *excluding the current booking being edited*.
-    // This finds all the "conflicts".
-    const { data: conflictingBookings, error: bookingsError } = await supabase
-        .from('bookings')
-        .select('timeslot_id')
-        .in('timeslot_id', timeslotIds)
-        .neq('id', bookingIdToExclude) // Exclude the current booking from the conflict check
-        .in('status', [1, 2]); // Only consider Confirmed or Pending bookings as conflicts
-
-    if (bookingsError) {
-        console.error('Error fetching conflicting bookings:', bookingsError);
-        // Fail gracefully: return all timeslots but the UI will still work.
-        return allTimeslots;
-    }
-
-    const bookedTimeslotIds = new Set(conflictingBookings.map(b => b.timeslot_id));
-
-    // 3. Filter out the booked timeslots, leaving only available ones.
-    const availableTimeslots = allTimeslots.filter(ts => !bookedTimeslotIds.has(ts.id));
-
-    return availableTimeslots;
+    return allTimeslots || [];
 }
