@@ -81,11 +81,10 @@ export async function updateBooking(formData: FormData) {
 }
 
 
-export async function getTimeslots(courtId: number, dateString: string, currentBookingId?: number) {
-    console.log(`Fetching timeslots for courtId: ${courtId}, date: ${dateString}, currentBookingId: ${currentBookingId}`);
+export async function getTimeslots(courtId: number, dateString: string) {
+    console.log(`[DEBUG] Fetching ALL timeslots for courtId: ${courtId}, date: ${dateString}`);
     const supabase = createServer();
 
-    // 1. Get all timeslots for the court and date
     const { data: allTimeslots, error: timeslotsError } = await supabase
         .from('timeslots')
         .select('id, start_time, end_time')
@@ -94,43 +93,16 @@ export async function getTimeslots(courtId: number, dateString: string, currentB
         .order('start_time');
 
     if (timeslotsError) {
-        console.error('Error fetching all timeslots:', timeslotsError);
+        console.error('Error fetching timeslots:', timeslotsError);
         return [];
     }
+
     if (!allTimeslots || allTimeslots.length === 0) {
-        console.log('No timeslots found for the given court and date.');
+        console.log(`[DEBUG] No timeslots found in DB for court ${courtId} on ${dateString}.`);
         return [];
     }
-    console.log(`Found ${allTimeslots.length} total timeslots for this day.`);
-
-    // 2. Get the IDs of all timeslots for the selected day that are already booked
-    const allTimeslotIds = allTimeslots.map(slot => slot.id);
-
-    const bookingsQuery = supabase
-        .from('bookings')
-        .select('timeslot_id')
-        .in('timeslot_id', allTimeslotIds)
-        .in('status', [1, 2]); // Confirmed or Pending
-
-    // If we're editing a booking, exclude it from the check
-    if (currentBookingId) {
-        bookingsQuery.neq('id', currentBookingId);
-    }
     
-    const { data: bookedSlots, error: bookingsError } = await bookingsQuery;
+    console.log(`[DEBUG] Found ${allTimeslots.length} timeslots. Returning all of them.`);
 
-    if (bookingsError) {
-        console.error('Error fetching booked slots:', bookingsError);
-        // Fail open: If we can't check for other bookings, return all slots for the day.
-        return allTimeslots;
-    }
-
-    const bookedTimeslotIds = new Set(bookedSlots.map(b => b.timeslot_id));
-    console.log(`Found ${bookedTimeslotIds.size} booked timeslots.`);
-    
-    // 3. Filter the full list of timeslots, keeping only those that are NOT booked by others.
-    const availableTimeslots = allTimeslots.filter(slot => !bookedTimeslotIds.has(slot.id));
-    console.log(`Returning ${availableTimeslots.length} available timeslots.`);
-
-    return availableTimeslots;
+    return allTimeslots;
 }

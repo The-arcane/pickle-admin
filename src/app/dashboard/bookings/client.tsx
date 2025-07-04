@@ -129,7 +129,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
         if (selectedCourtId && selectedDate && isEditDialogOpen) {
             setIsLoadingTimeslots(true);
             const dateString = formatISO(selectedDate, { representation: 'date' });
-            getTimeslots(Number(selectedCourtId), dateString, selectedBooking?.id)
+            getTimeslots(Number(selectedCourtId), dateString)
                 .then((slots) => {
                     setAvailableTimeslots(slots);
                     // If the previously selected timeslot is still in the new list, keep it selected.
@@ -142,7 +142,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
         } else {
             setAvailableTimeslots([]);
         }
-    }, [selectedCourtId, selectedDate, selectedBooking, isEditDialogOpen, selectedTimeslotId]);
+    }, [selectedCourtId, selectedDate, isEditDialogOpen, selectedTimeslotId]);
 
     // Effect for Add Dialog Timeslots
     useEffect(() => {
