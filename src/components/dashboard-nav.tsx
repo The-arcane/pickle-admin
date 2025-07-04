@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BarChart, Calendar, List, Settings, User, Users } from 'lucide-react';
-import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -19,24 +18,20 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <SidebarMenu>
+    <nav className="grid items-start gap-1 px-4 text-sm font-medium">
       {navItems.map((item) => (
-        <SidebarMenuItem key={item.href}>
-          <SidebarMenuButton
-            asChild
-            isActive={pathname === item.href}
-            className={cn(
-              'w-full justify-start',
-              pathname === item.href && "bg-card text-primary border border-primary hover:bg-card"
-            )}
-          >
-            <Link href={item.href}>
-              <item.icon className="mr-2 h-4 w-4" />
-              <span>{item.label}</span>
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
+        <Link
+          key={item.href}
+          href={item.href}
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+            pathname === item.href && 'bg-muted text-primary'
+          )}
+        >
+          <item.icon className="h-4 w-4" />
+          {item.label}
+        </Link>
       ))}
-    </SidebarMenu>
+    </nav>
   );
 }

@@ -1,11 +1,11 @@
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
-import { DashboardNav } from '@/components/dashboard-nav';
-import { UserNav } from '@/components/user-nav';
-import { Cuboid, Settings } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { Cuboid, PanelLeft } from 'lucide-react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { UserNav } from '@/components/user-nav';
+import { DashboardNav } from '@/components/dashboard-nav';
 
 export default async function DashboardLayout({
   children,
@@ -35,43 +35,55 @@ export default async function DashboardLayout({
   }
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader className="flex items-center p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <SidebarTrigger />
-            <div className="flex items-center gap-2 text-primary">
-                <Cuboid className="h-6 w-6" />
-                <h1 className="text-lg font-bold">LUMEN</h1>
-            </div>
-          </div>
-        </SidebarHeader>
-        <SidebarContent className="p-2">
-            <div className="px-2 pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                MENU
-            </div>
-            <DashboardNav />
-        </SidebarContent>
-        <SidebarFooter className="mt-auto p-4">
-            <p className="text-xs text-muted-foreground">Version 1.0</p>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-          <SidebarTrigger className="sm:hidden" />
-          <div className="flex-1" />
-          <Link href="/dashboard/settings">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <Settings className="h-4 w-4" />
-              <span className="sr-only">Settings</span>
-            </Button>
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-background sm:flex">
+        <div className="flex h-16 shrink-0 items-center border-b px-6">
+          <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-primary">
+            <Cuboid className="h-6 w-6" />
+            <span>LUMEN</span>
           </Link>
-          <UserNav user={userProfile} />
+        </div>
+        <div className="flex-1 overflow-y-auto py-4">
+            <DashboardNav />
+        </div>
+        <div className="mt-auto p-4">
+            <p className="text-xs text-muted-foreground">Version 1.0</p>
+        </div>
+      </aside>
+      <div className="flex flex-col sm:pl-60">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-6">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button size="icon" variant="outline" className="sm:hidden">
+                <PanelLeft className="h-5 w-5" />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col p-0 sm:max-w-xs">
+                <div className="flex h-16 shrink-0 items-center border-b px-6">
+                    <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-primary">
+                        <Cuboid className="h-6 w-6" />
+                        <span>LUMEN</span>
+                    </Link>
+                </div>
+                <div className="flex-1 overflow-y-auto py-4">
+                    <DashboardNav />
+                </div>
+            </SheetContent>
+          </Sheet>
+          
+          <div className="sm:hidden">
+             {/* This div is to push the UserNav to the right on mobile when the SheetTrigger is not displayed */}
+          </div>
+
+          <div className="ml-auto">
+            <UserNav user={userProfile} />
+          </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+        <main className="flex-1 p-6">
           {children}
         </main>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </div>
   );
 }
