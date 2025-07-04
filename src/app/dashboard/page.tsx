@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { StatusBadge } from '@/components/status-badge';
 import { Calendar, BarChartHorizontal, Clock, MessageSquare } from 'lucide-react';
 import { createServer } from '@/lib/supabase/server';
+import { format } from 'date-fns';
 
 // 0: Cancelled, 1: Confirmed, 2: Pending
 const statusMap: { [key: number]: string } = {
@@ -16,20 +17,20 @@ const statusMap: { [key: number]: string } = {
 
 const formatTime = (dateString: string | null) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+    try {
+        return format(new Date(dateString), 'p');
+    } catch (e) {
+        return 'N/A';
+    }
 };
   
 const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    try {
+        return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (e) {
+        return 'N/A';
+    }
 };
 
 const getInitials = (name: string) => {
@@ -65,7 +66,7 @@ export default async function DashboardPage() {
   const supabase = createServer();
   const { data, error } = await supabase
     .from('bookings')
-    .select('status, user!user_id(name, profile_image_url), courts!court_id(name), timeslots!timeslot_id(date, start_time)')
+    .select('status, user:user_id(name, profile_image_url), courts:court_id(name), timeslots:timeslot_id(date, start_time)')
     .limit(8);
 
   if (error) {

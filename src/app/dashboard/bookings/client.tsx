@@ -11,6 +11,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { Pencil } from 'lucide-react';
 import { updateBooking } from './actions';
 import { useToast } from "@/hooks/use-toast";
+import { format } from 'date-fns';
 
 type Booking = {
   id: number;
@@ -29,20 +30,20 @@ const statusMap: { [key: number]: string } = {
 
 const formatTime = (dateString: string | null) => {
   if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
+  try {
+    return format(new Date(dateString), 'p');
+  } catch (e) {
+    return 'N/A';
+  }
 };
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+    try {
+        return format(new Date(dateString), 'MMM d, yyyy');
+    } catch (e) {
+        return 'N/A';
+    }
 };
 
 export function BookingsClientPage({ bookings: initialBookings }: { bookings: Booking[] }) {
