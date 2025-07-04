@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -74,29 +75,27 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     };
 
     return (
-        <form action={handleFormAction} className="grid flex-1 items-start gap-4 lg:grid-cols-3 xl:grid-cols-4">
-            <div className="grid auto-rows-max items-start gap-4 lg:col-span-1">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Customize</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Tabs defaultValue="court-info" orientation="vertical" className="w-full">
+        <Tabs defaultValue="court-info">
+            <form action={handleFormAction} className="grid flex-1 items-start gap-4 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid auto-rows-max items-start gap-4 lg:col-span-1">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Customize</CardTitle>
+                        </CardHeader>
+                        <CardContent>
                             <TabsList className="grid w-full grid-cols-1 h-auto">
                                 <TabsTrigger value="court-info" className="justify-start">Court Info</TabsTrigger>
-                                <TabsTrigger value="availability" className="justify-start" disabled>Availability</TabsTrigger>
-                                <TabsTrigger value="booking-rules" className="justify-start" disabled>Booking Rules</TabsTrigger>
-                                <TabsTrigger value="pricing" className="justify-start" disabled>Pricing & Add-ons</TabsTrigger>
-                                <TabsTrigger value="visibility" className="justify-start" disabled>Visibility & Settings</TabsTrigger>
+                                <TabsTrigger value="availability" className="justify-start">Availability</TabsTrigger>
+                                <TabsTrigger value="booking-rules" className="justify-start">Booking Rules</TabsTrigger>
+                                <TabsTrigger value="pricing" className="justify-start">Pricing & Add-ons</TabsTrigger>
+                                <TabsTrigger value="visibility" className="justify-start">Visibility & Settings</TabsTrigger>
                             </TabsList>
-                        </Tabs>
-                    </CardContent>
-                </Card>
-            </div>
-            
-            <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 xl:col-span-3">
-                 <Tabs defaultValue="court-info">
-                    <TabsContent value="court-info">
+                        </CardContent>
+                    </Card>
+                </div>
+                
+                <div className="grid auto-rows-max items-start gap-4 lg:col-span-2 xl:col-span-3">
+                    <TabsContent value="court-info" className="mt-0">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Court Info</CardTitle>
@@ -207,15 +206,56 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                             </CardContent>
                         </Card>
                     </TabsContent>
-                </Tabs>
+                    <TabsContent value="availability" className="mt-0">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Availability</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-muted-foreground">Define when the court is open for bookings. This feature is coming soon.</p>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="booking-rules" className="mt-0">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Booking Rules</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-muted-foreground">Set rules for advance bookings, cancellations, etc. This feature is coming soon.</p>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="pricing" className="mt-0">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Pricing & Add-ons</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-muted-foreground">Manage court pricing and optional add-ons. This feature is coming soon.</p>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="visibility" className="mt-0">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Visibility & Settings</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-muted-foreground">Control who can see and book this court. This feature is coming soon.</p>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
 
-                <div className="flex items-center justify-end gap-2">
-                    <Link href="/dashboard/courts" passHref>
-                        <Button variant="outline" type="button">Cancel</Button>
-                    </Link>
-                    <Button type="submit">Save</Button>
+                    <div className="flex items-center justify-end gap-2">
+                        <Link href="/dashboard/courts" passHref>
+                            <Button variant="outline" type="button">Cancel</Button>
+                        </Link>
+                        <Button type="submit">Save</Button>
+                    </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </Tabs>
     );
-}
+
+    
