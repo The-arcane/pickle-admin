@@ -1,8 +1,5 @@
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -13,7 +10,6 @@ import {
 } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
 import { createServer } from '@/lib/supabase/server';
-import { DebugButton } from '@/components/debug-button';
 
 // 0: Cancelled, 1: Confirmed, 2: Pending
 const statusMap: { [key: number]: string } = {
@@ -22,20 +18,48 @@ const statusMap: { [key: number]: string } = {
   2: 'Pending',
 };
 
+const formatTime = (dateString: string | null) => {
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
+
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
 export default async function BookingsPage() {
   const supabase = createServer();
-  
-  // TEMPORARY QUERY FOR DEBUGGING: Fetches only from the bookings table
-  const { data, error } = await supabase.from('bookings').select('*');
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(
+      'status, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time)'
+    );
 
-  // The data mapping is simplified for the debug query. It will not show joined data.
+  if (error) {
+    console.error('Error fetching bookings:', error);
+  }
+
   const bookings =
     data?.map((booking) => {
+      const user = booking.user as { name: string } | null;
+      const court = booking.courts as { name: string } | null;
+      const timeslot = booking.timeslots as { date: string | null; start_time: string | null } | null;
+      const userName = user?.name ?? 'N/A';
+
       return {
-        user: `User ID: ${booking.user_id}`,
-        court: `Court ID: ${booking.court_id}`,
-        date: `Timeslot ID: ${booking.timeslot_id}`,
-        time: 'N/A',
+        user: userName,
+        court: court?.name ?? 'N/A',
+        date: formatDate(timeslot?.date),
+        time: formatTime(timeslot?.start_time),
         status: statusMap[booking.status] ?? 'Unknown',
       };
     }) || [];
@@ -47,10 +71,7 @@ export default async function BookingsPage() {
           <h1 className="text-3xl font-bold">Bookings</h1>
           <p className="text-muted-foreground">A list of all recent bookings.</p>
         </div>
-        <div className="flex items-center gap-4">
-          <DebugButton data={data} error={error} />
-          <Button>Add Booking</Button>
-        </div>
+        <Button>Add Booking</Button>
       </div>
       <Card>
         <CardContent className="pt-6">
@@ -76,10 +97,10 @@ export default async function BookingsPage() {
                   </TableCell>
                 </TableRow>
               ))}
-               {bookings.length === 0 && (
+              {bookings.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No bookings found. Use the "Check Fetch Status" button to diagnose.
+                    No bookings found.
                   </TableCell>
                 </TableRow>
               )}
