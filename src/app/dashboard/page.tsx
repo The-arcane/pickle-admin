@@ -1,27 +1,15 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { StatusBadge } from '@/components/status-badge';
 import { Calendar, BarChartHorizontal, Clock, MessageSquare } from 'lucide-react';
 import { createServer } from '@/lib/supabase/server';
 import { format } from 'date-fns';
+import { RecentBookingsTable } from '@/components/recent-bookings-table';
 
-// 0: Cancelled, 1: Confirmed, 2: Pending
 const statusMap: { [key: number]: string } = {
   0: 'Cancelled',
   1: 'Confirmed',
   2: 'Pending',
-};
-
-const formatTime = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    try {
-        return format(new Date(dateString), 'p');
-    } catch (e) {
-        return 'N/A';
-    }
 };
   
 const formatDate = (dateString: string | null) => {
@@ -66,7 +54,7 @@ export default async function DashboardPage() {
   const supabase = createServer();
   const { data, error } = await supabase
     .from('bookings')
-    .select('status, user:user_id(name, profile_image_url), courts:court_id(name), timeslots:timeslot_id(date, start_time)')
+    .select('id, status, user:user_id(name, profile_image_url), courts:court_id(name), timeslots:timeslot_id(date, start_time)')
     .limit(8);
 
   if (error) {
@@ -81,10 +69,11 @@ export default async function DashboardPage() {
       const userName = typeof user === 'object' && user !== null && 'name' in user ? (user as any).name : 'N/A';
 
       return {
+        id: booking.id,
         user: userName,
         court: typeof court === 'object' && court !== null && 'name' in court ? (court as any).name : 'N/A',
         date: typeof timeslot === 'object' && timeslot !== null && 'date' in timeslot ? formatDate((timeslot as any).date) : 'N/A',
-        time: typeof timeslot === 'object' && timeslot !== null && 'start_time' in timeslot ? formatTime((timeslot as any).start_time) : 'N/A',
+        time: typeof timeslot === 'object' && timeslot !== null && 'start_time' in timeslot ? (timeslot as any).start_time as string : '',
         status: statusMap[booking.status] ?? 'Unknown',
         avatar: typeof user === 'object' && user !== null && 'profile_image_url' in user ? (user as any).profile_image_url as string | null : null,
         initials: getInitials(userName),
@@ -137,38 +126,7 @@ export default async function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead className="hidden sm:table-cell">Court</TableHead>
-                  <TableHead className="hidden md:table-cell">Date</TableHead>
-                  <TableHead className="hidden md:table-cell">Time</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {bookings.map((b, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={b.avatar ?? undefined} alt={b.user} />
-                          <AvatarFallback>{b.initials}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{b.user}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">{b.court}</TableCell>
-                    <TableCell className="hidden md:table-cell">{b.date}</TableCell>
-                    <TableCell className="hidden md:table-cell">{b.time}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={b.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <RecentBookingsTable bookings={bookings} />
           </CardContent>
         </Card>
 

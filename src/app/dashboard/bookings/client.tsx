@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Booking = {
   id: number;
@@ -24,6 +25,18 @@ type Booking = {
   user: { name: string } | null;
   courts: { name: string } | null;
   timeslots: { date: string | null; start_time: string | null } | null;
+};
+
+type ProcessedBooking = {
+  id: number;
+  user: string;
+  court: string;
+  date: string;
+  time: string;
+  status: string;
+  court_id: number;
+  timeslot_id: number;
+  raw_date: Date | undefined;
 };
 
 type Court = {
@@ -37,37 +50,59 @@ type Timeslot = {
     end_time: string | null;
 }
 
-// 0: Cancelled, 1: Confirmed, 2: Pending
 const statusMap: { [key: number]: string } = {
   0: 'Cancelled',
   1: 'Confirmed',
   2: 'Pending',
 };
 
-const formatTime = (dateString: string | null) => {
-  if (!dateString) return 'N/A';
-  try {
-    return format(new Date(dateString), 'p');
-  } catch (e) {
-    return 'N/A';
-  }
-};
-
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return 'N/A';
-    try {
-        return format(new Date(dateString), 'MMM d, yyyy');
-    } catch (e) {
-        return 'N/A';
-    }
-};
-
 export function BookingsClientPage({ bookings: initialBookings, courts: allCourts }: { bookings: Booking[], courts: Court[] }) {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
+    const [selectedBooking, setSelectedBooking] = useState<ProcessedBooking | null>(null);
     const { toast } = useToast();
+    
+    const [processedBookings, setProcessedBookings] = useState<ProcessedBooking[]>([]);
 
-    // State for the edit dialog form
+    useEffect(() => {
+        const formatTime = (dateString: string | null) => {
+            if (!dateString) return 'N/A';
+            try {
+                return format(new Date(dateString), 'p');
+            } catch (e) {
+                return 'N/A';
+            }
+        };
+
+        const formatDate = (dateString: string | null) => {
+            if (!dateString) return 'N/A';
+            try {
+                return format(new Date(dateString), 'MMM d, yyyy');
+            } catch (e) {
+                return 'N/A';
+            }
+        };
+
+        const bookings = initialBookings.map((booking) => {
+            const user = booking.user as { name: string } | null;
+            const court = booking.courts as { name: string } | null;
+            const timeslot = booking.timeslots as { date: string | null; start_time: string | null } | null;
+            const userName = user?.name ?? 'N/A';
+
+            return {
+                id: booking.id,
+                user: userName,
+                court: court?.name ?? 'N/A',
+                date: formatDate(timeslot?.date),
+                time: formatTime(timeslot?.start_time),
+                status: statusMap[booking.status] ?? 'Unknown',
+                court_id: booking.court_id,
+                timeslot_id: booking.timeslot_id,
+                raw_date: timeslot?.date ? new Date(timeslot.date) : undefined
+            };
+        });
+        setProcessedBookings(bookings);
+    }, [initialBookings]);
+
     const [selectedCourtId, setSelectedCourtId] = useState<string>('');
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const [availableTimeslots, setAvailableTimeslots] = useState<Timeslot[]>([]);
@@ -85,26 +120,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
     }, [selectedCourtId, selectedDate]);
 
 
-    const bookings = initialBookings.map((booking) => {
-        const user = booking.user as { name: string } | null;
-        const court = booking.courts as { name: string } | null;
-        const timeslot = booking.timeslots as { date: string | null; start_time: string | null } | null;
-        const userName = user?.name ?? 'N/A';
-
-        return {
-            id: booking.id,
-            user: userName,
-            court: court?.name ?? 'N/A',
-            date: formatDate(timeslot?.date),
-            time: formatTime(timeslot?.start_time),
-            status: statusMap[booking.status] ?? 'Unknown',
-            court_id: booking.court_id,
-            timeslot_id: booking.timeslot_id,
-            raw_date: timeslot?.date ? new Date(timeslot.date) : undefined
-        };
-    });
-
-    const handleEditClick = (booking: any) => {
+    const handleEditClick = (booking: ProcessedBooking) => {
         setSelectedBooking(booking);
         setSelectedCourtId(booking.court_id.toString());
         setSelectedDate(booking.raw_date);
@@ -128,6 +144,15 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
             setSelectedBooking(null);
         }
     }
+    
+    const formatTimeForSelect = (dateString: string | null) => {
+        if (!dateString) return 'N/A';
+        try {
+            return format(new Date(dateString), 'p');
+        } catch (e) {
+            return 'N/A';
+        }
+    };
 
   return (
     <>
@@ -153,29 +178,43 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {bookings.map((booking) => (
-                        <TableRow key={booking.id}>
-                        <TableCell className="font-medium">{booking.user}</TableCell>
-                        <TableCell>{booking.court}</TableCell>
-                        <TableCell>{booking.date}</TableCell>
-                        <TableCell>{booking.time}</TableCell>
-                        <TableCell>
-                            <StatusBadge status={booking.status} />
-                        </TableCell>
-                        <TableCell className="text-right">
-                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(booking)}>
-                                <Pencil className="h-4 w-4" />
-                                <span className="sr-only">Edit booking</span>
-                            </Button>
-                        </TableCell>
-                        </TableRow>
-                    ))}
-                    {bookings.length === 0 && (
-                        <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground">
-                            No bookings found.
-                        </TableCell>
-                        </TableRow>
+                    {processedBookings.length > 0 ? (
+                        processedBookings.map((booking) => (
+                            <TableRow key={booking.id}>
+                            <TableCell className="font-medium">{booking.user}</TableCell>
+                            <TableCell>{booking.court}</TableCell>
+                            <TableCell>{booking.date}</TableCell>
+                            <TableCell>{booking.time}</TableCell>
+                            <TableCell>
+                                <StatusBadge status={booking.status} />
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" onClick={() => handleEditClick(booking)}>
+                                    <Pencil className="h-4 w-4" />
+                                    <span className="sr-only">Edit booking</span>
+                                </Button>
+                            </TableCell>
+                            </TableRow>
+                        ))
+                    ) : (
+                        initialBookings.length > 0 ? (
+                            Array.from({ length: 5 }).map((_, index) => (
+                                <TableRow key={index}>
+                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                                    <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                    No bookings found.
+                                </TableCell>
+                            </TableRow>
+                        )
                     )}
                     </TableBody>
                 </Table>
@@ -238,7 +277,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                                 </SelectTrigger>
                                 <SelectContent>
                                     {availableTimeslots.map((slot) => (
-                                        <SelectItem key={slot.id} value={slot.id.toString()}>{formatTime(slot.start_time)} - {formatTime(slot.end_time)}</SelectItem>
+                                        <SelectItem key={slot.id} value={slot.id.toString()}>{formatTimeForSelect(slot.start_time)} - {formatTimeForSelect(slot.end_time)}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
