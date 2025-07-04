@@ -64,7 +64,6 @@ const statusMap: { [key: number]: string } = {
 const formatTime = (timeString: string | null) => {
     if (!timeString) return '';
     try {
-        // Timestamps may be full ISO strings, so parse them first
         return format(parseISO(timeString), 'p');
     } catch (e) {
         console.error(`Failed to parse time: ${timeString}`, e);
@@ -409,13 +408,14 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                                     selected={addDate}
                                     onSelect={setAddDate}
                                     initialFocus
+                                    disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
                                     />
                                 </PopoverContent>
                             </Popover>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="add_timeslot_id">Timeslot</Label>
-                            <Select name="timeslot_id" disabled={isAddLoadingTimeslots || !addDate}>
+                            <Select name="timeslot_id" disabled={isAddLoadingTimeslots || !addDate || !addCourtId}>
                                 <SelectTrigger id="add_timeslot_id">
                                     <SelectValue placeholder={isAddLoadingTimeslots ? "Loading..." : "Select timeslot"} />
                                 </SelectTrigger>
@@ -426,7 +426,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                                         ))
                                     ) : (
                                         <SelectItem value="none" disabled>
-                                            {addDate ? 'No available slots' : 'Please select a date'}
+                                            {!addCourtId || !addDate ? 'Select court and date' : 'No available slots'}
                                         </SelectItem>
                                     )}
                                 </SelectContent>

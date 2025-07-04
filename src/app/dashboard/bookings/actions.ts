@@ -2,7 +2,6 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { formatISO } from 'date-fns';
 
 const statusMapToDb: { [key: string]: number } = {
   'Cancelled': 0,
@@ -101,32 +100,32 @@ export async function getTimeslots(courtId: number, dateString: string, currentB
         return [];
     }
 
-    // 2. Get the IDs of timeslots that are booked by OTHER confirmed/pending bookings
-    // on the same date for the same court.
-    const query = supabase
+    // 2. Get the IDs of all timeslots for the selected day that are already booked
+    const allTimeslotIds = allTimeslots.map(slot => slot.id);
+
+    const bookingsQuery = supabase
         .from('bookings')
-        .select('timeslot_id, timeslots!inner(date)')
-        .eq('court_id', courtId)
-        .eq('timeslots.date', dateString)
+        .select('timeslot_id')
+        .in('timeslot_id', allTimeslotIds)
         .in('status', [1, 2]); // Confirmed or Pending
-        
+
+    // If we're editing a booking, exclude it from the check
     if (currentBookingId) {
-        query.neq('id', currentBookingId); // Exclude the booking we are currently editing
+        bookingsQuery.neq('id', currentBookingId);
     }
-
-    const { data: otherBookings, error: bookingsError } = await query;
-
+    
+    const { data: bookedSlots, error: bookingsError } = await bookingsQuery;
 
     if (bookingsError) {
-        console.error('Error fetching other bookings for availability check:', bookingsError);
+        console.error('Error fetching booked slots:', bookingsError);
         // Fail open: If we can't check for other bookings, return all slots for the day.
         return allTimeslots;
     }
 
-    const otherBookedTimeslotIds = new Set(otherBookings.map(b => b.timeslot_id));
+    const bookedTimeslotIds = new Set(bookedSlots.map(b => b.timeslot_id));
     
     // 3. Filter the full list of timeslots, keeping only those that are NOT booked by others.
-    const availableTimeslots = allTimeslots.filter(slot => !otherBookedTimeslotIds.has(slot.id));
+    const availableTimeslots = allTimeslots.filter(slot => !bookedTimeslotIds.has(slot.id));
 
     return availableTimeslots;
 }

@@ -7,7 +7,8 @@ export default async function BookingsPage() {
     .from('bookings')
     .select(
       'id, status, court_id, timeslot_id, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time, end_time)'
-    );
+    )
+    .order('id', { ascending: false });
 
   const { data: courtsData, error: courtsError } = await supabase.from('courts').select('id, name');
   const { data: usersData, error: usersError } = await supabase.from('user').select('id, name').eq('user_type', 1);
