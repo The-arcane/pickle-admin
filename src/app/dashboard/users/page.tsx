@@ -28,7 +28,8 @@ export default async function UsersPage() {
   const supabase = createServer();
   const { data: usersData, error } = await supabase
     .from('user')
-    .select('name, email, profile_image_url, is_deleted');
+    .select('name, email, profile_image_url, is_deleted')
+    .eq('user_type', 1);
 
   if (error) {
     console.error('Error fetching users:', error);
