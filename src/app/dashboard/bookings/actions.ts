@@ -82,6 +82,7 @@ export async function updateBooking(formData: FormData) {
 
 
 export async function getTimeslots(courtId: number, dateString: string, currentBookingId?: number) {
+    console.log(`Fetching timeslots for courtId: ${courtId}, date: ${dateString}, currentBookingId: ${currentBookingId}`);
     const supabase = createServer();
 
     // 1. Get all timeslots for the court and date
@@ -97,8 +98,10 @@ export async function getTimeslots(courtId: number, dateString: string, currentB
         return [];
     }
     if (!allTimeslots || allTimeslots.length === 0) {
+        console.log('No timeslots found for the given court and date.');
         return [];
     }
+    console.log(`Found ${allTimeslots.length} total timeslots for this day.`);
 
     // 2. Get the IDs of all timeslots for the selected day that are already booked
     const allTimeslotIds = allTimeslots.map(slot => slot.id);
@@ -123,9 +126,11 @@ export async function getTimeslots(courtId: number, dateString: string, currentB
     }
 
     const bookedTimeslotIds = new Set(bookedSlots.map(b => b.timeslot_id));
+    console.log(`Found ${bookedTimeslotIds.size} booked timeslots.`);
     
     // 3. Filter the full list of timeslots, keeping only those that are NOT booked by others.
     const availableTimeslots = allTimeslots.filter(slot => !bookedTimeslotIds.has(slot.id));
+    console.log(`Returning ${availableTimeslots.length} available timeslots.`);
 
     return availableTimeslots;
 }

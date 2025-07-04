@@ -55,15 +55,15 @@ type Timeslot = {
     end_time: string | null;
 }
 
-const statusMap: { [key: number]: string } = {
-  0: 'Cancelled',
-  1: 'Confirmed',
-  2: 'Pending',
-};
+type BookingStatus = {
+    id: number;
+    label: string;
+}
 
 const formatTime = (timeString: string | null) => {
     if (!timeString) return '';
     try {
+        // Timestamps from Supabase are in ISO 8601 format (e.g., "2024-07-16T10:00:00+00:00")
         return format(parseISO(timeString), 'p');
     } catch (e) {
         console.error(`Failed to parse time: ${timeString}`, e);
@@ -71,7 +71,7 @@ const formatTime = (timeString: string | null) => {
     }
 }
 
-export function BookingsClientPage({ bookings: initialBookings, courts: allCourts, users: allUsers }: { bookings: BookingFromDb[], courts: Court[], users: User[] }) {
+export function BookingsClientPage({ bookings: initialBookings, courts: allCourts, users: allUsers, bookingStatuses }: { bookings: BookingFromDb[], courts: Court[], users: User[], bookingStatuses: BookingStatus[] }) {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<ProcessedBooking | null>(null);
@@ -79,6 +79,13 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
     
     const [processedBookings, setProcessedBookings] = useState<ProcessedBooking[]>([]);
     const [isClient, setIsClient] = useState(false);
+
+    const statusMap = useMemo(() => {
+        return bookingStatuses.reduce((acc, status) => {
+            acc[status.id] = status.label;
+            return acc;
+        }, {} as { [key: number]: string });
+    }, [bookingStatuses]);
 
     useEffect(() => {
         setIsClient(true);
@@ -102,7 +109,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
             };
         });
         setProcessedBookings(bookings);
-    }, [initialBookings]);
+    }, [initialBookings, statusMap]);
 
     // State for Edit Dialog
     const [selectedCourtId, setSelectedCourtId] = useState<string>('');
@@ -123,12 +130,19 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
             setIsLoadingTimeslots(true);
             const dateString = formatISO(selectedDate, { representation: 'date' });
             getTimeslots(Number(selectedCourtId), dateString, selectedBooking?.id)
-                .then(setAvailableTimeslots)
+                .then((slots) => {
+                    setAvailableTimeslots(slots);
+                    // If the previously selected timeslot is still in the new list, keep it selected.
+                    // Otherwise, the selection will be reset.
+                    if (!slots.some(slot => slot.id.toString() === selectedTimeslotId)) {
+                        setSelectedTimeslotId('');
+                    }
+                })
                 .finally(() => setIsLoadingTimeslots(false));
         } else {
             setAvailableTimeslots([]);
         }
-    }, [selectedCourtId, selectedDate, selectedBooking, isEditDialogOpen]);
+    }, [selectedCourtId, selectedDate, selectedBooking, isEditDialogOpen, selectedTimeslotId]);
 
     // Effect for Add Dialog Timeslots
     useEffect(() => {
@@ -335,9 +349,9 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                                     <SelectValue placeholder="Select status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Confirmed">Confirmed</SelectItem>
-                                    <SelectItem value="Pending">Pending</SelectItem>
-                                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                    {bookingStatuses.map((status) => (
+                                        <SelectItem key={status.id} value={status.label}>{status.label}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -439,9 +453,9 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                                     <SelectValue placeholder="Select status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Confirmed">Confirmed</SelectItem>
-                                    <SelectItem value="Pending">Pending</SelectItem>
-                                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                     {bookingStatuses.map((status) => (
+                                        <SelectItem key={status.id} value={status.label}>{status.label}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
