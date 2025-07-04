@@ -4,15 +4,25 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { signup } from './actions';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { useFormStatus } from 'react-dom';
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      {pending ? 'Creating Account...' : 'Create an account'}
+    </Button>
+  );
+}
 
 export default function SignupPage() {
-  const router = useRouter();
-
-  const handleSignUp = (e: React.FormEvent) => {
-    e.preventDefault();
-    router.push('/dashboard');
-  };
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
@@ -22,23 +32,28 @@ export default function SignupPage() {
           <CardDescription>Enter your information to create an account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignUp} className="grid gap-4">
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Signup Failed</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <form action={signup} className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="full-name">Full name</Label>
-              <Input id="full-name" placeholder="John Doe" required />
+              <Label htmlFor="fullName">Full name</Label>
+              <Input id="fullName" name="fullName" placeholder="John Doe" required />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="m@example.com" required />
+              <Input id="email" name="email" type="email" placeholder="m@example.com" required />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" />
+              <Input id="password" name="password" type="password" required />
             </div>
-            <Button type="submit" className="w-full">
-              Create an account
-            </Button>
-            <Button variant="outline" className="w-full">
+            <SubmitButton />
+            <Button variant="outline" className="w-full" type="button" disabled>
               Sign up with Google
             </Button>
           </form>

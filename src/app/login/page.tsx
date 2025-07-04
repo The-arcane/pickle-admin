@@ -1,47 +1,28 @@
 'use client';
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useFormStatus } from 'react-dom';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { createClient } from '@/lib/supabase/client';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { login } from './actions';
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      {pending ? 'Signing In...' : 'Sign In'}
+    </Button>
+  );
+}
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const supabase = createClient();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const form = e.target as HTMLFormElement;
-    const email = form.email.value;
-    const password = form.password.value;
-
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    setLoading(false);
-
-    if (authError) {
-      setError(authError?.message || 'Authentication failed. Please check your credentials.');
-      return;
-    }
-
-    // On successful login, redirect to the dashboard.
-    // The dashboard layout will handle authorization.
-    router.push('/dashboard');
-    router.refresh();
-  };
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -58,7 +39,7 @@ const LoginPage = () => {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form action={login} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" type="email" placeholder="admin@example.com" required />
@@ -88,9 +69,7 @@ const LoginPage = () => {
                 </button>
               </div>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing In...' : 'Sign In'}
-            </Button>
+            <SubmitButton />
           </form>
         </CardContent>
       </Card>
