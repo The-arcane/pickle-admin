@@ -59,10 +59,12 @@ const statusMap: { [key: number]: string } = {
 const formatTime = (timeString: string | null) => {
     if (!timeString) return '';
     try {
-        const date = new Date(`1970-01-01T${timeString}Z`);
-        return format(date, 'p', { useAdditionalDayOfYearTokens: false });
-    } catch {
-        return '';
+        // The database returns a full timestamp string (e.g., "2024-07-25T09:00:00+00:00").
+        // parseISO can handle this format correctly.
+        return format(parseISO(timeString), 'p'); // 'p' formats to 'h:mm AM/PM'
+    } catch (e) {
+        console.error(`Failed to parse time: ${timeString}`, e);
+        return "Invalid Time";
     }
 }
 
