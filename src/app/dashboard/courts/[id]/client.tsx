@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +6,7 @@ import Link from 'next/link';
 import { addCourt, updateCourt } from '../actions';
 import type { Court, Organisation, Sport } from './types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -211,26 +210,42 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                         </TabsContent>
                         <TabsContent value="availability" className="mt-0">
                             <Card>
-                                <CardHeader><CardTitle>Availability</CardTitle></CardHeader>
-                                <CardContent><p className="text-muted-foreground">Define when the court is open for bookings. This feature is coming soon.</p></CardContent>
+                                <CardHeader>
+                                    <CardTitle>Availability</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p>Define when the court is open for bookings. This feature is coming soon.</p>
+                                </CardContent>
                             </Card>
                         </TabsContent>
                         <TabsContent value="booking-rules" className="mt-0">
                             <Card>
-                                <CardHeader><CardTitle>Booking Rules</CardTitle></CardHeader>
-                                <CardContent><p className="text-muted-foreground">Set rules for advance bookings, cancellations, etc. This feature is coming soon.</p></CardContent>
+                                <CardHeader>
+                                    <CardTitle>Booking Rules</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p>Set rules for advance bookings, cancellations, etc. This feature is coming soon.</p>
+                                </CardContent>
                             </Card>
                         </TabsContent>
                         <TabsContent value="pricing" className="mt-0">
                             <Card>
-                                <CardHeader><CardTitle>Pricing & Add-ons</CardTitle></CardHeader>
-                                <CardContent><p className="text-muted-foreground">Manage court pricing and optional add-ons. This feature is coming soon.</p></CardContent>
+                                <CardHeader>
+                                    <CardTitle>Pricing &amp; Add-ons</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p>Manage court pricing and optional add-ons. This feature is coming soon.</p>
+                                </CardContent>
                             </Card>
                         </TabsContent>
                         <TabsContent value="visibility" className="mt-0">
                             <Card>
-                                <CardHeader><CardTitle>Visibility & Settings</CardTitle></CardHeader>
-                                <CardContent><p className="text-muted-foreground">Control who can see and book this court. This feature is coming soon.</p></CardContent>
+                                <CardHeader>
+                                    <CardTitle>Visibility &amp; Settings</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p>Control who can see and book this court. This feature is coming soon.</p>
+                                </CardContent>
                             </Card>
                         </TabsContent>
 
