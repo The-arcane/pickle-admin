@@ -109,15 +109,15 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
     const [isLoadingTimeslots, setIsLoadingTimeslots] = useState(false);
 
     useEffect(() => {
-        if (selectedCourtId && selectedDate) {
+        if (selectedCourtId && selectedDate && selectedBooking) {
             setIsLoadingTimeslots(true);
-            getTimeslots(Number(selectedCourtId), selectedDate)
+            getTimeslots(Number(selectedCourtId), selectedDate, selectedBooking.id)
                 .then(setAvailableTimeslots)
                 .finally(() => setIsLoadingTimeslots(false));
         } else {
             setAvailableTimeslots([]);
         }
-    }, [selectedCourtId, selectedDate]);
+    }, [selectedCourtId, selectedDate, selectedBooking]);
 
 
     const handleEditClick = (booking: ProcessedBooking) => {
@@ -276,9 +276,13 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                                     <SelectValue placeholder={isLoadingTimeslots ? "Loading..." : "Select timeslot"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {availableTimeslots.map((slot) => (
-                                        <SelectItem key={slot.id} value={slot.id.toString()}>{formatTimeForSelect(slot.start_time)} - {formatTimeForSelect(slot.end_time)}</SelectItem>
-                                    ))}
+                                    {availableTimeslots.length > 0 ? (
+                                        availableTimeslots.map((slot) => (
+                                            <SelectItem key={slot.id} value={slot.id.toString()}>{formatTimeForSelect(slot.start_time)} - {formatTimeForSelect(slot.end_time)}</SelectItem>
+                                        ))
+                                    ) : (
+                                        <SelectItem value="none" disabled>No available slots</SelectItem>
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
