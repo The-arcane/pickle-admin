@@ -10,13 +10,15 @@ export default async function BookingsPage() {
     );
 
   const { data: courtsData, error: courtsError } = await supabase.from('courts').select('id, name');
+  const { data: usersData, error: usersError } = await supabase.from('user').select('id, name').eq('user_type', 1);
 
-  if (error || courtsError) {
-    console.error('Error fetching data:', error || courtsError);
+  if (error || courtsError || usersError) {
+    console.error('Error fetching data:', error || courtsError || usersError);
   }
 
   const bookings = data || [];
   const courts = courtsData || [];
+  const users = usersData || [];
 
-  return <BookingsClientPage bookings={bookings} courts={courts} />;
+  return <BookingsClientPage bookings={bookings} courts={courts} users={users} />;
 }

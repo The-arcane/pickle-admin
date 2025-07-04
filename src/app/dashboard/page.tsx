@@ -5,6 +5,7 @@ import { Calendar, BarChartHorizontal, Clock, MessageSquare } from 'lucide-react
 import { createServer } from '@/lib/supabase/server';
 import { format } from 'date-fns';
 import { RecentBookingsTable } from '@/components/recent-bookings-table';
+import Link from 'next/link';
 
 const statusMap: { [key: number]: string } = {
   0: 'Cancelled',
@@ -87,7 +88,9 @@ export default async function DashboardPage() {
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Here&apos;s a snapshot of your facility&apos;s activity.</p>
         </div>
-        <Button>+ New Booking</Button>
+        <Link href="/dashboard/bookings">
+            <Button>+ New Booking</Button>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">

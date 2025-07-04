@@ -10,6 +10,38 @@ const statusMapToDb: { [key: string]: number } = {
   'Pending': 2,
 };
 
+export async function addBooking(formData: FormData) {
+  const supabase = createServer();
+  const user_id = formData.get('user_id') as string;
+  const court_id = formData.get('court_id') as string;
+  const timeslot_id = formData.get('timeslot_id') as string;
+  const status = formData.get('status') as string;
+  
+  const statusValue = statusMapToDb[status];
+
+  if (!user_id || !court_id || !timeslot_id || statusValue === undefined) {
+    return { error: 'All fields are required.' };
+  }
+
+  const { error } = await supabase
+    .from('bookings')
+    .insert({ 
+      user_id: Number(user_id),
+      court_id: Number(court_id),
+      timeslot_id: Number(timeslot_id),
+      status: statusValue,
+     });
+
+  if (error) {
+    console.error('Error adding booking:', error);
+    return { error: 'Failed to add booking.' };
+  }
+
+  revalidatePath('/dashboard/bookings');
+  revalidatePath('/dashboard');
+  return { success: true };
+}
+
 export async function updateBooking(formData: FormData) {
   const supabase = createServer();
   const id = formData.get('id') as string;
@@ -71,13 +103,19 @@ export async function getTimeslots(courtId: number, dateString: string, currentB
 
     // 2. Get the IDs of timeslots that are booked by OTHER confirmed/pending bookings
     // on the same date for the same court.
-    const { data: otherBookings, error: bookingsError } = await supabase
+    const query = supabase
         .from('bookings')
         .select('timeslot_id, timeslots!inner(date)')
         .eq('court_id', courtId)
         .eq('timeslots.date', dateString)
-        .in('status', [1, 2]) // Confirmed or Pending
-        .neq('id', currentBookingId || 0); // Exclude the booking we are currently editing
+        .in('status', [1, 2]); // Confirmed or Pending
+        
+    if (currentBookingId) {
+        query.neq('id', currentBookingId); // Exclude the booking we are currently editing
+    }
+
+    const { data: otherBookings, error: bookingsError } = await query;
+
 
     if (bookingsError) {
         console.error('Error fetching other bookings for availability check:', bookingsError);

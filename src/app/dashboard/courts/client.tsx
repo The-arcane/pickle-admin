@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pencil } from 'lucide-react';
-import { updateCourt } from './actions';
+import { addCourt, updateCourt } from './actions';
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -34,6 +34,7 @@ type Sport = {
 
 export function CourtsClientPage({ courts, organisations, sports }: { courts: Court[], organisations: Organisation[], sports: Sport[] }) {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
     const { toast } = useToast();
 
@@ -42,7 +43,7 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
         setIsEditDialogOpen(true);
     };
     
-    const handleFormAction = async (formData: FormData) => {
+    const handleUpdateFormAction = async (formData: FormData) => {
         const result = await updateCourt(formData);
         if (result.error) {
             toast({
@@ -59,6 +60,23 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
             setSelectedCourt(null);
         }
     }
+    
+    const handleAddFormAction = async (formData: FormData) => {
+        const result = await addCourt(formData);
+        if (result.error) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: result.error,
+            });
+        } else {
+            toast({
+                title: "Success",
+                description: "Court added successfully.",
+            });
+            setIsAddDialogOpen(false);
+        }
+    }
 
   return (
     <>
@@ -68,7 +86,7 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                 <h1 className="text-3xl font-bold">Courts</h1>
                 <p className="text-muted-foreground">Manage your court listings and availability.</p>
                 </div>
-                <Button>Add Court</Button>
+                <Button onClick={() => setIsAddDialogOpen(true)}>Add Court</Button>
             </div>
             <Card>
                 <CardContent className="pt-6">
@@ -110,13 +128,14 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
             </Card>
         </div>
 
+        {/* Edit Court Dialog */}
         {selectedCourt && (
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Court</DialogTitle>
                     </DialogHeader>
-                    <form action={handleFormAction}>
+                    <form action={handleUpdateFormAction}>
                         <input type="hidden" name="id" value={selectedCourt.id} />
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
@@ -160,6 +179,55 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                 </DialogContent>
             </Dialog>
         )}
+
+        {/* Add Court Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add New Court</DialogTitle>
+                </DialogHeader>
+                <form action={handleAddFormAction}>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="add_name">Court Name</Label>
+                            <Input id="add_name" name="name" placeholder="e.g., Center Court" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="add_organisation_id">Venue</Label>
+                            <Select name="organisation_id">
+                                <SelectTrigger id="add_organisation_id">
+                                    <SelectValue placeholder="Select venue" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {organisations.map((org) => (
+                                        <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                            <div className="space-y-2">
+                            <Label htmlFor="add_sport_id">Court Type</Label>
+                            <Select name="sport_id">
+                                <SelectTrigger id="add_sport_id">
+                                    <SelectValue placeholder="Select court type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {sports.map((sport) => (
+                                        <SelectItem key={sport.id} value={sport.id.toString()}>{sport.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">Cancel</Button>
+                        </DialogClose>
+                        <Button type="submit">Add Court</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     </>
   );
 }

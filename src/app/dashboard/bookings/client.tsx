@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
 import { Calendar as CalendarIcon, Pencil } from 'lucide-react';
-import { updateBooking, getTimeslots } from './actions';
+import { addBooking, updateBooking, getTimeslots } from './actions';
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, formatISO } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
@@ -44,6 +44,11 @@ type Court = {
     name: string;
 }
 
+type User = {
+    id: number;
+    name: string;
+}
+
 type Timeslot = {
     id: number;
     start_time: string | null;
@@ -59,6 +64,7 @@ const statusMap: { [key: number]: string } = {
 const formatTime = (timeString: string | null) => {
     if (!timeString) return '';
     try {
+        // Timestamps may be full ISO strings, so parse them first
         return format(parseISO(timeString), 'p');
     } catch (e) {
         console.error(`Failed to parse time: ${timeString}`, e);
@@ -66,8 +72,9 @@ const formatTime = (timeString: string | null) => {
     }
 }
 
-export function BookingsClientPage({ bookings: initialBookings, courts: allCourts }: { bookings: BookingFromDb[], courts: Court[] }) {
+export function BookingsClientPage({ bookings: initialBookings, courts: allCourts, users: allUsers }: { bookings: BookingFromDb[], courts: Court[], users: User[] }) {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<ProcessedBooking | null>(null);
     const { toast } = useToast();
     
@@ -98,14 +105,22 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
         setProcessedBookings(bookings);
     }, [initialBookings]);
 
+    // State for Edit Dialog
     const [selectedCourtId, setSelectedCourtId] = useState<string>('');
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const [availableTimeslots, setAvailableTimeslots] = useState<Timeslot[]>([]);
     const [isLoadingTimeslots, setIsLoadingTimeslots] = useState(false);
     const [selectedTimeslotId, setSelectedTimeslotId] = useState<string>('');
 
+    // State for Add Dialog
+    const [addCourtId, setAddCourtId] = useState<string>('');
+    const [addDate, setAddDate] = useState<Date | undefined>(undefined);
+    const [addAvailableTimeslots, setAddAvailableTimeslots] = useState<Timeslot[]>([]);
+    const [isAddLoadingTimeslots, setIsAddLoadingTimeslots] = useState(false);
+
+    // Effect for Edit Dialog Timeslots
     useEffect(() => {
-        if (selectedCourtId && selectedDate) {
+        if (selectedCourtId && selectedDate && isEditDialogOpen) {
             setIsLoadingTimeslots(true);
             const dateString = formatISO(selectedDate, { representation: 'date' });
             getTimeslots(Number(selectedCourtId), dateString, selectedBooking?.id)
@@ -114,7 +129,21 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
         } else {
             setAvailableTimeslots([]);
         }
-    }, [selectedCourtId, selectedDate, selectedBooking]);
+    }, [selectedCourtId, selectedDate, selectedBooking, isEditDialogOpen]);
+
+    // Effect for Add Dialog Timeslots
+    useEffect(() => {
+        if (addCourtId && addDate && isAddDialogOpen) {
+            setIsAddLoadingTimeslots(true);
+            const dateString = formatISO(addDate, { representation: 'date' });
+            getTimeslots(Number(addCourtId), dateString)
+                .then(setAddAvailableTimeslots)
+                .finally(() => setIsAddLoadingTimeslots(false));
+        } else {
+            setAddAvailableTimeslots([]);
+        }
+    }, [addCourtId, addDate, isAddDialogOpen]);
+
 
     const handleEditClick = (booking: ProcessedBooking) => {
         setSelectedBooking(booking);
@@ -124,7 +153,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
         setIsEditDialogOpen(true);
     };
     
-    const handleFormAction = async (formData: FormData) => {
+    const handleUpdateFormAction = async (formData: FormData) => {
         const result = await updateBooking(formData);
         if (result.error) {
             toast({
@@ -139,6 +168,23 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
             });
             setIsEditDialogOpen(false);
             setSelectedBooking(null);
+        }
+    }
+    
+    const handleAddFormAction = async (formData: FormData) => {
+        const result = await addBooking(formData);
+        if (result.error) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: result.error,
+            });
+        } else {
+            toast({
+                title: "Success",
+                description: "Booking added successfully.",
+            });
+            setIsAddDialogOpen(false);
         }
     }
 
@@ -193,7 +239,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                 <h1 className="text-3xl font-bold">Bookings</h1>
                 <p className="text-muted-foreground">A list of all recent bookings.</p>
                 </div>
-                <Button>Add Booking</Button>
+                <Button onClick={() => setIsAddDialogOpen(true)}>Add Booking</Button>
             </div>
             <Card>
                 <CardContent className="pt-6">
@@ -216,13 +262,14 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
             </Card>
         </div>
 
+        {/* Edit Booking Dialog */}
         {selectedBooking && (
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Edit Booking</DialogTitle>
                 </DialogHeader>
-                <form action={handleFormAction}>
+                <form action={handleUpdateFormAction}>
                     <input type="hidden" name="id" value={selectedBooking.id} />
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
@@ -306,6 +353,108 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
             </DialogContent>
             </Dialog>
         )}
+
+        {/* Add Booking Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add New Booking</DialogTitle>
+                </DialogHeader>
+                <form action={handleAddFormAction}>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="add_user_id">User</Label>
+                            <Select name="user_id">
+                                <SelectTrigger id="add_user_id">
+                                    <SelectValue placeholder="Select user" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {allUsers.map((user) => (
+                                        <SelectItem key={user.id} value={user.id.toString()}>{user.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="add_court_id">Court</Label>
+                            <Select name="court_id" onValueChange={setAddCourtId}>
+                                <SelectTrigger id="add_court_id">
+                                    <SelectValue placeholder="Select court" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {allCourts.map((court) => (
+                                        <SelectItem key={court.id} value={court.id.toString()}>{court.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                             <Label htmlFor="add_date">Date</Label>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !addDate && "text-muted-foreground"
+                                    )}
+                                    >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {addDate ? format(addDate, "PPP") : <span>Pick a date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                    mode="single"
+                                    selected={addDate}
+                                    onSelect={setAddDate}
+                                    initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="add_timeslot_id">Timeslot</Label>
+                            <Select name="timeslot_id" disabled={isAddLoadingTimeslots || !addDate}>
+                                <SelectTrigger id="add_timeslot_id">
+                                    <SelectValue placeholder={isAddLoadingTimeslots ? "Loading..." : "Select timeslot"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {addAvailableTimeslots.length > 0 ? (
+                                        addAvailableTimeslots.map((slot) => (
+                                            <SelectItem key={slot.id} value={slot.id.toString()}>{formatTime(slot.start_time)} - {formatTime(slot.end_time)}</SelectItem>
+                                        ))
+                                    ) : (
+                                        <SelectItem value="none" disabled>
+                                            {addDate ? 'No available slots' : 'Please select a date'}
+                                        </SelectItem>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="add_status">Status</Label>
+                            <Select name="status" defaultValue="Pending">
+                                <SelectTrigger id="add_status">
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Confirmed">Confirmed</SelectItem>
+                                    <SelectItem value="Pending">Pending</SelectItem>
+                                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">Cancel</Button>
+                        </DialogClose>
+                        <Button type="submit">Add Booking</Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+            </Dialog>
     </>
   );
 }
