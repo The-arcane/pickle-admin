@@ -8,6 +8,7 @@ export async function updateUser(formData: FormData) {
   const id = formData.get('id') as string;
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
+  const phone = formData.get('phone') as string;
   const status = formData.get('status') as string;
 
   if (!id) {
@@ -19,6 +20,7 @@ export async function updateUser(formData: FormData) {
     .update({
       name,
       email,
+      phone,
       is_deleted: status === 'Inactive',
     })
     .eq('id', id);

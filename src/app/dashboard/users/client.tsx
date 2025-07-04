@@ -18,6 +18,7 @@ type User = {
   id: number;
   name: string;
   email: string;
+  phone: string | null;
   status: string;
   avatar: string | null;
 };
@@ -127,6 +128,10 @@ export function UsersClientPage({ users }: { users: User[] }) {
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" name="email" type="email" defaultValue={selectedUser.email} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input id="phone" name="phone" defaultValue={selectedUser.phone ?? ''} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="status">Status</Label>

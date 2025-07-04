@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Pencil } from 'lucide-react';
 import { updateCourt } from './actions';
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Court = {
   id: number;
@@ -17,9 +18,21 @@ type Court = {
   venue: string | null;
   type: string | null;
   max_players: number | null;
+  organisation_id: number;
+  sport_id: number;
 };
 
-export function CourtsClientPage({ courts }: { courts: Court[] }) {
+type Organisation = {
+    id: number;
+    name: string;
+}
+
+type Sport = {
+    id: number;
+    name: string;
+}
+
+export function CourtsClientPage({ courts, organisations, sports }: { courts: Court[], organisations: Organisation[], sports: Sport[] }) {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
     const { toast } = useToast();
@@ -87,7 +100,7 @@ export function CourtsClientPage({ courts }: { courts: Court[] }) {
                     {courts.length === 0 && (
                         <TableRow>
                         <TableCell colSpan={5} className="text-center text-muted-foreground">
-                            No available courts found for the selected criteria.
+                            No available courts found.
                         </TableCell>
                         </TableRow>
                     )}
@@ -111,12 +124,30 @@ export function CourtsClientPage({ courts }: { courts: Court[] }) {
                                 <Input id="name" name="name" defaultValue={selectedCourt.name} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Venue</Label>
-                                <Input defaultValue={selectedCourt.venue || 'N/A'} disabled />
+                                <Label htmlFor="organisation_id">Venue</Label>
+                                <Select name="organisation_id" defaultValue={selectedCourt.organisation_id.toString()}>
+                                    <SelectTrigger id="organisation_id">
+                                        <SelectValue placeholder="Select venue" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {organisations.map((org) => (
+                                            <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                              <div className="space-y-2">
-                                <Label>Court Type</Label>
-                                <Input defaultValue={selectedCourt.type || 'N/A'} disabled />
+                                <Label htmlFor="sport_id">Court Type</Label>
+                                <Select name="sport_id" defaultValue={selectedCourt.sport_id.toString()}>
+                                    <SelectTrigger id="sport_id">
+                                        <SelectValue placeholder="Select court type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {sports.map((sport) => (
+                                            <SelectItem key={sport.id} value={sport.id.toString()}>{sport.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                         <DialogFooter>

@@ -7,6 +7,9 @@ export async function updateCourt(formData: FormData) {
   const supabase = createServer();
   const id = formData.get('id') as string;
   const name = formData.get('name') as string;
+  const organisation_id = formData.get('organisation_id') as string;
+  const sport_id = formData.get('sport_id') as string;
+
 
   if (!id) {
     return { error: 'Court ID is missing.' };
@@ -14,7 +17,11 @@ export async function updateCourt(formData: FormData) {
 
   const { error } = await supabase
     .from('courts')
-    .update({ name })
+    .update({ 
+      name,
+      organisation_id: Number(organisation_id),
+      sport_id: Number(sport_id),
+     })
     .eq('id', Number(id));
 
   if (error) {

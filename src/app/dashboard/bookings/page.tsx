@@ -6,14 +6,17 @@ export default async function BookingsPage() {
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, status, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time)'
+      'id, status, court_id, timeslot_id, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time)'
     );
 
-  if (error) {
-    console.error('Error fetching bookings:', error);
+  const { data: courtsData, error: courtsError } = await supabase.from('courts').select('id, name');
+
+  if (error || courtsError) {
+    console.error('Error fetching data:', error || courtsError);
   }
 
   const bookings = data || [];
+  const courts = courtsData || [];
 
-  return <BookingsClientPage bookings={bookings} />;
+  return <BookingsClientPage bookings={bookings} courts={courts} />;
 }

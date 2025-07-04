@@ -5,7 +5,7 @@ export default async function UsersPage() {
   const supabase = createServer();
   const { data: usersData, error } = await supabase
     .from('user')
-    .select('id, name, email, profile_image_url, is_deleted')
+    .select('id, name, email, phone, profile_image_url, is_deleted')
     .eq('user_type', 1);
 
   if (error) {
@@ -16,6 +16,7 @@ export default async function UsersPage() {
     id: user.id,
     name: user.name,
     email: user.email,
+    phone: user.phone,
     status: user.is_deleted ? 'Inactive' : 'Active',
     avatar: user.profile_image_url,
   })) || [];
