@@ -16,6 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Car, Coffee, Droplet, Bath, Plus } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Calendar } from '@/components/ui/calendar';
 
 const courtTypeOptions = ['Indoor', 'VIP', 'Night Lights', 'Outdoor'];
 const tagOptions = ['Indoor', 'VIP', 'Night Lights', 'Outdoor'];
@@ -208,43 +210,204 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                 </CardContent>
                             </Card>
                         </TabsContent>
+
                         <TabsContent value="availability" className="mt-0">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Availability</CardTitle>
+                                    <CardDescription>Define when the court is open for bookings.</CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <p>Define when the court is open for bookings. This feature is coming soon.</p>
+                                <CardContent className="space-y-8">
+                                    <div className="space-y-4">
+                                        <Label className="text-base font-medium">Operating Hours</Label>
+                                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                                            <div key={day} className="flex items-center gap-4">
+                                                <Checkbox id={`day-${day}`} defaultChecked/>
+                                                <Label htmlFor={`day-${day}`} className="w-24">{day}</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <Input type="time" defaultValue="09:00" className="w-auto"/>
+                                                    <span>-</span>
+                                                    <Input type="time" defaultValue="21:00" className="w-auto"/>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <Separator />
+                                    <div className="space-y-4">
+                                        <Label className="text-base font-medium">Blackout Dates</Label>
+                                        <p className="text-sm text-muted-foreground">Select dates when the court is unavailable for booking.</p>
+                                        <Calendar mode="multiple" className="rounded-md border"/>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </TabsContent>
+
                         <TabsContent value="booking-rules" className="mt-0">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Booking Rules</CardTitle>
+                                    <CardDescription>Set rules for advance bookings, cancellations, and more.</CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <p>Set rules for advance bookings, cancellations, etc. This feature is coming soon.</p>
+                                <CardContent className="space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="min-lead-time">Minimum Lead Time</Label>
+                                            <div className="flex gap-2">
+                                                <Input id="min-lead-time" type="number" defaultValue="2" className="w-24"/>
+                                                <Select defaultValue="hours">
+                                                    <SelectTrigger className="w-[120px]"><SelectValue/></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="hours">Hours</SelectItem>
+                                                        <SelectItem value="days">Days</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">How far in advance can users book?</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="max-lead-time">Maximum Lead Time</Label>
+                                            <div className="flex gap-2">
+                                                <Input id="max-lead-time" type="number" defaultValue="30" className="w-24"/>
+                                                <Select defaultValue="days">
+                                                    <SelectTrigger className="w-[120px]"><SelectValue/></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="days">Days</SelectItem>
+                                                        <SelectItem value="months">Months</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">How far into the future can users book?</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4 rounded-lg border p-4">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="cancellation-policy" className="text-base font-medium">Cancellation Policy</Label>
+                                            <Switch id="cancellation-policy" defaultChecked/>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <Label>Allow cancellation up to</Label>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <Input type="number" defaultValue="24" className="w-24"/>
+                                                <Select defaultValue="hours">
+                                                    <SelectTrigger className="w-[120px]"><SelectValue/></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="hours">Hours</SelectItem>
+                                                        <SelectItem value="days">Days</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <span>before booking time.</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Label>Cancellation Fee</Label>
+                                                <Input type="number" placeholder="Fee" className="w-24"/>
+                                                <Select defaultValue="percent">
+                                                    <SelectTrigger className="w-[120px]"><SelectValue/></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="percent">%</SelectItem>
+                                                        <SelectItem value="fixed">Fixed</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="min-booking-duration">Booking Duration (in minutes)</Label>
+                                            <div className="flex items-center gap-2">
+                                                <Input id="min-booking-duration" type="number" placeholder="Min" defaultValue="30" className="w-24"/>
+                                                <span>-</span>
+                                                <Input id="max-booking-duration" type="number" placeholder="Max" defaultValue="120" className="w-24"/>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </TabsContent>
+
                         <TabsContent value="pricing" className="mt-0">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Pricing &amp; Add-ons</CardTitle>
+                                    <CardDescription>Manage court pricing and optional add-ons.</CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <p>Manage court pricing and optional add-ons. This feature is coming soon.</p>
+                                <CardContent className="space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="base-price">Base Price</Label>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-lg font-semibold">₹</span>
+                                                <Input id="base-price" type="number" defaultValue="500" className="w-32" />
+                                                <Select defaultValue="hour">
+                                                    <SelectTrigger className="w-[120px]"><SelectValue/></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="hour">per hour</SelectItem>
+                                                        <SelectItem value="session">per session</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Separator />
+                                    <div className="space-y-4">
+                                        <Label className="text-base font-medium">Add-ons</Label>
+                                        <div className="space-y-2 p-4 border rounded-lg">
+                                            <div className="flex items-center gap-4">
+                                                <Checkbox id="addon-racket" defaultChecked/>
+                                                <Label htmlFor="addon-racket" className="flex-1">Racket Rental</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-semibold">₹</span>
+                                                    <Input type="number" defaultValue="50" className="w-24"/>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <Checkbox id="addon-balls" defaultChecked/>
+                                                <Label htmlFor="addon-balls" className="flex-1">Tennis Balls (can)</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-semibold">₹</span>
+                                                    <Input type="number" defaultValue="100" className="w-24"/>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Button type="button" variant="outline">
+                                            <Plus className="mr-2 h-4 w-4" /> Add New Add-on
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </TabsContent>
+
                         <TabsContent value="visibility" className="mt-0">
-                            <Card>
+                           <Card>
                                 <CardHeader>
                                     <CardTitle>Visibility &amp; Settings</CardTitle>
+                                    <CardDescription>Control who can see and book this court.</CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <p>Control who can see and book this court. This feature is coming soon.</p>
+                                <CardContent className="space-y-8">
+                                    <div className="flex items-center justify-between rounded-lg border p-4">
+                                        <div>
+                                            <Label htmlFor="public-visibility" className="text-base font-medium">Publicly Visible</Label>
+                                            <p className="text-sm text-muted-foreground">Make this court visible to everyone on your booking platform.</p>
+                                        </div>
+                                        <Switch id="public-visibility" defaultChecked/>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="who-can-book">Who can book?</Label>
+                                        <Select id="who-can-book" defaultValue="everyone">
+                                            <SelectTrigger className="w-[280px]"><SelectValue/></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="everyone">Everyone</SelectItem>
+                                                <SelectItem value="members">Members Only</SelectItem>
+                                                <SelectItem value="specific-groups">Specific User Groups</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-lg border p-4">
+                                        <div>
+                                            <Label htmlFor="require-approval" className="text-base font-medium">Require Booking Approval</Label>
+                                            <p className="text-sm text-muted-foreground">Manually approve bookings before they are confirmed.</p>
+                                        </div>
+                                        <Switch id="require-approval"/>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </TabsContent>
