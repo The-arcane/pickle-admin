@@ -65,7 +65,7 @@ export default async function DashboardPage() {
   const supabase = createServer();
   const { data, error } = await supabase
     .from('bookings')
-    .select('status, user:user_id(name, profile_image_url), courts:court_id(name), timeslots:timeslot_id(date, start_time)')
+    .select('status, user!user_id(name, profile_image_url), courts!court_id(name), timeslots!timeslot_id(date, start_time)')
     .limit(8);
 
   if (error) {

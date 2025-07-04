@@ -43,7 +43,7 @@ export default async function BookingsPage() {
   const supabase = createServer();
   const { data, error } = await supabase
     .from('bookings')
-    .select('status, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time)');
+    .select('status, user!user_id(name), courts!court_id(name), timeslots!timeslot_id(date, start_time)');
 
   if (error) {
     console.error('Error fetching bookings:', error.message);
