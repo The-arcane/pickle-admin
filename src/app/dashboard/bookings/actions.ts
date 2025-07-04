@@ -81,10 +81,11 @@ export async function updateBooking(formData: FormData) {
 }
 
 
-export async function getTimeslots(courtId: number, dateString: string) {
-    console.log(`[DEBUG] Fetching ALL timeslots for courtId: ${courtId}, date: ${dateString}`);
+export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number) {
+    console.log(`[DEBUG] Fetching available timeslots for courtId: ${courtId}, date: ${dateString}, excluding bookingId: ${bookingIdToExclude}`);
     const supabase = createServer();
 
+    // 1. Fetch all timeslots for the given court and date
     const { data: allTimeslots, error: timeslotsError } = await supabase
         .from('timeslots')
         .select('id, start_time, end_time')
@@ -93,7 +94,7 @@ export async function getTimeslots(courtId: number, dateString: string) {
         .order('start_time');
 
     if (timeslotsError) {
-        console.error('Error fetching timeslots:', timeslotsError);
+        console.error('Error fetching all timeslots:', timeslotsError);
         return [];
     }
 
@@ -101,8 +102,35 @@ export async function getTimeslots(courtId: number, dateString: string) {
         console.log(`[DEBUG] No timeslots found in DB for court ${courtId} on ${dateString}.`);
         return [];
     }
-    
-    console.log(`[DEBUG] Found ${allTimeslots.length} timeslots. Returning all of them.`);
+     console.log(`[DEBUG] Found ${allTimeslots.length} total timeslots for the day.`);
 
-    return allTimeslots;
+    // 2. Fetch all bookings that use these timeslots
+    const timeslotIdsForDay = allTimeslots.map(t => t.id);
+    const { data: bookingsOnDate, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id, timeslot_id')
+        .in('timeslot_id', timeslotIdsForDay);
+
+    if (bookingsError) {
+        console.error('Error fetching bookings for date:', bookingsError);
+        // If we can't check for bookings, it's safer to return no slots than to allow double booking
+        return [];
+    }
+
+    // 3. Create a set of booked timeslot IDs, EXCLUDING the one for the booking being edited
+    const bookedTimeslotIds = new Set(
+        bookingsOnDate
+            ?.filter(booking => booking.id !== bookingIdToExclude) // Exclude the current booking from the "booked" list
+            .map(booking => booking.timeslot_id)
+    );
+    console.log(`[DEBUG] These timeslot IDs are booked by others:`, Array.from(bookedTimeslotIds));
+
+
+    // 4. Filter the day's timeslots to only include available ones
+    const availableTimeslots = allTimeslots.filter(
+        slot => !bookedTimeslotIds.has(slot.id)
+    );
+    console.log(`[DEBUG] Returning ${availableTimeslots.length} available timeslots.`);
+
+    return availableTimeslots;
 }
