@@ -73,11 +73,9 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                     />
                 </div>
             </div>
-            <Link href="/dashboard/courts/add" passHref>
-              <Button asChild>
-                <a>+ Add Court</a>
-              </Button>
-            </Link>
+            <Button asChild>
+              <Link href="/dashboard/courts/add">+ Add Court</Link>
+            </Button>
         </div>
         
         <Card>
@@ -105,16 +103,18 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                     </TableCell>
                     <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                            <Link href={`/dashboard/courts/${court.id}`} passHref>
-                                <Button asChild variant="ghost" size="icon">
-                                    <a><Eye className="h-4 w-4" /><span className="sr-only">View court</span></a>
-                                </Button>
-                            </Link>
-                            <Link href={`/dashboard/courts/${court.id}`} passHref>
-                                <Button asChild variant="ghost" size="icon">
-                                    <a><Pencil className="h-4 w-4" /><span className="sr-only">Edit court</span></a>
-                                </Button>
-                            </Link>
+                            <Button asChild variant="ghost" size="icon">
+                              <Link href={`/dashboard/courts/${court.id}`}>
+                                <Eye className="h-4 w-4" />
+                                <span className="sr-only">View court</span>
+                              </Link>
+                            </Button>
+                            <Button asChild variant="ghost" size="icon">
+                              <Link href={`/dashboard/courts/${court.id}`}>
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Edit court</span>
+                              </Link>
+                            </Button>
                             <Button variant="ghost" size="icon">
                                 <MoreVertical className="h-4 w-4" />
                                 <span className="sr-only">More actions</span>
