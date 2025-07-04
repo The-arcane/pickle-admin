@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
 import { createServer } from '@/lib/supabase/server';
+import { DebugButton } from '@/components/debug-button';
 
 // 0: Cancelled, 1: Confirmed, 2: Pending
 const statusMap: { [key: number]: string } = {
@@ -21,45 +22,20 @@ const statusMap: { [key: number]: string } = {
   2: 'Pending',
 };
 
-const formatTime = (dateString: string | null) => {
-  if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
-};
-
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
-
 export default async function BookingsPage() {
   const supabase = createServer();
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('status, user!user_id(name), courts!court_id(name), timeslots!timeslot_id(date, start_time)');
+  
+  // TEMPORARY QUERY FOR DEBUGGING: Fetches only from the bookings table
+  const { data, error } = await supabase.from('bookings').select('*');
 
-  if (error) {
-    console.error('Error fetching bookings:', error.message);
-  }
-
+  // The data mapping is simplified for the debug query. It will not show joined data.
   const bookings =
     data?.map((booking) => {
-      const user = booking.user;
-      const court = booking.courts;
-      const timeslot = booking.timeslots;
-
       return {
-        user: typeof user === 'object' && user !== null && 'name' in user ? (user as any).name : 'N/A',
-        court: typeof court === 'object' && court !== null && 'name' in court ? (court as any).name : 'N/A',
-        date: typeof timeslot === 'object' && timeslot !== null && 'date' in timeslot ? formatDate((timeslot as any).date) : 'N/A',
-        time: typeof timeslot === 'object' && timeslot !== null && 'start_time' in timeslot ? formatTime((timeslot as any).start_time) : 'N/A',
+        user: `User ID: ${booking.user_id}`,
+        court: `Court ID: ${booking.court_id}`,
+        date: `Timeslot ID: ${booking.timeslot_id}`,
+        time: 'N/A',
         status: statusMap[booking.status] ?? 'Unknown',
       };
     }) || [];
@@ -71,7 +47,10 @@ export default async function BookingsPage() {
           <h1 className="text-3xl font-bold">Bookings</h1>
           <p className="text-muted-foreground">A list of all recent bookings.</p>
         </div>
-        <Button>Add Booking</Button>
+        <div className="flex items-center gap-4">
+          <DebugButton data={data} error={error} />
+          <Button>Add Booking</Button>
+        </div>
       </div>
       <Card>
         <CardContent className="pt-6">
@@ -97,6 +76,13 @@ export default async function BookingsPage() {
                   </TableCell>
                 </TableRow>
               ))}
+               {bookings.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    No bookings found. Use the "Check Fetch Status" button to diagnose.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
