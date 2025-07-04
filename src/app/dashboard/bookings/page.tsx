@@ -21,8 +21,8 @@ const bookings = [
 
 export default function BookingsPage() {
   return (
-    <>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Bookings</h1>
           <p className="text-muted-foreground">A list of all recent bookings.</p>
@@ -57,6 +57,6 @@ export default function BookingsPage() {
           </Table>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

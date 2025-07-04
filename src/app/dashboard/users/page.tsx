@@ -23,8 +23,8 @@ const users = [
 
 export default function UsersPage() {
   return (
-    <>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Users</h1>
           <p className="text-muted-foreground">Manage your users and their permissions.</p>
@@ -63,6 +63,6 @@ export default function UsersPage() {
           </Table>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

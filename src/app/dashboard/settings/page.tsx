@@ -9,6 +9,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Edit } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 export default function SettingsPage() {
   return (
@@ -22,90 +23,82 @@ export default function SettingsPage() {
 
       <Separator />
 
-      <div className="space-y-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Theme Setting
-        </h2>
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-base font-medium">Theme</h3>
+      <div className="space-y-8 max-w-2xl">
+        <div className="space-y-2">
+            <Label className="text-base font-medium">Theme</Label>
             <p className="text-sm text-muted-foreground">
-              Stay informed on changes and updates for your saved companies.
+              Select your preferred color scheme for the dashboard.
             </p>
-          </div>
-          <Select defaultValue="system">
-            <SelectTrigger id="theme-select" className="w-[180px]">
-              <SelectValue placeholder="Select theme" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="light">Light</SelectItem>
-              <SelectItem value="dark">Dark</SelectItem>
-              <SelectItem value="system">System theme</SelectItem>
-            </SelectContent>
-          </Select>
+            <Select defaultValue="system">
+                <SelectTrigger id="theme-select" className="w-[240px]">
+                <SelectValue placeholder="Select theme" />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="light">Light</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+                <SelectItem value="system">System theme</SelectItem>
+                </SelectContent>
+            </Select>
         </div>
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-base font-medium">Customize UI</h3>
-            <p className="max-w-md text-sm text-muted-foreground">
+
+        <div className="space-y-2">
+            <Label className="text-base font-medium">Customize UI</Label>
+            <p className="text-sm text-muted-foreground">
               Personalize the look and feel of your chatbot interface—update
-              logo, brand colors, button styles, and font to match your
-              business identity.
+              logo, brand colors, button styles, and font.
             </p>
-          </div>
-          <Button variant="outline">
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
+            <Button variant="outline" className="w-fit">
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+            </Button>
         </div>
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-base font-medium">
-              Receive New Recommendations
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Discover tailored company suggestions just for you.
-            </p>
-          </div>
-          <Switch id="recommendations-switch" />
+
+        <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+                <Label className="text-base font-medium">
+                Receive New Recommendations
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                Discover tailored company suggestions just for you.
+                </p>
+            </div>
+            <Switch id="recommendations-switch" />
         </div>
       </div>
 
       <Separator />
 
-      <div className="space-y-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Account Settings
-        </h2>
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-base font-medium">Update Password</h3>
-            <p className="text-sm text-muted-foreground">
-              Secure your account by updating your password.
-            </p>
-          </div>
-          <Button variant="outline">Update</Button>
+      <div className="space-y-8 max-w-2xl">
+        <div>
+          <h2 className="text-xl font-semibold">Account Settings</h2>
+          <p className="text-muted-foreground text-sm">Manage your account and security settings.</p>
         </div>
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-base font-medium">Sign in with Google</h3>
+        
+        <div className="space-y-2">
+          <Label className="text-base font-medium">Update Password</Label>
+          <p className="text-sm text-muted-foreground">
+            Secure your account by updating your password.
+          </p>
+          <Button variant="outline" className="w-fit">Update</Button>
+        </div>
+
+        <div className="space-y-2">
+            <Label className="text-base font-medium">Sign in with Google</Label>
             <p className="text-sm text-muted-foreground">
               Use esther@gmail.com Google&apos;s credentials to login in Enosis
             </p>
-          </div>
-          <Button variant="outline">Unlink Account</Button>
+            <Button variant="outline" className="w-fit">Unlink Account</Button>
         </div>
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-base font-medium text-destructive">
+        
+        <div className="space-y-2">
+            <Label className="text-base font-medium text-destructive">
               Delete Account
-            </h3>
+            </Label>
             <p className="text-sm text-muted-foreground">
               Permanently remove your account and all data. This action cannot
               be undone.
             </p>
-          </div>
-          <Button variant="destructive">Delete Account</Button>
+            <Button variant="destructive" className="w-fit">Delete Account</Button>
         </div>
       </div>
     </div>

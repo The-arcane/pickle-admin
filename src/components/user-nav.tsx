@@ -33,11 +33,12 @@ export function UserNav({ user }: { user: UserProfile }) {
   };
 
   const getInitials = (name: string) => {
-    const names = name.split(' ');
+    if (!name) return '';
+    const names = name.split(' ').filter(Boolean);
     if (names.length > 1) {
       return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
     }
-    return name.substring(0, 2).toUpperCase();
+    return names[0]?.substring(0, 2).toUpperCase() ?? '';
   };
 
   return (
@@ -45,7 +46,7 @@ export function UserNav({ user }: { user: UserProfile }) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.profile_image_url ?? undefined} alt={user.name} />
+            <AvatarImage src={user.profile_image_url || undefined} alt={user.name} />
             <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
           </Avatar>
         </Button>
