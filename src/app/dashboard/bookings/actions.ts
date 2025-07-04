@@ -50,9 +50,10 @@ export async function updateBooking(formData: FormData) {
 }
 
 
-export async function getTimeslots(courtId: number, dateString: string) {
+export async function getTimeslots(courtId: number, dateString: string, currentBookingId?: number) {
     const supabase = createServer();
 
+    // 1. Get all timeslots for the court and date
     const { data: allTimeslots, error: timeslotsError } = await supabase
         .from('timeslots')
         .select('id, start_time, end_time')
@@ -61,9 +62,33 @@ export async function getTimeslots(courtId: number, dateString: string) {
         .order('start_time');
 
     if (timeslotsError) {
-        console.error('Error fetching timeslots:', timeslotsError);
+        console.error('Error fetching all timeslots:', timeslotsError);
         return [];
     }
+    if (!allTimeslots || allTimeslots.length === 0) {
+        return [];
+    }
+
+    // 2. Get the IDs of timeslots that are booked by OTHER confirmed/pending bookings
+    // on the same date for the same court.
+    const { data: otherBookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('timeslot_id, timeslots!inner(date)')
+        .eq('court_id', courtId)
+        .eq('timeslots.date', dateString)
+        .in('status', [1, 2]) // Confirmed or Pending
+        .neq('id', currentBookingId || 0); // Exclude the booking we are currently editing
+
+    if (bookingsError) {
+        console.error('Error fetching other bookings for availability check:', bookingsError);
+        // Fail open: If we can't check for other bookings, return all slots for the day.
+        return allTimeslots;
+    }
+
+    const otherBookedTimeslotIds = new Set(otherBookings.map(b => b.timeslot_id));
     
-    return allTimeslots || [];
+    // 3. Filter the full list of timeslots, keeping only those that are NOT booked by others.
+    const availableTimeslots = allTimeslots.filter(slot => !otherBookedTimeslotIds.has(slot.id));
+
+    return availableTimeslots;
 }

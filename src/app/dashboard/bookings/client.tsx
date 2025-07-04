@@ -108,13 +108,13 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
         if (selectedCourtId && selectedDate) {
             setIsLoadingTimeslots(true);
             const dateString = formatISO(selectedDate, { representation: 'date' });
-            getTimeslots(Number(selectedCourtId), dateString)
+            getTimeslots(Number(selectedCourtId), dateString, selectedBooking?.id)
                 .then(setAvailableTimeslots)
                 .finally(() => setIsLoadingTimeslots(false));
         } else {
             setAvailableTimeslots([]);
         }
-    }, [selectedCourtId, selectedDate]);
+    }, [selectedCourtId, selectedDate, selectedBooking]);
 
     const handleEditClick = (booking: ProcessedBooking) => {
         setSelectedBooking(booking);
