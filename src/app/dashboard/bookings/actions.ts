@@ -50,13 +50,12 @@ export async function updateBooking(formData: FormData) {
 }
 
 
-export async function getTimeslots(courtId: number, date: Date, bookingIdToExclude: number) {
+export async function getTimeslots(courtId: number, dateString: string) {
     const supabase = createServer();
-    const dateString = formatISO(date, { representation: 'date' });
 
     const { data: allTimeslots, error: timeslotsError } = await supabase
         .from('timeslots')
-        .select('id, start_time, end_time, date')
+        .select('id, start_time, end_time')
         .eq('court_id', courtId)
         .eq('date', dateString)
         .order('start_time');

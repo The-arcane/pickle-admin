@@ -11,7 +11,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { Calendar as CalendarIcon, Pencil } from 'lucide-react';
 import { updateBooking, getTimeslots } from './actions';
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, formatISO } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -59,9 +59,7 @@ const statusMap: { [key: number]: string } = {
 const formatTime = (timeString: string | null) => {
     if (!timeString) return '';
     try {
-        // The database returns a full timestamp string (e.g., "2024-07-25T09:00:00+00:00").
-        // parseISO can handle this format correctly.
-        return format(parseISO(timeString), 'p'); // 'p' formats to 'h:mm AM/PM'
+        return format(parseISO(timeString), 'p');
     } catch (e) {
         console.error(`Failed to parse time: ${timeString}`, e);
         return "Invalid Time";
@@ -107,15 +105,16 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
     const [selectedTimeslotId, setSelectedTimeslotId] = useState<string>('');
 
     useEffect(() => {
-        if (selectedCourtId && selectedDate && selectedBooking) {
+        if (selectedCourtId && selectedDate) {
             setIsLoadingTimeslots(true);
-            getTimeslots(Number(selectedCourtId), selectedDate, selectedBooking.id)
+            const dateString = formatISO(selectedDate, { representation: 'date' });
+            getTimeslots(Number(selectedCourtId), dateString)
                 .then(setAvailableTimeslots)
                 .finally(() => setIsLoadingTimeslots(false));
         } else {
             setAvailableTimeslots([]);
         }
-    }, [selectedCourtId, selectedDate, selectedBooking]);
+    }, [selectedCourtId, selectedDate]);
 
     const handleEditClick = (booking: ProcessedBooking) => {
         setSelectedBooking(booking);
