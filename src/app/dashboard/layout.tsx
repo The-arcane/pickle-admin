@@ -4,7 +4,7 @@ import { UserNav } from '@/components/user-nav';
 import { Cuboid, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { createClient } from '@/lib/supabase/server';
+import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
 export default async function DashboardLayout({
@@ -12,7 +12,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
+  const supabase = createServer();
 
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -29,8 +29,8 @@ export default async function DashboardLayout({
   if (error || !userProfile || userProfile.user_type !== 2) {
     // This could happen if the profile isn't created yet, there's a DB error,
     // or the user is not an admin.
-    // To be safe, we'll sign out and redirect to login.
-    await supabase.auth.signOut();
+    // To be safe, we'll redirect to login. The middleware will handle clearing
+    // the invalid session cookie.
     return redirect('/login');
   }
 

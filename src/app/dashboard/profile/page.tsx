@@ -3,11 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { createClient } from '@/lib/supabase/server';
+import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
 export default async function ProfilePage() {
-  const supabase = createClient();
+  const supabase = createServer();
 
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -22,6 +22,7 @@ export default async function ProfilePage() {
     .single();
 
   if (error || !userProfile) {
+    // This could happen if the profile doesn't exist, so we redirect.
     return redirect('/login');
   }
 
