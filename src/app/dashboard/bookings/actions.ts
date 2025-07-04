@@ -2,6 +2,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { formatISO } from 'date-fns';
 
 const statusMapToDb: { [key: string]: number } = {
   'Cancelled': 0,
@@ -51,12 +52,12 @@ export async function updateBooking(formData: FormData) {
 
 export async function getTimeslots(courtId: number, date: Date, bookingIdToExclude: number) {
     const supabase = createServer();
-    const dateString = date.toISOString().split('T')[0];
+    const dateString = formatISO(date, { representation: 'date' });
 
-    // 1. Get all timeslots for the selected court and date.
+    // 1. Get all timeslots for the selected court.
     const { data: allTimeslots, error: timeslotsError } = await supabase
         .from('timeslots')
-        .select('id, start_time, end_time')
+        .select('id, start_time, end_time, date')
         .eq('court_id', courtId)
         .eq('date', dateString)
         .order('start_time');
@@ -65,7 +66,7 @@ export async function getTimeslots(courtId: number, date: Date, bookingIdToExclu
         console.error('Error fetching timeslots:', timeslotsError);
         return [];
     }
-
+    
     if (!allTimeslots || allTimeslots.length === 0) {
         return [];
     }

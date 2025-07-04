@@ -6,7 +6,7 @@ export default async function BookingsPage() {
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, status, court_id, timeslot_id, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time)'
+      'id, status, court_id, timeslot_id, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time, end_time)'
     );
 
   const { data: courtsData, error: courtsError } = await supabase.from('courts').select('id, name');

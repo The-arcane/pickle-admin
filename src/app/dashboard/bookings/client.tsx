@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -11,20 +11,20 @@ import { StatusBadge } from '@/components/status-badge';
 import { Calendar as CalendarIcon, Pencil } from 'lucide-react';
 import { updateBooking, getTimeslots } from './actions';
 import { useToast } from "@/hooks/use-toast";
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type Booking = {
+type BookingFromDb = {
   id: number;
   status: number;
   court_id: number;
   timeslot_id: number;
   user: { name: string } | null;
   courts: { name: string } | null;
-  timeslots: { date: string | null; start_time: string | null } | null;
+  timeslots: { date: string | null; start_time: string | null, end_time: string | null } | null;
 };
 
 type ProcessedBooking = {
@@ -56,48 +56,43 @@ const statusMap: { [key: number]: string } = {
   2: 'Pending',
 };
 
-export function BookingsClientPage({ bookings: initialBookings, courts: allCourts }: { bookings: Booking[], courts: Court[] }) {
+const formatTime = (timeString: string | null) => {
+    if (!timeString) return '';
+    try {
+        const date = new Date(`1970-01-01T${timeString}Z`);
+        return format(date, 'p', { useAdditionalDayOfYearTokens: false });
+    } catch {
+        return '';
+    }
+}
+
+export function BookingsClientPage({ bookings: initialBookings, courts: allCourts }: { bookings: BookingFromDb[], courts: Court[] }) {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [selectedBooking, setSelectedBooking] = useState<ProcessedBooking | null>(null);
     const { toast } = useToast();
     
     const [processedBookings, setProcessedBookings] = useState<ProcessedBooking[]>([]);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
-        const formatTime = (dateString: string | null) => {
-            if (!dateString) return 'N/A';
-            try {
-                return format(new Date(dateString), 'p');
-            } catch (e) {
-                return 'N/A';
-            }
-        };
-
-        const formatDate = (dateString: string | null) => {
-            if (!dateString) return 'N/A';
-            try {
-                return format(new Date(dateString), 'MMM d, yyyy');
-            } catch (e) {
-                return 'N/A';
-            }
-        };
-
+        setIsClient(true);
         const bookings = initialBookings.map((booking) => {
-            const user = booking.user as { name: string } | null;
-            const court = booking.courts as { name: string } | null;
-            const timeslot = booking.timeslots as { date: string | null; start_time: string | null } | null;
-            const userName = user?.name ?? 'N/A';
+            const user = booking.user;
+            const court = booking.courts;
+            const timeslot = booking.timeslots;
 
+            const date = timeslot?.date ? parseISO(timeslot.date) : new Date();
+            
             return {
                 id: booking.id,
-                user: userName,
+                user: user?.name ?? 'N/A',
                 court: court?.name ?? 'N/A',
-                date: formatDate(timeslot?.date),
-                time: formatTime(timeslot?.start_time),
+                date: timeslot?.date ? format(date, 'MMM d, yyyy') : 'N/A',
+                time: `${formatTime(timeslot?.start_time)} - ${formatTime(timeslot?.end_time)}`,
                 status: statusMap[booking.status] ?? 'Unknown',
                 court_id: booking.court_id,
                 timeslot_id: booking.timeslot_id,
-                raw_date: timeslot?.date ? new Date(timeslot.date) : undefined
+                raw_date: timeslot?.date ? date : undefined
             };
         });
         setProcessedBookings(bookings);
@@ -107,6 +102,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const [availableTimeslots, setAvailableTimeslots] = useState<Timeslot[]>([]);
     const [isLoadingTimeslots, setIsLoadingTimeslots] = useState(false);
+    const [selectedTimeslotId, setSelectedTimeslotId] = useState<string>('');
 
     useEffect(() => {
         if (selectedCourtId && selectedDate && selectedBooking) {
@@ -119,11 +115,11 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
         }
     }, [selectedCourtId, selectedDate, selectedBooking]);
 
-
     const handleEditClick = (booking: ProcessedBooking) => {
         setSelectedBooking(booking);
         setSelectedCourtId(booking.court_id.toString());
         setSelectedDate(booking.raw_date);
+        setSelectedTimeslotId(booking.timeslot_id.toString());
         setIsEditDialogOpen(true);
     };
     
@@ -144,15 +140,49 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
             setSelectedBooking(null);
         }
     }
-    
-    const formatTimeForSelect = (dateString: string | null) => {
-        if (!dateString) return 'N/A';
-        try {
-            return format(new Date(dateString), 'p');
-        } catch (e) {
-            return 'N/A';
+
+    const memoizedBookings = useMemo(() => {
+        if (!isClient) {
+            return Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={`skeleton-${index}`}>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                </TableRow>
+            ));
         }
-    };
+
+        if (processedBookings.length === 0) {
+            return (
+                <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        No bookings found.
+                    </TableCell>
+                </TableRow>
+            );
+        }
+
+        return processedBookings.map((booking) => (
+            <TableRow key={booking.id}>
+                <TableCell className="font-medium">{booking.user}</TableCell>
+                <TableCell>{booking.court}</TableCell>
+                <TableCell>{booking.date}</TableCell>
+                <TableCell>{booking.time}</TableCell>
+                <TableCell>
+                    <StatusBadge status={booking.status} />
+                </TableCell>
+                <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(booking)}>
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Edit booking</span>
+                    </Button>
+                </TableCell>
+            </TableRow>
+        ));
+    }, [isClient, processedBookings]);
 
   return (
     <>
@@ -178,44 +208,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {processedBookings.length > 0 ? (
-                        processedBookings.map((booking) => (
-                            <TableRow key={booking.id}>
-                            <TableCell className="font-medium">{booking.user}</TableCell>
-                            <TableCell>{booking.court}</TableCell>
-                            <TableCell>{booking.date}</TableCell>
-                            <TableCell>{booking.time}</TableCell>
-                            <TableCell>
-                                <StatusBadge status={booking.status} />
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" onClick={() => handleEditClick(booking)}>
-                                    <Pencil className="h-4 w-4" />
-                                    <span className="sr-only">Edit booking</span>
-                                </Button>
-                            </TableCell>
-                            </TableRow>
-                        ))
-                    ) : (
-                        initialBookings.length > 0 ? (
-                            Array.from({ length: 5 }).map((_, index) => (
-                                <TableRow key={index}>
-                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                                    <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                                    <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                                    No bookings found.
-                                </TableCell>
-                            </TableRow>
-                        )
-                    )}
+                        {memoizedBookings}
                     </TableBody>
                 </Table>
                 </CardContent>
@@ -233,7 +226,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="court_id">Court</Label>
-                            <Select name="court_id" defaultValue={selectedBooking.court_id.toString()} onValueChange={setSelectedCourtId}>
+                            <Select name="court_id" value={selectedCourtId} onValueChange={setSelectedCourtId}>
                                 <SelectTrigger id="court_id">
                                     <SelectValue placeholder="Select court" />
                                 </SelectTrigger>
@@ -271,17 +264,19 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="timeslot_id">Timeslot</Label>
-                            <Select name="timeslot_id" defaultValue={selectedBooking.timeslot_id.toString()} disabled={isLoadingTimeslots || availableTimeslots.length === 0}>
+                            <Select name="timeslot_id" value={selectedTimeslotId} onValueChange={setSelectedTimeslotId} disabled={isLoadingTimeslots || !selectedDate}>
                                 <SelectTrigger id="timeslot_id">
                                     <SelectValue placeholder={isLoadingTimeslots ? "Loading..." : "Select timeslot"} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {availableTimeslots.length > 0 ? (
                                         availableTimeslots.map((slot) => (
-                                            <SelectItem key={slot.id} value={slot.id.toString()}>{formatTimeForSelect(slot.start_time)} - {formatTimeForSelect(slot.end_time)}</SelectItem>
+                                            <SelectItem key={slot.id} value={slot.id.toString()}>{formatTime(slot.start_time)} - {formatTime(slot.end_time)}</SelectItem>
                                         ))
                                     ) : (
-                                        <SelectItem value="none" disabled>No available slots</SelectItem>
+                                        <SelectItem value="none" disabled>
+                                            {selectedDate ? 'No available slots' : 'Please select a date'}
+                                        </SelectItem>
                                     )}
                                 </SelectContent>
                             </Select>
