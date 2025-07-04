@@ -25,40 +25,22 @@ const LoginPage = () => {
     const email = form.email.value;
     const password = form.password.value;
 
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    const { error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (authError || !authData.user) {
+    setLoading(false);
+
+    if (authError) {
       setError(authError?.message || 'Authentication failed. Please check your credentials.');
-      setLoading(false);
       return;
     }
 
-    try {
-      const { data: userData, error: userError } = await supabase
-        .from('user')
-        .select('user_type')
-        .eq('user_uuid', authData.user.id)
-        .single();
-
-      if (userError || !userData) {
-        throw new Error('Could not retrieve user profile.');
-      }
-      
-      if (userData.user_type === 2) {
-        router.push('/dashboard');
-        router.refresh();
-      } else {
-        throw new Error('You do not have permission to access this admin portal.');
-      }
-    } catch (e: any) {
-      setError(e.message);
-      await supabase.auth.signOut();
-    } finally {
-      setLoading(false);
-    }
+    // On successful login, redirect to the dashboard.
+    // The dashboard layout will handle authorization.
+    router.push('/dashboard');
+    router.refresh();
   };
 
   return (

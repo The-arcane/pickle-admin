@@ -22,12 +22,13 @@ export default async function DashboardLayout({
 
   const { data: userProfile, error } = await supabase
     .from('user')
-    .select('name, email, profile_image_url')
+    .select('name, email, profile_image_url, user_type')
     .eq('user_uuid', user.id)
     .single();
 
-  if (error || !userProfile) {
-    // This could happen if the profile isn't created yet or there's a DB error.
+  if (error || !userProfile || userProfile.user_type !== 2) {
+    // This could happen if the profile isn't created yet, there's a DB error,
+    // or the user is not an admin.
     // To be safe, we'll sign out and redirect to login.
     await supabase.auth.signOut();
     return redirect('/login');
