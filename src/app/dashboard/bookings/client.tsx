@@ -63,10 +63,16 @@ type BookingStatus = {
 const formatTime = (timeString: string | null) => {
     if (!timeString) return '';
     try {
-        // Timestamps from Supabase are in ISO 8601 format (e.g., "2024-07-16T10:00:00+00:00")
-        return format(parseISO(timeString), 'p');
+        const date = new Date(timeString);
+        // Check if the date is valid. `new Date()` can return 'Invalid Date'.
+        if (isNaN(date.getTime())) {
+            console.error(`Failed to parse time: Invalid date from string "${timeString}"`);
+            return "Invalid Time";
+        }
+        // 'p' is for localized time like '1:00 PM'
+        return format(date, 'p');
     } catch (e) {
-        console.error(`Failed to parse time: ${timeString}`, e);
+        console.error(`Error formatting time: ${timeString}`, e);
         return "Invalid Time";
     }
 }
