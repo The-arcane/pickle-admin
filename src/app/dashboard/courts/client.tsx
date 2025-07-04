@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Pencil } from 'lucide-react';
+import { Eye, Pencil, MoreVertical, Search } from 'lucide-react';
 import { addCourt, updateCourt } from './actions';
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { StatusBadge } from '@/components/status-badge';
 
 type Court = {
   id: number;
@@ -20,6 +21,7 @@ type Court = {
   max_players: number | null;
   organisation_id: number;
   sport_id: number;
+  status: string;
 };
 
 type Organisation = {
@@ -37,6 +39,18 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [selectedCourt, setSelectedCourt] = useState<Court | null>(null);
     const { toast } = useToast();
+
+    const [venueFilter, setVenueFilter] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredCourts = useMemo(() => {
+        return courts.filter(court => {
+            const venueMatch = venueFilter === 'all' || court.venue === venueFilter;
+            const searchMatch = !searchQuery || court.name.toLowerCase().includes(searchQuery.toLowerCase());
+            return venueMatch && searchMatch;
+        });
+    }, [courts, venueFilter, searchQuery]);
+
 
     const handleEditClick = (court: Court) => {
         setSelectedCourt(court);
@@ -80,16 +94,40 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
 
   return (
     <>
-        <div className="space-y-8">
-            <div className="flex items-center justify-between">
-                <div>
-                <h1 className="text-3xl font-bold">Courts</h1>
-                <p className="text-muted-foreground">Manage your court listings and availability.</p>
-                </div>
-                <Button onClick={() => setIsAddDialogOpen(true)}>Add Court</Button>
+        <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold">Court Management</h1>
+              <p className="text-muted-foreground">Manage your courts and their availability</p>
             </div>
+
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    <Select value={venueFilter} onValueChange={setVenueFilter}>
+                        <SelectTrigger className="w-auto md:w-[180px]">
+                            <span className="hidden md:inline">Venue: </span><span>{venueFilter === 'all' ? 'All Venues' : organisations.find(o => o.name === venueFilter)?.name ?? 'All Venues'}</span>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Venues</SelectItem>
+                            {organisations.map(org => (
+                                <SelectItem key={org.id} value={org.name}>{org.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <div className="relative flex-grow md:flex-grow-0">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Search for courts..." 
+                            className="pl-10 w-full"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
+                <Button onClick={() => setIsAddDialogOpen(true)}>+ Add Court</Button>
+            </div>
+            
             <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-0">
                 <Table>
                     <TableHeader>
                     <TableRow>
@@ -97,28 +135,42 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                         <TableHead>Venue</TableHead>
                         <TableHead>Court Type</TableHead>
                         <TableHead>Max Players</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {courts.map((court) => (
+                    {filteredCourts.map((court) => (
                         <TableRow key={court.id}>
                         <TableCell className="font-medium">{court.name}</TableCell>
                         <TableCell>{court.venue || 'N/A'}</TableCell>
                         <TableCell>{court.type || 'N/A'}</TableCell>
                         <TableCell>{court.max_players || 'N/A'}</TableCell>
+                        <TableCell>
+                            <StatusBadge status={court.status} />
+                        </TableCell>
                         <TableCell className="text-right">
-                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(court)}>
-                                <Pencil className="h-4 w-4" />
-                                <span className="sr-only">Edit court</span>
-                            </Button>
+                           <div className="flex items-center justify-end gap-1">
+                                <Button variant="ghost" size="icon">
+                                    <Eye className="h-4 w-4" />
+                                    <span className="sr-only">View court</span>
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleEditClick(court)}>
+                                    <Pencil className="h-4 w-4" />
+                                    <span className="sr-only">Edit court</span>
+                                </Button>
+                                <Button variant="ghost" size="icon">
+                                    <MoreVertical className="h-4 w-4" />
+                                    <span className="sr-only">More actions</span>
+                                </Button>
+                            </div>
                         </TableCell>
                         </TableRow>
                     ))}
-                    {courts.length === 0 && (
+                    {filteredCourts.length === 0 && (
                         <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">
-                            No available courts found.
+                        <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
+                            No courts found matching your criteria.
                         </TableCell>
                         </TableRow>
                     )}
