@@ -4,12 +4,35 @@ import { UserNav } from '@/components/user-nav';
 import { Cuboid, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return redirect('/login');
+  }
+
+  const { data: userProfile, error } = await supabase
+    .from('user')
+    .select('name, email, profile_image_url')
+    .eq('user_uuid', user.id)
+    .single();
+
+  if (error || !userProfile) {
+    // This could happen if the profile isn't created yet or there's a DB error.
+    // To be safe, we'll sign out and redirect to login.
+    await supabase.auth.signOut();
+    return redirect('/login');
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -42,7 +65,7 @@ export default function DashboardLayout({
               <span className="sr-only">Settings</span>
             </Button>
           </Link>
-          <UserNav />
+          <UserNav user={userProfile} />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
           {children}

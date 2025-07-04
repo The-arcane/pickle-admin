@@ -3,8 +3,41 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  const supabase = createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return redirect('/login');
+  }
+
+  const { data: userProfile, error } = await supabase
+    .from('user')
+    .select('name, email, phone, profile_image_url, created_at')
+    .eq('user_uuid', user.id)
+    .single();
+
+  if (error || !userProfile) {
+    return redirect('/login');
+  }
+
+  const getInitials = (name: string) => {
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const memberSince = new Date(userProfile.created_at).toLocaleString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+
   return (
     <div className="space-y-8">
       <div>
@@ -15,28 +48,28 @@ export default function ProfilePage() {
 
       <div className="flex items-center gap-6">
         <Avatar className="h-20 w-20">
-            <AvatarImage src="https://randomuser.me/api/portraits/men/10.jpg" alt="User" />
-            <AvatarFallback>AK</AvatarFallback>
+            <AvatarImage src={userProfile.profile_image_url ?? undefined} alt={userProfile.name} />
+            <AvatarFallback>{getInitials(userProfile.name)}</AvatarFallback>
         </Avatar>
         <div>
-          <div className="text-xl font-bold">Amit Kumar</div>
-          <div className="text-muted-foreground">amit.kumar@email.com</div>
-          <div className="text-sm text-muted-foreground">Member since Jan 2024</div>
+          <div className="text-xl font-bold">{userProfile.name}</div>
+          <div className="text-muted-foreground">{userProfile.email}</div>
+          <div className="text-sm text-muted-foreground">Member since {memberSince}</div>
         </div>
       </div>
       
       <form className="space-y-4 max-w-lg">
         <div className="space-y-2">
           <Label htmlFor="fullName">Full Name</Label>
-          <Input id="fullName" defaultValue="Amit Kumar" />
+          <Input id="fullName" defaultValue={userProfile.name} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" defaultValue="amit.kumar@email.com" />
+          <Input id="email" type="email" defaultValue={userProfile.email} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" defaultValue="+91 9876543210" />
+          <Input id="phone" defaultValue={userProfile.phone ?? ''} />
         </div>
         <Button type="submit">Save Changes</Button>
       </form>
