@@ -135,7 +135,11 @@ export async function updateCourt(formData: FormData) {
         if (error) { console.error('Error deleting rules:', error); return { error: `Failed to delete old rules: ${error.message}` }; }
     }
     if(rules.length > 0) {
-      const rulesToUpsert = rules.map(({id: ruleId, rule}) => ({ id: ruleId, rule, court_id: id }));
+      const rulesToUpsert = rules.map(r => {
+        const record: any = { rule: r.rule, court_id: id };
+        if (r.id) record.id = r.id;
+        return record;
+      });
       const { error } = await supabase.from('court_rules').upsert(rulesToUpsert);
       if (error) { console.error('Error upserting rules:', error); return { error: `Failed to save rules: ${error.message}` }; }
     }
@@ -152,7 +156,11 @@ export async function updateCourt(formData: FormData) {
         if (error) { console.error('Error deleting gallery images:', error); return { error: `Failed to delete old gallery images: ${error.message}` }; }
     }
     if(gallery.length > 0) {
-      const galleryToUpsert = gallery.map(({id: galleryId, image_url}) => ({ id: galleryId, image_url, court_id: id }));
+      const galleryToUpsert = gallery.map(g => {
+        const record: any = { image_url: g.image_url, court_id: id };
+        if (g.id) record.id = g.id;
+        return record;
+      });
       const { error } = await supabase.from('court_gallery').upsert(galleryToUpsert);
       if (error) { console.error('Error upserting gallery:', error); return { error: `Failed to save gallery: ${error.message}` }; }
     }
@@ -162,7 +170,10 @@ export async function updateCourt(formData: FormData) {
     const hasNewContactInfo = contact.phone || contact.email;
     
     if (hasNewContactInfo) {
-        const contactData = { ...contact, id: existingContact?.id, court_id: id };
+        const contactData: any = { ...contact, court_id: id };
+        if (existingContact?.id) {
+          contactData.id = existingContact.id;
+        }
         const { error } = await supabase.from('court_contacts').upsert(contactData);
         if (error) { console.error('Error upserting contact:', error); return { error: `Failed to save contact info: ${error.message}` }; }
     } else if (existingContact) {
@@ -182,7 +193,11 @@ export async function updateCourt(formData: FormData) {
         if (error) { console.error('Error deleting availability:', error); return { error: `Failed to delete old availability blocks: ${error.message}` }; }
     }
     if(availability.length > 0) {
-      const availabilityToUpsert = availability.map(a => ({ id: a.id, court_id: id, date: a.date, start_time: a.start_time, end_time: a.end_time, reason: a.reason }));
+      const availabilityToUpsert = availability.map(a => {
+        const record: any = { court_id: id, date: a.date, start_time: a.start_time, end_time: a.end_time, reason: a.reason };
+        if (a.id) record.id = a.id;
+        return record;
+      });
       const { error } = await supabase.from('availability_blocks').upsert(availabilityToUpsert);
       if (error) { console.error('Error upserting availability:', error); return { error: `Failed to save availability: ${error.message}` }; }
     }
@@ -199,7 +214,11 @@ export async function updateCourt(formData: FormData) {
         if (error) { console.error('Error deleting recurring unavailability:', error); return { error: `Failed to delete old recurring unavailability: ${error.message}` }; }
     }
     if(unavailability.length > 0) {
-      const unavailabilityToUpsert = unavailability.map(u => ({ id: u.id, court_id: id, day_of_week: u.day_of_week, start_time: u.start_time, end_time: u.end_time, reason: u.reason, active: u.active ?? true }));
+      const unavailabilityToUpsert = unavailability.map(u => {
+        const record: any = { court_id: id, day_of_week: u.day_of_week, start_time: u.start_time, end_time: u.end_time, reason: u.reason, active: u.active ?? true };
+        if (u.id) record.id = u.id;
+        return record;
+      });
       const { error } = await supabase.from('recurring_unavailability').upsert(unavailabilityToUpsert);
       if (error) { console.error('Error upserting recurring unavailability:', error); return { error: `Failed to save recurring unavailability: ${error.message}` }; }
     }
