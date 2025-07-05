@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -70,9 +69,6 @@ export function UsersClientPage({ users }: { users: User[] }) {
             <h1 className="text-3xl font-bold">Users</h1>
             <p className="text-muted-foreground">Manage your users and their permissions.</p>
           </div>
-          <Link href="/signup">
-            <Button>Add User</Button>
-          </Link>
         </div>
         <Card>
           <CardContent className="pt-6">
