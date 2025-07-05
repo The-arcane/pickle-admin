@@ -1,15 +1,9 @@
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Edit } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { ThemeSelect } from '@/components/theme-select';
+import { LogoutButton } from '@/components/logout-button';
 
 export default function SettingsPage() {
   return (
@@ -29,16 +23,7 @@ export default function SettingsPage() {
             <p className="text-sm text-muted-foreground">
               Select your preferred color scheme for the dashboard.
             </p>
-            <Select defaultValue="system">
-                <SelectTrigger id="theme-select" className="w-[240px]">
-                <SelectValue placeholder="Select theme" />
-                </SelectTrigger>
-                <SelectContent>
-                <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
-                <SelectItem value="system">System theme</SelectItem>
-                </SelectContent>
-            </Select>
+            <ThemeSelect />
         </div>
 
         <div className="space-y-2">
@@ -51,18 +36,6 @@ export default function SettingsPage() {
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
             </Button>
-        </div>
-
-        <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-                <Label className="text-base font-medium">
-                Receive New Recommendations
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                Discover tailored company suggestions just for you.
-                </p>
-            </div>
-            <Switch id="recommendations-switch" />
         </div>
       </div>
 
@@ -88,6 +61,14 @@ export default function SettingsPage() {
               Use esther@gmail.com Google&apos;s credentials to login in Enosis
             </p>
             <Button variant="outline" className="w-fit">Unlink Account</Button>
+        </div>
+
+        <div className="space-y-2">
+            <Label className="text-base font-medium">Log Out</Label>
+            <p className="text-sm text-muted-foreground">
+              Sign out from your current session.
+            </p>
+            <LogoutButton />
         </div>
         
         <div className="space-y-2">

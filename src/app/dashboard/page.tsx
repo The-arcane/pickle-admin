@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, BarChartHorizontal, Clock, MessageSquare, AlertCircle } from 'lucide-react';
+import { Calendar, BarChartHorizontal, Clock, MessageSquare, AlertCircle, MapPin } from 'lucide-react';
 import { createServer } from '@/lib/supabase/server';
 import { format, parseISO } from 'date-fns';
 import { RecentBookingsTable } from '@/components/recent-bookings-table';
@@ -43,7 +43,8 @@ async function getDashboardData() {
     totalRevenueRes,
     upcomingBookingsRes,
     latestReviewRes,
-    avgRatingRes
+    avgRatingRes,
+    upcomingEventsRes
   ] = await Promise.all([
     // Recent Bookings
     supabase
@@ -83,7 +84,15 @@ async function getDashboardData() {
     // All ratings for average calculation
     supabase
         .from('court_reviews')
-        .select('rating')
+        .select('rating'),
+
+    // Upcoming Events
+    supabase
+        .from('events')
+        .select('id, title, start_time, location_name')
+        .gte('start_time', new Date().toISOString())
+        .order('start_time', { ascending: true })
+        .limit(3)
   ]);
 
   if (recentBookingsRes.error) console.error("Error fetching recent bookings:", recentBookingsRes.error.message);
@@ -92,6 +101,7 @@ async function getDashboardData() {
   if (upcomingBookingsRes.error) console.error("Error fetching upcoming bookings:", upcomingBookingsRes.error.message);
   if (latestReviewRes.error) console.error("Error fetching latest review:", latestReviewRes.error.message);
   if (avgRatingRes.error) console.error("Error fetching ratings:", avgRatingRes.error.message);
+  if (upcomingEventsRes.error) console.error("Error fetching upcoming events:", upcomingEventsRes.error.message);
 
 
   const recentBookings = recentBookingsRes.data?.map((booking) => {
@@ -133,6 +143,13 @@ async function getDashboardData() {
       ? (ratings.reduce((acc, r) => acc + r, 0) / ratings.length)
       : 0;
 
+  const upcomingEvents = upcomingEventsRes.data?.map(event => ({
+    id: event.id,
+    title: event.title,
+    startTime: event.start_time,
+    location: event.location_name ?? 'N/A',
+  })) || [];
+
   return {
     recentBookings,
     stats: {
@@ -145,12 +162,13 @@ async function getDashboardData() {
         ...latestReview,
         rating: parseFloat(averageRating.toFixed(1)),
     },
+    upcomingEvents,
     error: recentBookingsRes.error,
   };
 }
 
 export default async function DashboardPage() {
-  const { recentBookings, stats, feedback, error } = await getDashboardData();
+  const { recentBookings, stats, feedback, upcomingEvents, error } = await getDashboardData();
   
   const statCards = [
     { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar },
@@ -194,42 +212,91 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="col-span-1 lg:col-span-2">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Recent Booking Activity</CardTitle>
-                <CardDescription>An overview of the latest bookings.</CardDescription>
-              </div>
-              <Select defaultValue="all">
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Filter" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {error ? (
-               <Alert variant="destructive">
-                 <AlertCircle className="h-4 w-4" />
-                 <AlertTitle>Error Fetching Bookings</AlertTitle>
-                 <AlertDescription>
-                   Could not load recent bookings. Please check your connection or database policies.
-                 </AlertDescription>
-               </Alert>
-            ) : (
-              <RecentBookingsTable bookings={recentBookings} />
-            )}
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-2 space-y-6">
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>Recent Booking Activity</CardTitle>
+                        <CardDescription>An overview of the latest bookings.</CardDescription>
+                    </div>
+                    <Select defaultValue="all">
+                        <SelectTrigger className="w-[120px]">
+                        <SelectValue placeholder="Filter" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {error ? (
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error Fetching Bookings</AlertTitle>
+                        <AlertDescription>
+                        Could not load recent bookings. Please check your connection or database policies.
+                        </AlertDescription>
+                    </Alert>
+                    ) : (
+                    <RecentBookingsTable bookings={recentBookings} />
+                    )}
+                </CardContent>
+            </Card>
 
-        <div className="flex flex-col gap-6">
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Upcoming Events</CardTitle>
+                            <CardDescription>Here's what's happening soon at your facility.</CardDescription>
+                        </div>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href="/dashboard/events">View All</Link>
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                     {upcomingEvents.length > 0 ? (
+                        <div className="space-y-4">
+                            {upcomingEvents.map(event => (
+                                <div key={event.id} className="flex items-start justify-between gap-4 p-3 rounded-lg border">
+                                    <div className="flex-1 space-y-1">
+                                        <p className="font-semibold">{event.title}</p>
+                                        <div className="flex flex-col sm:flex-row sm:items-center text-sm text-muted-foreground gap-x-4 gap-y-1">
+                                            <div className="flex items-center gap-1.5">
+                                                <Calendar className="h-4 w-4" />
+                                                <span>{format(new Date(event.startTime), 'E, MMM d, yyyy @ p')}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <MapPin className="h-4 w-4" />
+                                                <span>{event.location}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Button asChild variant="secondary" size="sm" className="shrink-0">
+                                        <Link href={`/dashboard/events/${event.id}`}>View Details</Link>
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center text-muted-foreground py-8">
+                            <p>No upcoming events.</p>
+                            <Button asChild variant="link">
+                                <Link href="/dashboard/events/add">Create one now</Link>
+                            </Button>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Chatbot Usage Today</CardTitle>
