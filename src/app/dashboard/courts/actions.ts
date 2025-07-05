@@ -15,6 +15,14 @@ function getCourtDataFromFormData(formData: FormData) {
     const is_equipment_available = formData.get('is_equipment_available') === 'true';
     const surface = formData.get('surface') as string;
     const has_floodlights = formData.get('has_floodlights') === 'true';
+    
+    // New fields from the schema
+    const price = formData.get('price') as string;
+    const discount = formData.get('discount') as string;
+    const image = formData.get('image') as string;
+    const cover_image = formData.get('cover_image') as string;
+    const feature = formData.get('feature') as string;
+    const badge_type = formData.get('badge_type') as string;
 
     return {
         name,
@@ -27,6 +35,12 @@ function getCourtDataFromFormData(formData: FormData) {
         is_equipment_available,
         surface,
         has_floodlights,
+        price: price ? Number(price) : null,
+        discount: discount ? Number(discount) : null,
+        image,
+        cover_image,
+        feature,
+        badge_type
     };
 }
 
