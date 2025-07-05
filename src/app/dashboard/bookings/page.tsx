@@ -15,7 +15,7 @@ export default async function BookingsPage() {
   // Fetch event bookings
   const { data: eventBookingsData, error: eventBookingsError } = await supabase
     .from('event_bookings')
-    .select('id, booking_time, quantity, status, user:user_id(name), events:event_id(title)')
+    .select('id, event_id, booking_time, quantity, status, user:user_id(name), events:event_id(title)')
     .order('booking_time', { ascending: false });
 
   // Fetch related data for forms and display
@@ -28,8 +28,39 @@ export default async function BookingsPage() {
     console.error('Error fetching bookings data:', { courtBookingsError, eventBookingsError, courtsError, usersError, courtStatusesError, eventStatusesError });
   }
 
+  let eventBookings = eventBookingsData || [];
+
+  // Calculate total enrollments for each event that has a booking
+  if (eventBookings.length > 0) {
+    const eventIds = [...new Set(eventBookings.map(b => b.event_id).filter(id => id != null))] as number[];
+    
+    // Fetch all confirmed bookings for these events to calculate totals
+    const { data: allBookingsForEvents, error: totalsError } = await supabase
+      .from('event_bookings')
+      .select('event_id, quantity')
+      .in('event_id', eventIds)
+      .eq('status', 1); // Assuming 1 is 'Confirmed' for event bookings
+
+    if (totalsError) {
+      console.error("Error fetching event enrollment totals:", totalsError);
+    } else if (allBookingsForEvents) {
+        const totalsMap: { [key: number]: number } = {};
+        allBookingsForEvents.forEach(b => {
+            if(b.event_id) {
+                totalsMap[b.event_id] = (totalsMap[b.event_id] || 0) + (b.quantity ?? 1);
+            }
+        });
+      
+      // Augment the eventBookings data with the total
+      eventBookings = eventBookings.map(booking => ({
+        ...booking,
+        total_enrolled: totalsMap[booking.event_id!] || 0,
+      }));
+    }
+  }
+
+
   const courtBookings = courtBookingsData || [];
-  const eventBookings = eventBookingsData || [];
   const courts = courtsData || [];
   const users = usersData || [];
   const courtBookingStatuses = courtBookingStatusesData || [];

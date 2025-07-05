@@ -49,6 +49,7 @@ type EventBookingFromDb = {
     status: number;
     user: { name: string; } | null;
     events: { title: string; } | null;
+    total_enrolled: number;
 };
 
 type ProcessedEventBooking = {
@@ -58,6 +59,7 @@ type ProcessedEventBooking = {
     quantity: number;
     date: string;
     status: string;
+    total_enrolled: number;
 };
 
 type Court = {
@@ -169,6 +171,7 @@ export function BookingsClientPage({
             quantity: booking.quantity ?? 1,
             date: booking.booking_time ? format(parseISO(booking.booking_time), 'MMM d, yyyy') : 'N/A',
             status: eventStatusMap[booking.status] ?? 'Unknown',
+            total_enrolled: booking.total_enrolled,
         }));
         setProcessedEventBookings(bookings);
     }, [initialEventBookings, eventStatusMap]);
@@ -313,6 +316,7 @@ export function BookingsClientPage({
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
                 </TableRow>
             ));
@@ -321,7 +325,7 @@ export function BookingsClientPage({
         if (processedEventBookings.length === 0) {
             return (
                 <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
                         No event bookings found.
                     </TableCell>
                 </TableRow>
@@ -333,6 +337,7 @@ export function BookingsClientPage({
                 <TableCell className="font-medium">{booking.event}</TableCell>
                 <TableCell>{booking.user}</TableCell>
                 <TableCell>{booking.quantity}</TableCell>
+                <TableCell>{booking.total_enrolled}</TableCell>
                 <TableCell>{booking.date}</TableCell>
                 <TableCell>
                     <StatusBadge status={booking.status} />
@@ -388,7 +393,8 @@ export function BookingsClientPage({
                                     <TableRow>
                                         <TableHead>Event</TableHead>
                                         <TableHead>User</TableHead>
-                                        <TableHead>Quantity</TableHead>
+                                        <TableHead>Attendees</TableHead>
+                                        <TableHead>Total Attendees (Event)</TableHead>
                                         <TableHead>Booking Date</TableHead>
                                         <TableHead>Status</TableHead>
                                     </TableRow>
