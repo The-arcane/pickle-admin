@@ -14,8 +14,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Lightbulb, Plus, Trash2, ImagePlus, X } from 'lucide-react';
+import { Lightbulb, Plus, Trash2, ImagePlus, X, Calendar as CalendarIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+
+const daysOfWeek = [
+    { value: 1, label: 'Monday' },
+    { value: 2, label: 'Tuesday' },
+    { value: 3, label: 'Wednesday' },
+    { value: 4, 'label': 'Thursday' },
+    { value: 5, 'label': 'Friday' },
+    { value: 6, 'label': 'Saturday' },
+    { value: 0, 'label': 'Sunday' },
+];
 
 export function EditCourtClientPage({ court, organisations, sports }: { court: Court | null, organisations: Organisation[], sports: Sport[] }) {
     const router = useRouter();
@@ -40,8 +54,8 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         formData.append('rules', JSON.stringify(rules.filter(r => r.rule && r.rule.trim() !== '')));
         formData.append('gallery', JSON.stringify(gallery));
         formData.append('contact', JSON.stringify(contact));
-        formData.append('availability', JSON.stringify(availability.filter(a => a.day_of_week && a.start_time && a.end_time)));
-        formData.append('unavailability', JSON.stringify(unavailability.filter(u => u.day_of_week && u.start_time && u.end_time)));
+        formData.append('availability', JSON.stringify(availability.filter(a => a.date)));
+        formData.append('unavailability', JSON.stringify(unavailability.filter(u => u.day_of_week !== undefined && u.start_time && u.end_time)));
 
 
         const action = isAdding ? addCourt : updateCourt;
@@ -76,24 +90,23 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     };
     const handleRemoveImage = (index: number) => setGallery(gallery.filter((_, i) => i !== index));
 
-    const handleAddAvailability = () => setAvailability([...availability, { day_of_week: 'Monday', start_time: '09:00', end_time: '17:00' }]);
+    // For one-off unavailability (availability_blocks)
+    const handleAddAvailability = () => setAvailability([...availability, { date: null, start_time: null, end_time: null }]);
     const handleRemoveAvailability = (index: number) => setAvailability(availability.filter((_, i) => i !== index));
-    const handleAvailabilityChange = (index: number, field: keyof AvailabilityBlock, value: string) => {
-        const newAvailability = [...availability];
-        (newAvailability[index] as any)[field] = value;
+    const handleAvailabilityChange = (index: number, field: keyof AvailabilityBlock, value: any) => {
+        const newAvailability = [...availability] as any[];
+        newAvailability[index][field] = value;
         setAvailability(newAvailability);
     };
 
-    const handleAddUnavailability = () => setUnavailability([...unavailability, { day_of_week: 'Monday', start_time: '12:00', end_time: '13:00', reason: '' }]);
+    // For recurring unavailability
+    const handleAddUnavailability = () => setUnavailability([...unavailability, { day_of_week: 1, start_time: '12:00', end_time: '13:00', reason: '' }]);
     const handleRemoveUnavailability = (index: number) => setUnavailability(unavailability.filter((_, i) => i !== index));
-    const handleUnavailabilityChange = (index: number, field: keyof RecurringUnavailability, value: string) => {
+    const handleUnavailabilityChange = (index: number, field: keyof RecurringUnavailability, value: string | number) => {
         const newUnavailability = [...unavailability];
         (newUnavailability[index] as any)[field] = value;
         setUnavailability(newUnavailability);
     };
-
-    const daysOfWeek: AvailabilityBlock['day_of_week'][] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
 
     return (
         <form action={handleFormAction} className="space-y-8 max-w-4xl mx-auto">
@@ -142,7 +155,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
             <Card>
                 <CardHeader>
                     <CardTitle>Court Availability</CardTitle>
-                    <CardDescription>Set the general business hours and weekly availability for this court.</CardDescription>
+                    <CardDescription>Set business hours, one-off unavailable dates, and recurring weekly unavailable times.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -157,33 +170,39 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                     </div>
                     <Separator />
                     <div className="space-y-4">
-                        <Label className="text-base font-medium">Weekly Availability Blocks</Label>
+                        <Label className="text-base font-medium">One-off Unavailability</Label>
+                        <CardDescription>Block specific dates and times (e.g., for maintenance or special events). Leave times blank to block the entire day.</CardDescription>
                         {availability.map((block, index) => (
                             <div key={index} className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 p-2 border rounded-md">
-                                <Select value={block.day_of_week} onValueChange={(val) => handleAvailabilityChange(index, 'day_of_week', val as any)}>
-                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>{daysOfWeek.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}</SelectContent>
-                                </Select>
-                                <Input type="time" value={block.start_time} onChange={(e) => handleAvailabilityChange(index, 'start_time', e.target.value)} />
-                                <Input type="time" value={block.end_time} onChange={(e) => handleAvailabilityChange(index, 'end_time', e.target.value)} />
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !block.date && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {block.date ? format(new Date(block.date), "PPP") : <span>Pick a date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={block.date ? new Date(block.date) : undefined} onSelect={(date) => handleAvailabilityChange(index, 'date', date ? format(date, 'yyyy-MM-dd') : null)} initialFocus/></PopoverContent>
+                                </Popover>
+                                <Input type="time" placeholder="Start (optional)" value={block.start_time ?? ''} onChange={(e) => handleAvailabilityChange(index, 'start_time', e.target.value || null)} />
+                                <Input type="time" placeholder="End (optional)" value={block.end_time ?? ''} onChange={(e) => handleAvailabilityChange(index, 'end_time', e.target.value || null)} />
                                 <Button type="button" variant="ghost" size="icon" className="justify-self-end" onClick={() => handleRemoveAvailability(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                             </div>
                         ))}
-                        <Button type="button" variant="outline" onClick={handleAddAvailability}><Plus className="mr-2 h-4 w-4" /> Add Availability</Button>
+                        <Button type="button" variant="outline" onClick={handleAddAvailability}><Plus className="mr-2 h-4 w-4" /> Add Date</Button>
                     </div>
                     <Separator />
                     <div className="space-y-4">
                         <Label className="text-base font-medium">Recurring Unavailability</Label>
                          {unavailability.map((block, index) => (
-                            <div key={index} className="grid grid-cols-1 md:grid-cols-5 items-center gap-2 p-2 border rounded-md">
-                                <Select value={block.day_of_week} onValueChange={(val) => handleUnavailabilityChange(index, 'day_of_week', val as any)}>
-                                     <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>{daysOfWeek.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}</SelectContent>
+                            <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_0.75fr_0.75fr_1fr_auto] items-center gap-2 p-2 border rounded-md">
+                                <Select value={block.day_of_week?.toString()} onValueChange={(val) => handleUnavailabilityChange(index, 'day_of_week', parseInt(val, 10))}>
+                                     <SelectTrigger><SelectValue placeholder="Select day"/></SelectTrigger>
+                                    <SelectContent>{daysOfWeek.map(day => <SelectItem key={day.value} value={day.value.toString()}>{day.label}</SelectItem>)}</SelectContent>
                                 </Select>
-                                <Input type="time" value={block.start_time} onChange={(e) => handleUnavailabilityChange(index, 'start_time', e.target.value)} />
-                                <Input type="time" value={block.end_time} onChange={(e) => handleUnavailabilityChange(index, 'end_time', e.target.value)} />
-                                <Input className="md:col-span-2" placeholder="Reason (e.g., Maintenance)" value={block.reason || ''} onChange={(e) => handleUnavailabilityChange(index, 'reason', e.target.value)} />
-                                <Button type="button" variant="ghost" size="icon" className="md:col-start-6 justify-self-end" onClick={() => handleRemoveUnavailability(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                <Input type="time" value={block.start_time ?? ''} onChange={(e) => handleUnavailabilityChange(index, 'start_time', e.target.value)} />
+                                <Input type="time" value={block.end_time ?? ''} onChange={(e) => handleUnavailabilityChange(index, 'end_time', e.target.value)} />
+                                <Input placeholder="Reason (e.g., Maintenance)" value={block.reason || ''} onChange={(e) => handleUnavailabilityChange(index, 'reason', e.target.value)} />
+                                <Button type="button" variant="ghost" size="icon" className="justify-self-end" onClick={() => handleRemoveUnavailability(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                             </div>
                         ))}
                         <Button type="button" variant="outline" onClick={handleAddUnavailability}><Plus className="mr-2 h-4 w-4" /> Add Unavailability</Button>

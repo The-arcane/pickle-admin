@@ -163,7 +163,7 @@ export async function updateCourt(formData: FormData) {
       await supabase.from('court_contacts').delete().eq('id', existingContact.id);
     }
 
-    // --- 5. Sync Availability ---
+    // --- 5. Sync Availability Blocks ---
     const { data: existingAvailability } = await supabase.from('availability_blocks').select('id').eq('court_id', id);
     const existingAvailabilityIds = existingAvailability?.map(a => a.id) ?? [];
     const newAvailabilityIds = availability.map(a => a.id).filter(Boolean);
@@ -173,7 +173,7 @@ export async function updateCourt(formData: FormData) {
         await supabase.from('availability_blocks').delete().in('id', availabilityToDelete);
     }
     if(availability.length > 0) {
-      const availabilityToUpsert = availability.map(a => ({ id: a.id, court_id: id, day_of_week: a.day_of_week, start_time: a.start_time, end_time: a.end_time }));
+      const availabilityToUpsert = availability.map(a => ({ id: a.id, court_id: id, date: a.date, start_time: a.start_time, end_time: a.end_time }));
       await supabase.from('availability_blocks').upsert(availabilityToUpsert);
     }
     
@@ -187,7 +187,7 @@ export async function updateCourt(formData: FormData) {
         await supabase.from('recurring_unavailability').delete().in('id', unavailabilityToDelete);
     }
     if(unavailability.length > 0) {
-      const unavailabilityToUpsert = unavailability.map(u => ({ id: u.id, court_id: id, day_of_week: u.day_of_week, start_time: u.start_time, end_time: u.end_time, reason: u.reason }));
+      const unavailabilityToUpsert = unavailability.map(u => ({ id: u.id, court_id: id, day_of_week: u.day_of_week, start_time: u.start_time, end_time: u.end_time, reason: u.reason, active: u.active ?? true }));
       await supabase.from('recurring_unavailability').upsert(unavailabilityToUpsert);
     }
 

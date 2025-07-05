@@ -2,6 +2,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { parseISO, getDay, parse } from 'date-fns';
 
 const statusMapToDb: { [key: string]: number } = {
   'Cancelled': 0,
@@ -81,56 +82,107 @@ export async function updateBooking(formData: FormData) {
 }
 
 
+// Helper function to check for time overlaps
+// All inputs are Date objects
+function isOverlapping(slotStart: Date, slotEnd: Date, blockStart: Date, blockEnd: Date): boolean {
+    return slotStart < blockEnd && slotEnd > blockStart;
+}
+
 export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number) {
-    console.log(`[DEBUG] Fetching available timeslots for courtId: ${courtId}, date: ${dateString}, excluding bookingId: ${bookingIdToExclude}`);
+    console.log(`[getTimeslots] Fetching for courtId: ${courtId}, date: ${dateString}, excluding: ${bookingIdToExclude}`);
     const supabase = createServer();
+    
+    if (!dateString) {
+        console.error("[getTimeslots] Date string is missing.");
+        return [];
+    }
+    
+    const selectedDate = parseISO(dateString);
+    const dayOfWeek = getDay(selectedDate); // 0 = Sunday, 1 = Monday, ...
 
-    // 1. Fetch all timeslots for the given court and date
-    const { data: allTimeslots, error: timeslotsError } = await supabase
-        .from('timeslots')
-        .select('id, start_time, end_time')
-        .eq('court_id', courtId)
-        .eq('date', dateString)
-        .order('start_time');
+    // 1. Fetch all data needed for filtering in parallel
+    const [
+        { data: allTimeslots, error: timeslotsError },
+        { data: recurringUnavailability, error: recurringError },
+        { data: oneOffUnavailability, error: oneOffError }
+    ] = await Promise.all([
+        supabase.from('timeslots').select('id, start_time, end_time').eq('court_id', courtId).eq('date', dateString).order('start_time'),
+        supabase.from('recurring_unavailability').select('start_time, end_time').eq('court_id', courtId).eq('day_of_week', dayOfWeek).eq('active', true),
+        supabase.from('availability_blocks').select('start_time, end_time').eq('court_id', courtId).eq('date', dateString)
+    ]);
+    
+    // Fetch bookings separately as it doesn't depend on the date directly
+    const { data: bookingsData, error: bookingsError } = await supabase.from('bookings').select('id, timeslot_id');
 
-    if (timeslotsError) {
-        console.error('Error fetching all timeslots:', timeslotsError);
+    if (timeslotsError || bookingsError || recurringError || oneOffError) {
+        console.error('Error fetching availability data:', { timeslotsError, bookingsError, recurringError, oneOffError });
         return [];
     }
 
     if (!allTimeslots || allTimeslots.length === 0) {
-        console.log(`[DEBUG] No timeslots found in DB for court ${courtId} on ${dateString}.`);
+        console.log(`[getTimeslots] No timeslots found in DB for court ${courtId} on ${dateString}.`);
         return [];
     }
-     console.log(`[DEBUG] Found ${allTimeslots.length} total timeslots for the day.`);
 
-    // 2. Fetch all bookings that use these timeslots
+    // 2. Filter out already booked slots
     const timeslotIdsForDay = allTimeslots.map(t => t.id);
-    const { data: bookingsOnDate, error: bookingsError } = await supabase
-        .from('bookings')
-        .select('id, timeslot_id')
-        .in('timeslot_id', timeslotIdsForDay);
-
-    if (bookingsError) {
-        console.error('Error fetching bookings for date:', bookingsError);
-        // If we can't check for bookings, it's safer to return no slots than to allow double booking
-        return [];
-    }
-
-    // 3. Create a set of booked timeslot IDs, EXCLUDING the one for the booking being edited
+    const bookingsOnDate = bookingsData?.filter(b => timeslotIdsForDay.includes(b.timeslot_id));
+    
     const bookedTimeslotIds = new Set(
         bookingsOnDate
-            ?.filter(booking => booking.id !== bookingIdToExclude) // Exclude the current booking from the "booked" list
+            ?.filter(booking => booking.id !== bookingIdToExclude)
             .map(booking => booking.timeslot_id)
     );
-    console.log(`[DEBUG] These timeslot IDs are booked by others:`, Array.from(bookedTimeslotIds));
 
-
-    // 4. Filter the day's timeslots to only include available ones
-    const availableTimeslots = allTimeslots.filter(
+    let availableTimeslots = allTimeslots.filter(
         slot => !bookedTimeslotIds.has(slot.id)
     );
-    console.log(`[DEBUG] Returning ${availableTimeslots.length} available timeslots.`);
+    
+    // 3. Prepare unavailability periods for comparison
+    const unavailabilityPeriods: { start: Date, end: Date }[] = [];
+    
+    // Process recurring unavailability for the day of the week
+    recurringUnavailability?.forEach(block => {
+        if(block.start_time && block.end_time) {
+            const start = parse(`${dateString}T${block.start_time}`);
+            const end = parse(`${dateString}T${block.end_time}`);
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                unavailabilityPeriods.push({ start, end });
+            }
+        }
+    });
 
+    // Process one-off unavailability blocks for the specific date
+    oneOffUnavailability?.forEach(block => {
+        const startOfDay = new Date(selectedDate.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(selectedDate.setHours(23, 59, 59, 999));
+
+        const start = block.start_time ? parse(`${dateString}T${block.start_time}`) : startOfDay;
+        const end = block.end_time ? parse(`${dateString}T${block.end_time}`) : endOfDay;
+        
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+            unavailabilityPeriods.push({ start, end });
+        }
+    });
+
+    // 4. Filter slots based on all unavailability periods
+    if (unavailabilityPeriods.length > 0) {
+        availableTimeslots = availableTimeslots.filter(slot => {
+            if (!slot.start_time || !slot.end_time) return false;
+            
+            const slotStart = parseISO(slot.start_time);
+            const slotEnd = parseISO(slot.end_time);
+
+            if (isNaN(slotStart.getTime()) || isNaN(slotEnd.getTime())) return false;
+
+            const isUnavailable = unavailabilityPeriods.some(block => 
+                isOverlapping(slotStart, slotEnd, block.start, block.end)
+            );
+
+            return !isUnavailable; // Keep the slot if it is NOT unavailable
+        });
+    }
+
+    console.log(`[getTimeslots] Returning ${availableTimeslots.length} available timeslots after all filters.`);
     return availableTimeslots;
 }

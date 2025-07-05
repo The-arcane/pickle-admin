@@ -34,18 +34,19 @@ export type CourtContact = {
 export type AvailabilityBlock = {
     id: number;
     court_id: number;
-    day_of_week: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
-    start_time: string;
-    end_time: string;
+    date: string | null;
+    start_time: string | null;
+    end_time: string | null;
 };
 
 export type RecurringUnavailability = {
     id: number;
     court_id: number;
-    day_of_week: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+    day_of_week: number;
     start_time: string;
     end_time: string;
     reason: string | null;
+    active: boolean;
 };
 
 
