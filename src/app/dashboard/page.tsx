@@ -36,6 +36,15 @@ const getInitials = (name: string) => {
 async function getDashboardData() {
   const supabase = createServer();
   const today = new Date().toISOString().split('T')[0];
+  
+  // Fetch the ID for 'Confirmed' event bookings to ensure query is robust
+  const { data: confirmedEventStatus } = await supabase
+    .from('event_booking_status')
+    .select('id')
+    .eq('label', 'Confirmed')
+    .maybeSingle();
+  const confirmedEventStatusId = confirmedEventStatus?.id;
+
 
   const [
     recentBookingsRes,
@@ -102,11 +111,11 @@ async function getDashboardData() {
         .select('id', { count: 'exact', head: true })
         .gte('start_time', new Date().toISOString()),
 
-    // Total Event Enrolments
+    // Total Event Enrolments (using dynamically fetched confirmed status ID)
     supabase
         .from('event_bookings')
         .select('quantity')
-        .eq('status', 1) // Confirmed bookings
+        .eq('status', confirmedEventStatusId ?? -1) // Use fetched ID, or -1 if not found
   ]);
 
   if (recentBookingsRes.error) console.error("Error fetching recent bookings:", recentBookingsRes.error.message);
