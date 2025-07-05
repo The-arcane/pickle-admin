@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 
 function getCourtDataFromFormData(formData: FormData) {
     const name = formData.get('name') as string;
+    const address = formData.get('address') as string;
     const organisation_id = formData.get('organisation_id') as string;
     const sport_id = formData.get('sport_id') as string;
     const description = formData.get('description') as string;
@@ -17,6 +18,7 @@ function getCourtDataFromFormData(formData: FormData) {
 
     return {
         name,
+        address,
         organisation_id: Number(organisation_id),
         sport_id: Number(sport_id),
         description,
@@ -37,9 +39,18 @@ export async function addCourt(formData: FormData) {
     return { error: 'Court Name, Venue, and Sport Type are required.' };
   }
 
+  // Lat and lng are required by the schema, but we don't have them in the form.
+  // We'll add placeholder values for now.
+  const dataToInsert = {
+    ...courtData,
+    lat: 0,
+    lng: 0,
+  };
+
+
   const { error } = await supabase
     .from('courts')
-    .insert(courtData);
+    .insert(dataToInsert);
 
   if (error) {
     console.error('Error adding court:', error);

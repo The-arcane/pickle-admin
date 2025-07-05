@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { addCourt, updateCourt } from '../actions';
@@ -33,20 +33,15 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     
     // Form State
     const [organisationId, setOrganisationId] = useState(court?.organisation_id?.toString() || '');
-    const [address, setAddress] = useState(court?.organisations?.address || '');
+    const [address, setAddress] = useState(court?.address || '');
     const [equipmentRental, setEquipmentRental] = useState(court?.is_equipment_available ?? false);
     const [floodlights, setFloodlights] = useState(court?.has_floodlights ?? false);
     
-    const existingAmenities = useMemo(() => court?.court_amenities?.map(a => a.amenity) || [], [court]);
-    const [selectedFacilities, setSelectedFacilities] = useState<string[]>(existingAmenities);
+    // For now, amenities are not loaded from the DB. This state is here for UI purposes.
+    const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
     
     const [blackoutDates, setBlackoutDates] = useState<Date[] | undefined>(undefined);
 
-
-    useEffect(() => {
-        const selectedOrg = organisations.find(o => o.id.toString() === organisationId);
-        setAddress(selectedOrg?.address || '');
-    }, [organisationId, organisations]);
 
     const handleFormAction = async (formData: FormData) => {
         // Manually append switch states to FormData
@@ -115,7 +110,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="address">Address</Label>
-                                            <Input id="address" name="address" value={address} readOnly placeholder="Venue address"/>
+                                            <Input id="address" name="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Court address"/>
                                         </div>
                                     </div>
                                     

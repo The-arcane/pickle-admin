@@ -15,8 +15,7 @@ export default async function EditCourtPage({ params }: { params: { id: string }
       .select(`
         *,
         organisations(*),
-        sports(*),
-        court_amenities(amenity)
+        sports(*)
       `)
       .eq('id', id)
       .single();

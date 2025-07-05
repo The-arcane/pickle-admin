@@ -11,17 +11,13 @@ export type Sport = {
     name: string;
 };
 
-export type Amenity = {
-    amenity: string;
-};
-
 // Based on the provided schema for the 'courts' table and its relations
 export type Court = {
   id: number;
   name: string;
   address: string;
-  lat: number | null;
-  lng: number | null;
+  lat: number;
+  lng: number;
   organisation_id: number;
   sport_id: number;
   description: string | null;
@@ -34,5 +30,4 @@ export type Court = {
   // Nested relations
   organisations: Organisation | null;
   sports: Sport | null;
-  court_amenities: Amenity[];
 };
