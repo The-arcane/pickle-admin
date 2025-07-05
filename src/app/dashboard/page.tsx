@@ -168,7 +168,7 @@ async function getDashboardData() {
 
   const upcomingEventsCount = upcomingEventsCountRes.count ?? 0;
 
-  const totalEnrolments = totalEnrolmentsRes.data?.reduce((sum, booking) => sum + (booking.quantity || 0), 0) ?? 0;
+  const totalEnrolments = totalEnrolmentsRes.data?.reduce((sum, booking) => sum + (booking.quantity ?? 1), 0) ?? 0;
 
   return {
     recentBookings,
@@ -266,7 +266,7 @@ export default async function DashboardPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <CardTitle>Upcoming Events</CardTitle>
-                            <CardDescription>Here's what's happening soon at your facility.</CardDescription>
+                            <CardDescription>Here&apos;s what&apos;s happening soon at your facility.</CardDescription>
                         </div>
                         <Button asChild variant="outline" size="sm">
                             <Link href="/dashboard/events">View All</Link>
