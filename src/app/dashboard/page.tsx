@@ -1,24 +1,24 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, BarChartHorizontal, Clock, MessageSquare } from 'lucide-react';
+import { Calendar, BarChartHorizontal, Clock, MessageSquare, AlertCircle } from 'lucide-react';
 import { createServer } from '@/lib/supabase/server';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { RecentBookingsTable } from '@/components/recent-bookings-table';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
 
 const statusMap: { [key: number]: string } = {
   0: 'Cancelled',
   1: 'Confirmed',
   2: 'Pending',
 };
-  
+
 const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
     try {
-        return format(new Date(dateString), 'MMM d, yyyy');
+        // Use parseISO to correctly handle date strings without timezones
+        return format(parseISO(dateString), 'MMM d, yyyy');
     } catch (e) {
         return 'N/A';
     }
@@ -32,67 +32,140 @@ const getInitials = (name: string) => {
     }
     return names[0]?.substring(0, 2).toUpperCase() ?? '';
 };
-  
-const stats = [
-  { label: "Today's Bookings", value: 12, icon: Calendar },
-  { label: 'Total Revenue', value: '₹18,200', icon: BarChartHorizontal },
-  { label: 'Upcoming Slots', value: 6, icon: Clock },
-  { label: 'Chatbot Interactions', value: 412, icon: MessageSquare },
-];
 
-const chatbotStats = {
-  total: 412,
-  autoSolved: 25,
-  transfers: 6,
-  topIntent: 'Booking Inquiry',
-};
-
-const feedback = {
-  rating: 4.7,
-  comment: 'Loved the smooth booking process. Will play again!',
-  user: 'Sneha M.'
-};
-
-async function getRecentBookings() {
+async function getDashboardData() {
   const supabase = createServer();
-  try {
-    const { data, error } = await supabase
+  const today = new Date().toISOString().split('T')[0];
+
+  const [
+    recentBookingsRes,
+    todaysBookingsRes,
+    totalRevenueRes,
+    upcomingBookingsRes,
+    latestReviewRes,
+    avgRatingRes
+  ] = await Promise.all([
+    // Recent Bookings
+    supabase
       .from('bookings')
       .select('id, status, user:user_id(name, profile_image_url), courts:court_id(name), timeslots:timeslot_id(date, start_time)')
-      .limit(8);
+      .limit(5)
+      .order('id', { ascending: false }),
 
-    if (error) {
-      throw error;
-    }
+    // Today's Bookings Count
+    supabase
+        .from('bookings')
+        .select('id, timeslots!inner(date)', { count: 'exact', head: true })
+        .eq('timeslots.date', today)
+        .in('status', [1, 2]), // Confirmed or Pending
     
-    return { 
-      bookings: data?.map((booking) => {
-        const user = booking.user;
-        const court = booking.courts;
-        const timeslot = booking.timeslots;
-        const userName = typeof user === 'object' && user !== null && 'name' in user ? (user as any).name : 'N/A';
+    // Total Revenue
+    supabase
+        .from('bookings')
+        .select('courts(price)')
+        .eq('status', 1), // Confirmed
 
-        return {
-          id: booking.id,
-          user: userName,
-          court: typeof court === 'object' && court !== null && 'name' in court ? (court as any).name : 'N/A',
-          date: typeof timeslot === 'object' && timeslot !== null && 'date' in timeslot ? formatDate((timeslot as any).date) : 'N/A',
-          time: typeof timeslot === 'object' && timeslot !== null && 'start_time' in timeslot ? (timeslot as any).start_time as string : '',
-          status: statusMap[booking.status] ?? 'Unknown',
-          avatar: typeof user === 'object' && user !== null && 'profile_image_url' in user ? (user as any).profile_image_url as string | null : null,
-          initials: getInitials(userName),
-        };
-      }) || [],
-      error: null
+    // Upcoming Bookings Count
+    supabase
+        .from('bookings')
+        .select('id, timeslots!inner(date)', { count: 'exact', head: true })
+        .eq('status', 1) // Confirmed
+        .gte('timeslots.date', today),
+
+    // Latest review
+    supabase
+        .from('court_reviews')
+        .select('review_text, reviewer_name, rating')
+        .order('review_date', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+
+    // All ratings for average calculation
+    supabase
+        .from('court_reviews')
+        .select('rating')
+  ]);
+
+  if (recentBookingsRes.error) console.error("Error fetching recent bookings:", recentBookingsRes.error.message);
+  if (todaysBookingsRes.error) console.error("Error fetching today's bookings:", todaysBookingsRes.error.message);
+  if (totalRevenueRes.error) console.error("Error fetching total revenue:", totalRevenueRes.error.message);
+  if (upcomingBookingsRes.error) console.error("Error fetching upcoming bookings:", upcomingBookingsRes.error.message);
+  if (latestReviewRes.error) console.error("Error fetching latest review:", latestReviewRes.error.message);
+  if (avgRatingRes.error) console.error("Error fetching ratings:", avgRatingRes.error.message);
+
+
+  const recentBookings = recentBookingsRes.data?.map((booking) => {
+    const user = booking.user;
+    const court = booking.courts;
+    const timeslot = booking.timeslots;
+    const userName = typeof user === 'object' && user !== null && 'name' in user ? (user as any).name : 'N/A';
+
+    return {
+      id: booking.id,
+      user: userName,
+      court: typeof court === 'object' && court !== null && 'name' in court ? (court as any).name : 'N/A',
+      date: typeof timeslot === 'object' && timeslot !== null && 'date' in timeslot ? formatDate((timeslot as any).date) : 'N/A',
+      time: typeof timeslot === 'object' && timeslot !== null && 'start_time' in timeslot ? (timeslot as any).start_time as string : '',
+      status: statusMap[booking.status] ?? 'Unknown',
+      avatar: typeof user === 'object' && user !== null && 'profile_image_url' in user ? (user as any).profile_image_url as string | null : null,
+      initials: getInitials(userName),
     };
-  } catch (error) {
-    console.error('Error fetching recent bookings:', error);
-    return { bookings: [], error: error as Error };
-  }
+  }) || [];
+  
+  const todaysBookingsCount = todaysBookingsRes.count ?? 0;
+  
+  const totalRevenue = totalRevenueRes.data?.reduce(
+      (acc, item) => acc + (item.courts?.price || 0), 
+  0) ?? 0;
+  
+  const upcomingBookingsCount = upcomingBookingsRes.count ?? 0;
+  
+  const latestReview = latestReviewRes.data ? {
+      comment: latestReviewRes.data.review_text,
+      user: latestReviewRes.data.reviewer_name,
+  } : {
+      comment: 'No reviews yet. Be the first to leave one!',
+      user: '',
+  };
+
+  const ratings = avgRatingRes.data?.map(r => r.rating).filter(r => r !== null) as number[] || [];
+  const averageRating = ratings.length > 0
+      ? (ratings.reduce((acc, r) => acc + r, 0) / ratings.length)
+      : 0;
+
+  return {
+    recentBookings,
+    stats: {
+        todaysBookings: todaysBookingsCount,
+        totalRevenue: totalRevenue,
+        upcomingSlots: upcomingBookingsCount,
+        chatbotInteractions: 412, // This is static as there is no data source
+    },
+    feedback: {
+        ...latestReview,
+        rating: parseFloat(averageRating.toFixed(1)),
+    },
+    error: recentBookingsRes.error,
+  };
 }
 
 export default async function DashboardPage() {
-  const { bookings, error } = await getRecentBookings();
+  const { recentBookings, stats, feedback, error } = await getDashboardData();
+  
+  const statCards = [
+    { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar },
+    { label: 'Total Revenue', value: `₹${stats.totalRevenue.toLocaleString('en-IN')}`, icon: BarChartHorizontal },
+    { label: 'Upcoming Slots', value: stats.upcomingSlots, icon: Clock },
+    { label: 'Chatbot Interactions', value: stats.chatbotInteractions, icon: MessageSquare },
+  ];
+
+  // This remains static as no data source was provided for it.
+  const chatbotStats = {
+    total: 412,
+    autoSolved: 25,
+    transfers: 6,
+    topIntent: 'Booking Inquiry',
+  };
 
   return (
     <>
@@ -107,7 +180,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {stats.map((stat, i) => (
+        {statCards.map((stat, i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
@@ -147,11 +220,11 @@ export default async function DashboardPage() {
                  <AlertCircle className="h-4 w-4" />
                  <AlertTitle>Error Fetching Bookings</AlertTitle>
                  <AlertDescription>
-                   Could not load recent bookings due to a database error. Please check your RLS policies.
+                   Could not load recent bookings. Please check your connection or database policies.
                  </AlertDescription>
                </Alert>
             ) : (
-              <RecentBookingsTable bookings={bookings} />
+              <RecentBookingsTable bookings={recentBookings} />
             )}
           </CardContent>
         </Card>
@@ -178,7 +251,9 @@ export default async function DashboardPage() {
                 <span className="text-yellow-500 font-bold">★ {feedback.rating}/5</span>
               </div>
               <blockquote className="text-sm italic border-l-2 pl-4">"{feedback.comment}"</blockquote>
-              <p className="text-xs text-muted-foreground text-right mt-2">- {feedback.user}</p>
+              {feedback.user && (
+                <p className="text-xs text-muted-foreground text-right mt-2">- {feedback.user}</p>
+              )}
             </CardContent>
           </Card>
         </div>
