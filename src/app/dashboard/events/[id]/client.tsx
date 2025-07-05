@@ -30,8 +30,25 @@ export function EditEventClientPage({ event, organisations, categories, tags }: 
     const [startDate, setStartDate] = useState<Date | undefined>(event?.start_time ? parseISO(event.start_time) : undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(event?.end_time ? parseISO(event.end_time) : undefined);
 
+    const formatTimeToInputValue = (isoString: string | null | undefined): string => {
+        if (!isoString) return '';
+        try {
+            // new Date(isoString) works fine with full ISO strings
+            return format(new Date(isoString), 'HH:mm');
+        } catch (e) {
+            console.error("Failed to format time", e);
+            return '';
+        }
+    };
+
     // Dynamic lists
-    const [subEvents, setSubEvents] = useState<Partial<SubEvent>[]>(event?.event_sub_events ?? []);
+    const [subEvents, setSubEvents] = useState<Partial<SubEvent>[]>(
+        event?.event_sub_events.map(sub => ({
+            ...sub,
+            start_time: formatTimeToInputValue(sub.start_time),
+            end_time: formatTimeToInputValue(sub.end_time),
+        })) ?? []
+    );
     const [gallery, setGallery] = useState<Partial<GalleryImage>[]>(event?.event_gallery_images ?? []);
     const [whatToBring, setWhatToBring] = useState<Partial<WhatToBringItem>[]>(event?.event_what_to_bring ?? []);
     const [newImageUrl, setNewImageUrl] = useState('');
@@ -177,9 +194,10 @@ export function EditEventClientPage({ event, organisations, categories, tags }: 
                 <CardHeader><CardTitle>Sub-Events / Schedule</CardTitle><CardDescription>Break down the event into smaller parts or a schedule.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                     {subEvents.map((sub, index) => (
-                        <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] items-end gap-2 p-2 border rounded-md">
+                        <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_0.5fr_0.5fr_auto] items-end gap-2 p-2 border rounded-md">
                              <div className="space-y-2"><Label>Title</Label><Input value={sub.title || ''} onChange={(e) => handleSubEventChange(index, 'title', e.target.value)} placeholder="e.g., Registration" /></div>
-                             <div className="space-y-2"><Label>Time</Label><Input value={sub.start_time || ''} onChange={(e) => handleSubEventChange(index, 'start_time', e.target.value)} placeholder="e.g., 09:00 AM" /></div>
+                             <div className="space-y-2"><Label>Start Time</Label><Input type="time" value={sub.start_time || ''} onChange={(e) => handleSubEventChange(index, 'start_time', e.target.value)} /></div>
+                             <div className="space-y-2"><Label>End Time</Label><Input type="time" value={sub.end_time || ''} onChange={(e) => handleSubEventChange(index, 'end_time', e.target.value)} /></div>
                              <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveSubEvent(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                         </div>
                     ))}

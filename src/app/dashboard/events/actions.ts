@@ -6,6 +6,9 @@ import type { SubEvent, GalleryImage, WhatToBringItem, EventCategory, EventTag }
 
 function getEventDataFromFormData(formData: FormData) {
     const isFree = formData.get('is_free') === 'true';
+    const startTime = formData.get('start_time') as string;
+    const endTime = formData.get('end_time') as string;
+    
     return {
         title: formData.get('title') as string,
         slug: (formData.get('title') as string).toLowerCase().replace(/\s+/g, '-'),
@@ -13,19 +16,19 @@ function getEventDataFromFormData(formData: FormData) {
         type: formData.get('type') as string,
         access_type: formData.get('access_type') as string,
         organiser_org_id: Number(formData.get('organiser_org_id')),
-        start_time: new Date(formData.get('start_time') as string).toISOString(),
-        end_time: new Date(formData.get('end_time') as string).toISOString(),
+        start_time: startTime ? new Date(startTime).toISOString() : null,
+        end_time: endTime ? new Date(endTime).toISOString() : null,
         timezone: formData.get('timezone') as string,
         location_name: formData.get('location_name') as string,
         address: formData.get('address') as string,
         latitude: Number(formData.get('latitude')),
         longitude: Number(formData.get('longitude')),
-        is_family_friendly: formData.get('is_family_friendly') === 'true',
-        is_outdoor: formData.get('is_outdoor') === 'true',
-        has_parking: formData.get('has_parking') === 'true',
-        is_accessible: formData.get('is_accessible') === 'true',
-        pets_allowed: formData.get('pets_allowed') === 'true',
-        security_on_site: formData.get('security_on_site') === 'true',
+        is_family_friendly: formData.get('is_family_friendly') === 'on',
+        is_outdoor: formData.get('is_outdoor') === 'on',
+        has_parking: formData.get('has_parking') === 'on',
+        is_accessible: formData.get('is_accessible') === 'on',
+        pets_allowed: formData.get('pets_allowed') === 'on',
+        security_on_site: formData.get('security_on_site') === 'on',
         is_free: isFree,
         currency: isFree ? null : formData.get('currency') as string,
         amount: isFree ? null : Number(formData.get('amount')),
@@ -62,7 +65,15 @@ export async function addEvent(formData: FormData) {
     const whatToBring = JSON.parse(formData.get('what_to_bring') as string) as Partial<WhatToBringItem>[];
 
     if (subEvents.length > 0) {
-      const toInsert = subEvents.map(item => ({ ...item, event_id: eventId }));
+      const mainEventDateString = eventData.start_time ? new Date(eventData.start_time).toISOString().split('T')[0] : null;
+      const createTimestamp = (timeStr: string | null | undefined) => !timeStr || !mainEventDateString ? null : new Date(`${mainEventDateString}T${timeStr}:00.000Z`).toISOString();
+      
+      const toInsert = subEvents.map(item => ({ 
+          event_id: eventId,
+          title: item.title || null,
+          start_time: createTimestamp(item.start_time),
+          end_time: createTimestamp(item.end_time),
+      }));
       const { error } = await supabase.from('event_sub_events').insert(toInsert);
       if(error) { console.error('Error adding sub-events:', error); return { error: `Failed to save sub-events: ${error.message}` }; }
     }
@@ -114,11 +125,17 @@ export async function updateEvent(formData: FormData) {
         if (error) { return { error: `Failed to delete old sub-events: ${error.message}` }; }
     }
     if(subEvents.length > 0) {
-      const toUpsert = subEvents.map(item => {
-        const record: any = { ...item, event_id: id };
-        if (!record.id) delete record.id;
-        return record;
-      });
+        const mainEventDateString = eventData.start_time ? new Date(eventData.start_time).toISOString().split('T')[0] : null;
+        const createTimestamp = (timeStr: string | null | undefined) => !timeStr || !mainEventDateString ? null : new Date(`${mainEventDateString}T${timeStr}:00.000Z`).toISOString();
+        
+        const toUpsert = subEvents.map(item => {
+            const record: any = { ...item, event_id: id };
+            record.start_time = createTimestamp(item.start_time);
+            record.end_time = createTimestamp(item.end_time);
+            if (!record.id) delete record.id;
+            return record;
+        });
+
       const { error } = await supabase.from('event_sub_events').upsert(toUpsert);
       if (error) { return { error: `Failed to save sub-events: ${error.message}` }; }
     }
