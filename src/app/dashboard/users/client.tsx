@@ -13,6 +13,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { Pencil } from 'lucide-react';
 import { updateUser } from './actions';
 import { useToast } from "@/hooks/use-toast";
+import { DebugButton } from '@/components/debug-button';
 
 type User = {
   id: number;
@@ -32,7 +33,7 @@ const getInitials = (name: string) => {
   return names[0]?.substring(0, 2).toUpperCase() ?? '';
 };
 
-export function UsersClientPage({ users }: { users: User[] }) {
+export function UsersClientPage({ users, error }: { users: User[], error: any }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
@@ -69,6 +70,7 @@ export function UsersClientPage({ users }: { users: User[] }) {
             <h1 className="text-3xl font-bold">Users</h1>
             <p className="text-muted-foreground">Manage your users and their permissions.</p>
           </div>
+          <DebugButton data={users} error={error} />
         </div>
         <Card>
           <CardContent className="pt-6">
@@ -83,7 +85,7 @@ export function UsersClientPage({ users }: { users: User[] }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {users.length > 0 ? users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -106,7 +108,13 @@ export function UsersClientPage({ users }: { users: User[] }) {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                )) : (
+                    <TableRow>
+                        <TableCell colSpan={5} className="text-center h-24">
+                            No users found.
+                        </TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
