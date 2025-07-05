@@ -167,7 +167,6 @@ async function getDashboardData() {
   })) || [];
 
   const upcomingEventsCount = upcomingEventsCountRes.count ?? 0;
-
   const totalEnrolments = totalEnrolmentsRes.data?.reduce((sum, booking) => sum + (booking.quantity ?? 1), 0) ?? 0;
 
   return {
