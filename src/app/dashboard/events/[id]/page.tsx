@@ -1,0 +1,50 @@
+import { createServer } from '@/lib/supabase/server';
+import { notFound } from 'next/navigation';
+import { EditEventClientPage } from './client';
+import type { Event } from './types';
+
+export default async function EditEventPage({ params }: { params: { id: string } }) {
+  const supabase = createServer();
+  const { id } = params;
+  const isAdding = id === 'add';
+
+  let event: Event | null = null;
+  
+  if (!isAdding) {
+    const { data: eventData, error: eventError } = await supabase
+      .from('events')
+      .select(`
+        *,
+        event_sub_events(*),
+        event_gallery_images(*),
+        event_what_to_bring(*),
+        event_categories:event_category_map(category_id),
+        event_tags:event_tag_map(tag_id)
+      `)
+      .eq('id', id)
+      .single();
+    
+    if (eventError || !eventData) {
+      console.error('Error fetching event details:', eventError);
+      notFound();
+    }
+    event = eventData as Event;
+  }
+  
+  const { data: organisationsData, error: orgsError } = await supabase.from('organisations').select('id, name');
+  const { data: categoriesData, error: catsError } = await supabase.from('event_categories').select('id, name');
+  const { data: tagsData, error: tagsError } = await supabase.from('event_tags').select('id, name');
+
+  if (orgsError || catsError || tagsError) {
+    console.error("Error fetching related data for event form", orgsError || catsError || tagsError);
+  }
+
+  return (
+    <EditEventClientPage
+      event={event}
+      organisations={organisationsData || []}
+      categories={categoriesData || []}
+      tags={tagsData || []}
+    />
+  );
+}

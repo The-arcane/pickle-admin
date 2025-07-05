@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Calendar, List, Settings, User, Users } from 'lucide-react';
+import { BarChart, Calendar, List, Settings, User, Users, PartyPopper } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { href: '/dashboard/bookings', label: 'Bookings', icon: Calendar },
   { href: '/dashboard/users', label: 'Users', icon: Users },
   { href: '/dashboard/courts', label: 'Court List', icon: List },
+  { href: '/dashboard/events', label: 'Events', icon: PartyPopper },
   { href: '/dashboard/profile', label: 'Admin Profile', icon: User },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
@@ -25,7 +26,8 @@ export function DashboardNav() {
           href={item.href}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-            pathname === item.href && 'bg-muted text-primary'
+            pathname.startsWith(item.href) && item.href !== '/dashboard' && 'bg-muted text-primary',
+            pathname === item.href && item.href === '/dashboard' && 'bg-muted text-primary'
           )}
         >
           <item.icon className="h-4 w-4" />
