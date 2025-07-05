@@ -1,13 +1,12 @@
-
-import { Suspense } from 'react';
-import { SignupForm } from './client';
-
-export const dynamic = 'force-dynamic';
+'use client';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function SignupPage() {
-    return (
-        <Suspense>
-            <SignupForm />
-        </Suspense>
-    );
+  const router = useRouter();
+  useEffect(() => {
+    router.replace('/login');
+  }, [router]);
+
+  return null;
 }
