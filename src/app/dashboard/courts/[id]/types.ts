@@ -11,7 +11,28 @@ export type Sport = {
     name: string;
 };
 
-// Based on the provided schema for the 'courts' table
+export type CourtRule = {
+    id: number;
+    court_id: number;
+    rule: string;
+};
+
+export type CourtGalleryImage = {
+    id: number;
+    court_id: number;
+    image_url: string;
+};
+
+export type CourtContact = {
+    id: number;
+    court_id: number;
+    phone: string | null;
+    email: string | null;
+    closed_days: string[] | null;
+};
+
+
+// Based on the provided schema for the 'courts' table and its relations
 export type Court = {
   id: number;
   name: string;
@@ -39,4 +60,7 @@ export type Court = {
   // Nested relations
   organisations: Organisation | null;
   sports: Sport | null;
+  court_rules: CourtRule[];
+  court_gallery: CourtGalleryImage[];
+  court_contacts: CourtContact[];
 };
