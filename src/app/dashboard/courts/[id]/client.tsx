@@ -46,6 +46,8 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     const [selectedTags, setSelectedTags] = useState<string[]>(court?.tags || ['Indoor']);
     const [labels, setLabels] = useState(court?.labels || ['Label', 'Label', 'Label', 'Label']);
     const [selectedFacilities, setSelectedFacilities] = useState<string[]>(court?.facilities || ['Water', 'Restrooms']);
+    const [blackoutDates, setBlackoutDates] = useState<Date[] | undefined>(undefined);
+
 
     useEffect(() => {
         const selectedOrg = organisations.find(o => o.id.toString() === organisationId);
@@ -57,9 +59,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         if (!isAdding && court) {
             formData.append('id', court.id.toString());
         }
-        // Note: For now, we are not appending the array/boolean values to formData
-        // as the backend actions are not yet set up to receive them.
-        // This can be added later when the DB schema and actions are updated.
+        
         const result = await action(formData);
         if (result?.error) {
             toast({
@@ -100,6 +100,14 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                 
                 <div className="md:col-span-3">
                     <form action={handleFormAction}>
+                        {/* Hidden inputs for complex state */}
+                        <input type="hidden" name="court_type" value={JSON.stringify(selectedCourtTypes)} />
+                        <input type="hidden" name="tags" value={JSON.stringify(selectedTags)} />
+                        <input type="hidden" name="equipment_rental" value={String(equipmentRental)} />
+                        <input type="hidden" name="facilities" value={JSON.stringify(selectedFacilities)} />
+                        <input type="hidden" name="blackout_dates" value={JSON.stringify(blackoutDates?.map(d => d.toISOString()))} />
+
+
                         <TabsContent value="court-info" className="mt-0">
                             <Card>
                                 <CardHeader>
@@ -169,8 +177,8 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     </div>
 
                                     <div className="flex items-center justify-between rounded-lg border p-4">
-                                        <Label htmlFor="equipment_rental" className="text-base font-medium">Equipment Rental Available</Label>
-                                        <Switch id="equipment_rental" checked={equipmentRental} onCheckedChange={setEquipmentRental}/>
+                                        <Label htmlFor="equipment_rental_switch" className="text-base font-medium">Equipment Rental Available</Label>
+                                        <Switch id="equipment_rental_switch" checked={equipmentRental} onCheckedChange={setEquipmentRental}/>
                                     </div>
 
                                     <div className="space-y-2">
@@ -183,7 +191,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {labels.map((label, index) => (
                                                 <div key={index} className="space-y-1">
-                                                    <Input value={label} readOnly />
+                                                    <Input name={`label_${index}`} defaultValue={label} />
                                                 </div>
                                             ))}
                                         </div>
@@ -197,10 +205,10 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {facilityOptions.map(facility => (
                                                 <div key={facility.id} className="flex items-center gap-2">
-                                                    <Checkbox id={facility.id} checked={selectedFacilities.includes(facility.id)} onCheckedChange={(checked) => {
+                                                    <Checkbox id={facility.id} onCheckedChange={(checked) => {
                                                         const list = checked ? [...selectedFacilities, facility.id] : selectedFacilities.filter(f => f !== facility.id);
                                                         setSelectedFacilities(list);
-                                                    }} />
+                                                    }} checked={selectedFacilities.includes(facility.id)} />
                                                     <facility.icon className="h-4 w-4 text-muted-foreground" />
                                                     <Label htmlFor={facility.id} className="text-sm font-normal">{facility.label}</Label>
                                                 </div>
@@ -222,12 +230,12 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                         <Label className="text-base font-medium">Operating Hours</Label>
                                         {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
                                             <div key={day} className="flex items-center gap-4">
-                                                <Checkbox id={`day-${day}`} defaultChecked/>
+                                                <Checkbox id={`day-${day}`} name={`operating_day_${day.toLowerCase()}`} defaultChecked/>
                                                 <Label htmlFor={`day-${day}`} className="w-24">{day}</Label>
                                                 <div className="flex items-center gap-2">
-                                                    <Input type="time" defaultValue="09:00" className="w-auto"/>
+                                                    <Input type="time" name={`operating_start_${day.toLowerCase()}`} defaultValue="09:00" className="w-auto"/>
                                                     <span>-</span>
-                                                    <Input type="time" defaultValue="21:00" className="w-auto"/>
+                                                    <Input type="time" name={`operating_end_${day.toLowerCase()}`} defaultValue="21:00" className="w-auto"/>
                                                 </div>
                                             </div>
                                         ))}
@@ -236,7 +244,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     <div className="space-y-4">
                                         <Label className="text-base font-medium">Blackout Dates</Label>
                                         <p className="text-sm text-muted-foreground">Select dates when the court is unavailable for booking.</p>
-                                        <Calendar mode="multiple" className="rounded-md border"/>
+                                        <Calendar mode="multiple" selected={blackoutDates} onSelect={setBlackoutDates} className="rounded-md border"/>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -253,8 +261,8 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                         <div className="space-y-2">
                                             <Label htmlFor="min-lead-time">Minimum Lead Time</Label>
                                             <div className="flex gap-2">
-                                                <Input id="min-lead-time" type="number" defaultValue="2" className="w-24"/>
-                                                <Select defaultValue="hours">
+                                                <Input id="min-lead-time" name="min_lead_time_value" type="number" defaultValue="2" className="w-24"/>
+                                                <Select name="min_lead_time_unit" defaultValue="hours">
                                                     <SelectTrigger className="w-[120px]"><SelectValue/></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="hours">Hours</SelectItem>
@@ -267,8 +275,8 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                         <div className="space-y-2">
                                             <Label htmlFor="max-lead-time">Maximum Lead Time</Label>
                                             <div className="flex gap-2">
-                                                <Input id="max-lead-time" type="number" defaultValue="30" className="w-24"/>
-                                                <Select defaultValue="days">
+                                                <Input id="max-lead-time" name="max_lead_time_value" type="number" defaultValue="30" className="w-24"/>
+                                                <Select name="max_lead_time_unit" defaultValue="days">
                                                     <SelectTrigger className="w-[120px]"><SelectValue/></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="days">Days</SelectItem>
@@ -281,14 +289,14 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     </div>
                                     <div className="space-y-4 rounded-lg border p-4">
                                         <div className="flex items-center justify-between">
-                                            <Label htmlFor="cancellation-policy" className="text-base font-medium">Cancellation Policy</Label>
-                                            <Switch id="cancellation-policy" defaultChecked/>
+                                            <Label htmlFor="cancellation-policy-switch" className="text-base font-medium">Cancellation Policy</Label>
+                                            <Switch name="cancellation_policy_enabled" id="cancellation-policy-switch" defaultChecked/>
                                         </div>
                                         <div className="space-y-4">
                                             <Label>Allow cancellation up to</Label>
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <Input type="number" defaultValue="24" className="w-24"/>
-                                                <Select defaultValue="hours">
+                                                <Input name="cancellation_window_value" type="number" defaultValue="24" className="w-24"/>
+                                                <Select name="cancellation_window_unit" defaultValue="hours">
                                                     <SelectTrigger className="w-[120px]"><SelectValue/></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="hours">Hours</SelectItem>
@@ -299,8 +307,8 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Label>Cancellation Fee</Label>
-                                                <Input type="number" placeholder="Fee" className="w-24"/>
-                                                <Select defaultValue="percent">
+                                                <Input name="cancellation_fee_value" type="number" placeholder="Fee" className="w-24"/>
+                                                <Select name="cancellation_fee_type" defaultValue="percent">
                                                     <SelectTrigger className="w-[120px]"><SelectValue/></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="percent">%</SelectItem>
@@ -314,9 +322,9 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                         <div className="space-y-2">
                                             <Label htmlFor="min-booking-duration">Booking Duration (in minutes)</Label>
                                             <div className="flex items-center gap-2">
-                                                <Input id="min-booking-duration" type="number" placeholder="Min" defaultValue="30" className="w-24"/>
+                                                <Input id="min-booking-duration" name="min_booking_duration" type="number" placeholder="Min" defaultValue="30" className="w-24"/>
                                                 <span>-</span>
-                                                <Input id="max-booking-duration" type="number" placeholder="Max" defaultValue="120" className="w-24"/>
+                                                <Input id="max-booking-duration" name="max_booking_duration" type="number" placeholder="Max" defaultValue="120" className="w-24"/>
                                             </div>
                                         </div>
                                     </div>
@@ -336,8 +344,8 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                             <Label htmlFor="base-price">Base Price</Label>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-lg font-semibold">₹</span>
-                                                <Input id="base-price" type="number" defaultValue="500" className="w-32" />
-                                                <Select defaultValue="hour">
+                                                <Input id="base-price" name="base_price" type="number" defaultValue="500" className="w-32" />
+                                                <Select name="base_price_unit" defaultValue="hour">
                                                     <SelectTrigger className="w-[120px]"><SelectValue/></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="hour">per hour</SelectItem>
@@ -352,19 +360,19 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                         <Label className="text-base font-medium">Add-ons</Label>
                                         <div className="space-y-2 p-4 border rounded-lg">
                                             <div className="flex items-center gap-4">
-                                                <Checkbox id="addon-racket" defaultChecked/>
+                                                <Checkbox id="addon-racket" name="addon_racket_enabled" defaultChecked/>
                                                 <Label htmlFor="addon-racket" className="flex-1">Racket Rental</Label>
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-sm font-semibold">₹</span>
-                                                    <Input type="number" defaultValue="50" className="w-24"/>
+                                                    <Input name="addon_racket_price" type="number" defaultValue="50" className="w-24"/>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4">
-                                                <Checkbox id="addon-balls" defaultChecked/>
+                                                <Checkbox id="addon-balls" name="addon_balls_enabled" defaultChecked/>
                                                 <Label htmlFor="addon-balls" className="flex-1">Tennis Balls (can)</Label>
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-sm font-semibold">₹</span>
-                                                    <Input type="number" defaultValue="100" className="w-24"/>
+                                                    <Input name="addon_balls_price" type="number" defaultValue="100" className="w-24"/>
                                                 </div>
                                             </div>
                                         </div>
@@ -388,11 +396,11 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                             <Label htmlFor="public-visibility" className="text-base font-medium">Publicly Visible</Label>
                                             <p className="text-sm text-muted-foreground">Make this court visible to everyone on your booking platform.</p>
                                         </div>
-                                        <Switch id="public-visibility" defaultChecked/>
+                                        <Switch id="public-visibility" name="publicly_visible" defaultChecked/>
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="who-can-book">Who can book?</Label>
-                                        <Select id="who-can-book" defaultValue="everyone">
+                                        <Select id="who-can-book" name="who_can_book" defaultValue="everyone">
                                             <SelectTrigger className="w-[280px]"><SelectValue/></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="everyone">Everyone</SelectItem>
@@ -406,7 +414,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                             <Label htmlFor="require-approval" className="text-base font-medium">Require Booking Approval</Label>
                                             <p className="text-sm text-muted-foreground">Manually approve bookings before they are confirmed.</p>
                                         </div>
-                                        <Switch id="require-approval"/>
+                                        <Switch id="require-approval" name="require_approval"/>
                                     </div>
                                 </CardContent>
                             </Card>

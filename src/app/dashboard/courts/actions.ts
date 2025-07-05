@@ -9,8 +9,19 @@ export async function addCourt(formData: FormData) {
   const name = formData.get('name') as string;
   const organisation_id = formData.get('organisation_id') as string;
   const sport_id = formData.get('sport_id') as string;
-  // Note: other fields from the new form are not in the db schema yet
-  // and will not be saved.
+  
+  // The following fields are collected from the form but not yet
+  // saved to the database. They can be added to the `insert` call
+  // once the database schema is updated.
+  const address = formData.get('address') as string;
+  const max_players = formData.get('max_players') as string;
+  const audience_capacity = formData.get('audience_capacity') as string;
+  const description = formData.get('description') as string;
+  const court_type = formData.get('court_type') as string; // JSON string
+  const tags = formData.get('tags') as string; // JSON string
+  const equipment_rental = formData.get('equipment_rental') as string; // 'true' or 'false'
+  const facilities = formData.get('facilities') as string; // JSON string
+  const blackout_dates = formData.get('blackout_dates') as string; // JSON string of dates
 
   if (!name || !organisation_id || !sport_id) {
     return { error: 'Court Name, Venue, and Sport Type are required.' };
@@ -39,8 +50,19 @@ export async function updateCourt(formData: FormData) {
   const name = formData.get('name') as string;
   const organisation_id = formData.get('organisation_id') as string;
   const sport_id = formData.get('sport_id') as string;
-  // Note: other fields from the new form are not in the db schema yet
-  // and will not be saved.
+
+  // The following fields are collected from the form but not yet
+  // saved to the database. They can be added to the `update` call
+  // once the database schema is updated.
+  const address = formData.get('address') as string;
+  const max_players = formData.get('max_players') as string;
+  const audience_capacity = formData.get('audience_capacity') as string;
+  const description = formData.get('description') as string;
+  const court_type = formData.get('court_type') as string; // JSON string
+  const tags = formData.get('tags') as string; // JSON string
+  const equipment_rental = formData.get('equipment_rental') as string; // 'true' or 'false'
+  const facilities = formData.get('facilities') as string; // JSON string
+  const blackout_dates = formData.get('blackout_dates') as string; // JSON string of dates
 
   if (!id) {
     return { error: 'Court ID is missing.' };
