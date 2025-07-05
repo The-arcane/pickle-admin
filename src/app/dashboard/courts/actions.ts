@@ -4,41 +4,50 @@ import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+function getCourtDataFromFormData(formData: FormData) {
+    const name = formData.get('name') as string;
+    const organisation_id = formData.get('organisation_id') as string;
+    const sport_id = formData.get('sport_id') as string;
+    const description = formData.get('description') as string;
+    const max_players = formData.get('max_players') as string;
+    const audience_capacity = formData.get('audience_capacity') as string;
+    const is_equipment_available = formData.get('is_equipment_available') === 'true';
+    const surface = formData.get('surface') as string;
+    const has_floodlights = formData.get('has_floodlights') === 'true';
+
+    return {
+        name,
+        organisation_id: Number(organisation_id),
+        sport_id: Number(sport_id),
+        description,
+        max_players: max_players ? Number(max_players) : null,
+        audience_capacity: audience_capacity ? Number(audience_capacity) : null,
+        is_equipment_available,
+        surface,
+        has_floodlights,
+    };
+}
+
+
 export async function addCourt(formData: FormData) {
   const supabase = createServer();
-  const name = formData.get('name') as string;
-  const organisation_id = formData.get('organisation_id') as string;
-  const sport_id = formData.get('sport_id') as string;
-  
-  // The following fields are collected from the form but not yet
-  // saved to the database. They can be added to the `insert` call
-  // once the database schema is updated.
-  const address = formData.get('address') as string;
-  const max_players = formData.get('max_players') as string;
-  const audience_capacity = formData.get('audience_capacity') as string;
-  const description = formData.get('description') as string;
-  const court_type = formData.get('court_type') as string; // JSON string
-  const tags = formData.get('tags') as string; // JSON string
-  const equipment_rental = formData.get('equipment_rental') as string; // 'true' or 'false'
-  const facilities = formData.get('facilities') as string; // JSON string
-  const blackout_dates = formData.get('blackout_dates') as string; // JSON string of dates
+  const courtData = getCourtDataFromFormData(formData);
 
-  if (!name || !organisation_id || !sport_id) {
+  if (!courtData.name || !courtData.organisation_id || !courtData.sport_id) {
     return { error: 'Court Name, Venue, and Sport Type are required.' };
   }
 
   const { error } = await supabase
     .from('courts')
-    .insert({
-      name,
-      organisation_id: Number(organisation_id),
-      sport_id: Number(sport_id),
-    });
+    .insert(courtData);
 
   if (error) {
     console.error('Error adding court:', error);
     return { error: 'Failed to add court.' };
   }
+  
+  // Note: Saving related data (amenities, gallery, etc.) is more complex
+  // and would typically be handled in a separate step or database function.
 
   revalidatePath('/dashboard/courts');
   redirect('/dashboard/courts');
@@ -47,38 +56,19 @@ export async function addCourt(formData: FormData) {
 export async function updateCourt(formData: FormData) {
   const supabase = createServer();
   const id = formData.get('id') as string;
-  const name = formData.get('name') as string;
-  const organisation_id = formData.get('organisation_id') as string;
-  const sport_id = formData.get('sport_id') as string;
-
-  // The following fields are collected from the form but not yet
-  // saved to the database. They can be added to the `update` call
-  // once the database schema is updated.
-  const address = formData.get('address') as string;
-  const max_players = formData.get('max_players') as string;
-  const audience_capacity = formData.get('audience_capacity') as string;
-  const description = formData.get('description') as string;
-  const court_type = formData.get('court_type') as string; // JSON string
-  const tags = formData.get('tags') as string; // JSON string
-  const equipment_rental = formData.get('equipment_rental') as string; // 'true' or 'false'
-  const facilities = formData.get('facilities') as string; // JSON string
-  const blackout_dates = formData.get('blackout_dates') as string; // JSON string of dates
+  const courtData = getCourtDataFromFormData(formData);
 
   if (!id) {
     return { error: 'Court ID is missing.' };
   }
   
-  if (!name || !organisation_id || !sport_id) {
+  if (!courtData.name || !courtData.organisation_id || !courtData.sport_id) {
     return { error: 'Court Name, Venue, and Sport Type are required.' };
   }
 
   const { error } = await supabase
     .from('courts')
-    .update({ 
-      name,
-      organisation_id: Number(organisation_id),
-      sport_id: Number(sport_id),
-     })
+    .update(courtData)
     .eq('id', Number(id));
 
   if (error) {
@@ -86,6 +76,10 @@ export async function updateCourt(formData: FormData) {
     return { error: 'Failed to update court.' };
   }
 
+  // Note: Saving related data (amenities, gallery, etc.) is more complex
+  // and would typically be handled in a separate step or database function.
+
   revalidatePath('/dashboard/courts');
+  revalidatePath(`/dashboard/courts/${id}`);
   redirect('/dashboard/courts');
 }

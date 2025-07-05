@@ -12,35 +12,21 @@ export default async function EditCourtPage({ params }: { params: { id: string }
   if (!isAdding) {
     const { data: courtData, error: courtError } = await supabase
       .from('courts')
-      .select('*, organisations(name, address), sports(name, max_players)')
+      .select(`
+        *,
+        organisations(*),
+        sports(*),
+        court_amenities(amenity)
+      `)
       .eq('id', id)
       .single();
     
     if (courtError || !courtData) {
+      console.error('Error fetching court details:', courtError);
       notFound();
     }
     
-    court = {
-      id: courtData.id,
-      name: courtData.name,
-      address: courtData.address,
-      organisation_id: courtData.organisation_id,
-      sport_id: courtData.sport_id,
-      lat: courtData.lat,
-      lng: courtData.lng,
-      // The following are mock values based on the design as they don't exist in the schema
-      venue_name: courtData.organisations?.name || 'N/A',
-      venue_address: courtData.organisations?.address || '',
-      sports_type: courtData.sports?.name || 'N/A',
-      max_players: courtData.sports?.max_players || 4,
-      audience_capacity: 7850,
-      court_type: ['Indoor'],
-      tags: ['Indoor'],
-      equipment_rental: true,
-      description: 'Pickelball Academy is a renowned sports facility situated in Ladha Sarai Village, Delhi with a commitment to providing high-quality services, we offers a range of amenities and equipment to support athletes in their treining and development.',
-      labels: ['Label', 'Label', 'Label', 'Label'],
-      facilities: ['Water', 'Restrooms'],
-    };
+    court = courtData as Court;
   }
   
   const { data: organisationsData, error: orgsError } = await supabase.from('organisations').select('id, name, address');

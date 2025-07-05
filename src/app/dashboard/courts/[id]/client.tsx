@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { addCourt, updateCourt } from '../actions';
@@ -15,12 +15,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Coffee, Droplet, Bath, Plus } from 'lucide-react';
+import { Car, Coffee, Droplet, Bath, Plus, Lightbulb } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 
-const courtTypeOptions = ['Indoor', 'VIP', 'Night Lights', 'Outdoor'];
-const tagOptions = ['Indoor', 'VIP', 'Night Lights', 'Outdoor'];
 const facilityOptions = [
     { id: 'Water', label: 'Water', icon: Droplet },
     { id: 'Restrooms', label: 'Restrooms', icon: Bath },
@@ -34,18 +32,14 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     const isAdding = !court;
     
     // Form State
-    const [courtName, setCourtName] = useState(court?.name || '');
     const [organisationId, setOrganisationId] = useState(court?.organisation_id?.toString() || '');
-    const [address, setAddress] = useState(court?.venue_address || '');
-    const [sportId, setSportId] = useState(court?.sport_id?.toString() || '');
-    const [maxPlayers, setMaxPlayers] = useState(court?.max_players || 4);
-    const [audienceCapacity, setAudienceCapacity] = useState(court?.audience_capacity || 7850);
-    const [description, setDescription] = useState(court?.description || '');
-    const [equipmentRental, setEquipmentRental] = useState(court?.equipment_rental || false);
-    const [selectedCourtTypes, setSelectedCourtTypes] = useState<string[]>(court?.court_type || ['Indoor']);
-    const [selectedTags, setSelectedTags] = useState<string[]>(court?.tags || ['Indoor']);
-    const [labels, setLabels] = useState(court?.labels || ['Label', 'Label', 'Label', 'Label']);
-    const [selectedFacilities, setSelectedFacilities] = useState<string[]>(court?.facilities || ['Water', 'Restrooms']);
+    const [address, setAddress] = useState(court?.organisations?.address || '');
+    const [equipmentRental, setEquipmentRental] = useState(court?.is_equipment_available ?? false);
+    const [floodlights, setFloodlights] = useState(court?.has_floodlights ?? false);
+    
+    const existingAmenities = useMemo(() => court?.court_amenities?.map(a => a.amenity) || [], [court]);
+    const [selectedFacilities, setSelectedFacilities] = useState<string[]>(existingAmenities);
+    
     const [blackoutDates, setBlackoutDates] = useState<Date[] | undefined>(undefined);
 
 
@@ -55,6 +49,12 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     }, [organisationId, organisations]);
 
     const handleFormAction = async (formData: FormData) => {
+        // Manually append switch states to FormData
+        formData.append('is_equipment_available', String(equipmentRental));
+        formData.append('has_floodlights', String(floodlights));
+        // Note: Saving amenities is complex and not implemented in this action.
+        // It would require inserts/deletes on the court_amenities table.
+
         const action = isAdding ? addCourt : updateCourt;
         if (!isAdding && court) {
             formData.append('id', court.id.toString());
@@ -67,14 +67,6 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                 title: "Error",
                 description: result.error,
             });
-        }
-    };
-    
-    const toggleSelection = (option: string, list: string[], setter: React.Dispatch<React.SetStateAction<string[]>>) => {
-        if (list.includes(option)) {
-            setter(list.filter(item => item !== option));
-        } else {
-            setter([...list, option]);
         }
     };
 
@@ -100,14 +92,6 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                 
                 <div className="md:col-span-3">
                     <form action={handleFormAction}>
-                        {/* Hidden inputs for complex state */}
-                        <input type="hidden" name="court_type" value={JSON.stringify(selectedCourtTypes)} />
-                        <input type="hidden" name="tags" value={JSON.stringify(selectedTags)} />
-                        <input type="hidden" name="equipment_rental" value={String(equipmentRental)} />
-                        <input type="hidden" name="facilities" value={JSON.stringify(selectedFacilities)} />
-                        <input type="hidden" name="blackout_dates" value={JSON.stringify(blackoutDates?.map(d => d.toISOString()))} />
-
-
                         <TabsContent value="court-info" className="mt-0">
                             <Card>
                                 <CardHeader>
@@ -116,7 +100,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                 <CardContent className="space-y-8">
                                     <div className="space-y-2">
                                         <Label htmlFor="name">Court Name</Label>
-                                        <Input id="name" name="name" value={courtName} onChange={e => setCourtName(e.target.value)} placeholder="e.g., Court A" />
+                                        <Input id="name" name="name" defaultValue={court?.name || ''} placeholder="e.g., Court A" />
                                     </div>
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -137,78 +121,59 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     
                                     <div className="space-y-2">
                                         <Label htmlFor="sport_id">Sports Type</Label>
-                                        <Select name="sport_id" value={sportId} onValueChange={setSportId}>
+                                        <Select name="sport_id" defaultValue={court?.sport_id?.toString() || ''}>
                                             <SelectTrigger><SelectValue placeholder="Select sport" /></SelectTrigger>
                                             <SelectContent>
                                                 {sports.map(sport => <SelectItem key={sport.id} value={sport.id.toString()}>{sport.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <Label>Court Type</Label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {courtTypeOptions.map(type => (
-                                                <Button key={type} type="button" variant={selectedCourtTypes.includes(type) ? 'default' : 'outline'} onClick={() => toggleSelection(type, selectedCourtTypes, setSelectedCourtTypes)}>{type}</Button>
-                                            ))}
-                                            <Button type="button" variant="outline" size="icon"><Plus className="h-4 w-4"/></Button>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="surface">Court Surface</Label>
+                                            <Input id="surface" name="surface" defaultValue={court?.surface || ''} placeholder="e.g., Hard, Clay, Grass"/>
+                                        </div>
+                                        <div className="flex items-center justify-between rounded-lg border p-4">
+                                            <Label htmlFor="has_floodlights" className="text-base font-medium flex items-center gap-2"><Lightbulb className="h-4 w-4"/> Floodlights Available</Label>
+                                            <Switch id="has_floodlights" checked={floodlights} onCheckedChange={setFloodlights}/>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
                                             <Label htmlFor="max_players">Max Players</Label>
-                                            <Input id="max_players" name="max_players" type="number" value={maxPlayers} onChange={e => setMaxPlayers(Number(e.target.value))} />
+                                            <Input id="max_players" name="max_players" type="number" defaultValue={court?.max_players || undefined} />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="audience_capacity">Audience Capacity</Label>
-                                            <Input id="audience_capacity" name="audience_capacity" type="number" value={audienceCapacity} onChange={e => setAudienceCapacity(Number(e.target.value))} />
+                                            <Input id="audience_capacity" name="audience_capacity" type="number" defaultValue={court?.audience_capacity || undefined} />
                                         </div>
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <Label>Tags</Label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {tagOptions.map(tag => (
-                                                <Button key={tag} type="button" variant={selectedTags.includes(tag) ? 'default' : 'outline'} onClick={() => toggleSelection(tag, selectedTags, setSelectedTags)}>{tag}</Button>
-                                            ))}
-                                            <Button type="button" variant="outline" size="icon"><Plus className="h-4 w-4"/></Button>
-                                        </div>
-                                    </div>
-
+                                    
                                     <div className="flex items-center justify-between rounded-lg border p-4">
-                                        <Label htmlFor="equipment_rental_switch" className="text-base font-medium">Equipment Rental Available</Label>
-                                        <Switch id="equipment_rental_switch" checked={equipmentRental} onCheckedChange={setEquipmentRental}/>
+                                        <Label htmlFor="is_equipment_available" className="text-base font-medium">Equipment Rental Available</Label>
+                                        <Switch id="is_equipment_available" checked={equipmentRental} onCheckedChange={setEquipmentRental}/>
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor="description">Court Description/Overview</Label>
-                                        <Textarea id="description" name="description" value={description} onChange={e => setDescription(e.target.value)} rows={4}/>
+                                        <Textarea id="description" name="description" defaultValue={court?.description || ''} rows={4}/>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        <Label>More Info</Label>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {labels.map((label, index) => (
-                                                <div key={index} className="space-y-1">
-                                                    <Input name={`label_${index}`} defaultValue={label} />
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <Button type="button" variant="outline" className="w-full">
-                                            <Plus className="mr-2 h-4 w-4" /> Add New
-                                        </Button>
-                                    </div>
-                                    
                                     <div className="space-y-4">
                                         <Label>Facility</Label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {facilityOptions.map(facility => (
                                                 <div key={facility.id} className="flex items-center gap-2">
-                                                    <Checkbox id={facility.id} onCheckedChange={(checked) => {
-                                                        const list = checked ? [...selectedFacilities, facility.id] : selectedFacilities.filter(f => f !== facility.id);
-                                                        setSelectedFacilities(list);
-                                                    }} checked={selectedFacilities.includes(facility.id)} />
+                                                    <Checkbox 
+                                                        id={facility.id}
+                                                        checked={selectedFacilities.includes(facility.id)}
+                                                        onCheckedChange={(checked) => {
+                                                            const list = checked ? [...selectedFacilities, facility.id] : selectedFacilities.filter(f => f !== facility.id);
+                                                            setSelectedFacilities(list);
+                                                        }}
+                                                    />
                                                     <facility.icon className="h-4 w-4 text-muted-foreground" />
                                                     <Label htmlFor={facility.id} className="text-sm font-normal">{facility.label}</Label>
                                                 </div>
