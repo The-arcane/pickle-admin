@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { addCourt, updateCourt } from '../actions';
 import type { Court, Organisation, Sport, CourtRule, CourtGalleryImage, CourtContact } from './types';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { Lightbulb, Plus, Trash2, ImagePlus, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 export function EditCourtClientPage({ court, organisations, sports }: { court: Court | null, organisations: Organisation[], sports: Sport[] }) {
+    const router = useRouter();
     const { toast } = useToast();
     const isAdding = !court;
     
@@ -48,6 +50,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
             toast({ variant: "destructive", title: "Error", description: result.error });
         } else {
             toast({ title: "Success", description: `Court ${isAdding ? 'added' : 'updated'} successfully.` });
+            router.push('/dashboard/courts');
         }
     };
     
@@ -84,12 +87,16 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                     <CardDescription>Basic details about the court.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className="space-y-2"><Label htmlFor="name">Court Name</Label><Input id="name" name="name" defaultValue={court?.name || ''} placeholder="e.g., Court A" /></div>
+                    <div className="space-y-2"><Label htmlFor="name">Court Name</Label><Input id="name" name="name" defaultValue={court?.name || ''} placeholder="e.g., Court A" required/></div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2"><Label htmlFor="organisation_id">Venue Name</Label><Select name="organisation_id" defaultValue={court?.organisation_id?.toString() || ''}><SelectTrigger><SelectValue placeholder="Select venue" /></SelectTrigger><SelectContent>{organisations.map(org => <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>)}</SelectContent></Select></div>
-                        <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" name="address" defaultValue={court?.address || ''} placeholder="Court address"/></div>
+                        <div className="space-y-2"><Label htmlFor="organisation_id">Venue Name</Label><Select name="organisation_id" defaultValue={court?.organisation_id?.toString() || ''} required><SelectTrigger><SelectValue placeholder="Select venue" /></SelectTrigger><SelectContent>{organisations.map(org => <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>)}</SelectContent></Select></div>
+                        <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" name="address" defaultValue={court?.address || ''} placeholder="Court address" required/></div>
                     </div>
-                    <div className="space-y-2"><Label htmlFor="sport_id">Sports Type</Label><Select name="sport_id" defaultValue={court?.sport_id?.toString() || ''}><SelectTrigger><SelectValue placeholder="Select sport" /></SelectTrigger><SelectContent>{sports.map(sport => <SelectItem key={sport.id} value={sport.id.toString()}>{sport.name}</SelectItem>)}</SelectContent></Select></div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2"><Label htmlFor="lat">Latitude</Label><Input id="lat" name="lat" type="number" step="any" defaultValue={court?.lat ?? ''} placeholder="e.g., 28.6139" required/></div>
+                        <div className="space-y-2"><Label htmlFor="lng">Longitude</Label><Input id="lng" name="lng" type="number" step="any" defaultValue={court?.lng ?? ''} placeholder="e.g., 77.2090" required/></div>
+                    </div>
+                    <div className="space-y-2"><Label htmlFor="sport_id">Sports Type</Label><Select name="sport_id" defaultValue={court?.sport_id?.toString() || ''} required><SelectTrigger><SelectValue placeholder="Select sport" /></SelectTrigger><SelectContent>{sports.map(sport => <SelectItem key={sport.id} value={sport.id.toString()}>{sport.name}</SelectItem>)}</SelectContent></Select></div>
                     <div className="space-y-2"><Label htmlFor="description">Court Description/Overview</Label><Textarea id="description" name="description" defaultValue={court?.description || ''} rows={4}/></div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2"><Label htmlFor="surface">Court Surface</Label><Input id="surface" name="surface" defaultValue={court?.surface || ''} placeholder="e.g., Hard, Clay, Grass"/></div>
