@@ -19,11 +19,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function EditEventClientPage({ event, organisations, categories, tags }: { event: Event | null, organisations: Organisation[], categories: EventCategory[], tags: EventTag[] }) {
     const router = useRouter();
     const { toast } = useToast();
     const isAdding = !event;
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     // Form State
     const [isFree, setIsFree] = useState(event?.is_free ?? true);
@@ -131,7 +137,10 @@ export function EditEventClientPage({ event, organisations, categories, tags }: 
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {startDate ? format(startDate, "PPP p") : <span>Pick a date</span>}
+                                        {startDate ? 
+                                            (isClient ? format(startDate, "PPP p") : <Skeleton className="h-4 w-[200px]" />) : 
+                                            (<span>Pick a date</span>)
+                                        }
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
@@ -145,7 +154,10 @@ export function EditEventClientPage({ event, organisations, categories, tags }: 
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {endDate ? format(endDate, "PPP p") : <span>Pick a date</span>}
+                                        {endDate ? 
+                                            (isClient ? format(endDate, "PPP p") : <Skeleton className="h-4 w-[200px]" />) : 
+                                            (<span>Pick a date</span>)
+                                        }
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
