@@ -6,6 +6,8 @@ import { createServer } from '@/lib/supabase/server';
 import { format } from 'date-fns';
 import { RecentBookingsTable } from '@/components/recent-bookings-table';
 import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const statusMap: { [key: number]: string } = {
   0: 'Cancelled',
@@ -51,35 +53,46 @@ const feedback = {
   user: 'Sneha M.'
 };
 
-export default async function DashboardPage() {
+async function getRecentBookings() {
   const supabase = createServer();
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('id, status, user:user_id(name, profile_image_url), courts:court_id(name), timeslots:timeslot_id(date, start_time)')
-    .limit(8);
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('id, status, user:user_id(name, profile_image_url), courts:court_id(name), timeslots:timeslot_id(date, start_time)')
+      .limit(8);
 
-  if (error) {
+    if (error) {
+      throw error;
+    }
+    
+    return { 
+      bookings: data?.map((booking) => {
+        const user = booking.user;
+        const court = booking.courts;
+        const timeslot = booking.timeslots;
+        const userName = typeof user === 'object' && user !== null && 'name' in user ? (user as any).name : 'N/A';
+
+        return {
+          id: booking.id,
+          user: userName,
+          court: typeof court === 'object' && court !== null && 'name' in court ? (court as any).name : 'N/A',
+          date: typeof timeslot === 'object' && timeslot !== null && 'date' in timeslot ? formatDate((timeslot as any).date) : 'N/A',
+          time: typeof timeslot === 'object' && timeslot !== null && 'start_time' in timeslot ? (timeslot as any).start_time as string : '',
+          status: statusMap[booking.status] ?? 'Unknown',
+          avatar: typeof user === 'object' && user !== null && 'profile_image_url' in user ? (user as any).profile_image_url as string | null : null,
+          initials: getInitials(userName),
+        };
+      }) || [],
+      error: null
+    };
+  } catch (error) {
     console.error('Error fetching recent bookings:', error);
+    return { bookings: [], error: error as Error };
   }
+}
 
-  const bookings =
-    data?.map((booking) => {
-      const user = booking.user;
-      const court = booking.courts;
-      const timeslot = booking.timeslots;
-      const userName = typeof user === 'object' && user !== null && 'name' in user ? (user as any).name : 'N/A';
-
-      return {
-        id: booking.id,
-        user: userName,
-        court: typeof court === 'object' && court !== null && 'name' in court ? (court as any).name : 'N/A',
-        date: typeof timeslot === 'object' && timeslot !== null && 'date' in timeslot ? formatDate((timeslot as any).date) : 'N/A',
-        time: typeof timeslot === 'object' && timeslot !== null && 'start_time' in timeslot ? (timeslot as any).start_time as string : '',
-        status: statusMap[booking.status] ?? 'Unknown',
-        avatar: typeof user === 'object' && user !== null && 'profile_image_url' in user ? (user as any).profile_image_url as string | null : null,
-        initials: getInitials(userName),
-      };
-    }) || [];
+export default async function DashboardPage() {
+  const { bookings, error } = await getRecentBookings();
 
   return (
     <>
@@ -129,7 +142,17 @@ export default async function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <RecentBookingsTable bookings={bookings} />
+            {error ? (
+               <Alert variant="destructive">
+                 <AlertCircle className="h-4 w-4" />
+                 <AlertTitle>Error Fetching Bookings</AlertTitle>
+                 <AlertDescription>
+                   Could not load recent bookings due to a database error. Please check your RLS policies.
+                 </AlertDescription>
+               </Alert>
+            ) : (
+              <RecentBookingsTable bookings={bookings} />
+            )}
           </CardContent>
         </Card>
 
