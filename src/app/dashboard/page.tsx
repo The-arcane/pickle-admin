@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, BarChartHorizontal, Clock, MessageSquare, AlertCircle, MapPin } from 'lucide-react';
+import { Calendar, BarChartHorizontal, Clock, PartyPopper, AlertCircle, MapPin, Users } from 'lucide-react';
 import { createServer } from '@/lib/supabase/server';
 import { format, parseISO } from 'date-fns';
 import { RecentBookingsTable } from '@/components/recent-bookings-table';
@@ -44,7 +44,9 @@ async function getDashboardData() {
     upcomingBookingsRes,
     latestReviewRes,
     avgRatingRes,
-    upcomingEventsRes
+    upcomingEventsRes,
+    upcomingEventsCountRes,
+    totalEnrolmentsRes,
   ] = await Promise.all([
     // Recent Bookings
     supabase
@@ -92,7 +94,19 @@ async function getDashboardData() {
         .select('id, title, start_time, location_name')
         .gte('start_time', new Date().toISOString())
         .order('start_time', { ascending: true })
-        .limit(3)
+        .limit(3),
+    
+    // Upcoming Events Count
+    supabase
+        .from('events')
+        .select('id', { count: 'exact', head: true })
+        .gte('start_time', new Date().toISOString()),
+
+    // Total Event Enrolments
+    supabase
+        .from('event_bookings')
+        .select('quantity')
+        .eq('status', 1) // Confirmed bookings
   ]);
 
   if (recentBookingsRes.error) console.error("Error fetching recent bookings:", recentBookingsRes.error.message);
@@ -102,6 +116,8 @@ async function getDashboardData() {
   if (latestReviewRes.error) console.error("Error fetching latest review:", latestReviewRes.error.message);
   if (avgRatingRes.error) console.error("Error fetching ratings:", avgRatingRes.error.message);
   if (upcomingEventsRes.error) console.error("Error fetching upcoming events:", upcomingEventsRes.error.message);
+  if (upcomingEventsCountRes.error) console.error("Error fetching upcoming events count:", upcomingEventsCountRes.error.message);
+  if (totalEnrolmentsRes.error) console.error("Error fetching total enrolments:", totalEnrolmentsRes.error.message);
 
 
   const recentBookings = recentBookingsRes.data?.map((booking) => {
@@ -150,13 +166,18 @@ async function getDashboardData() {
     location: event.location_name ?? 'N/A',
   })) || [];
 
+  const upcomingEventsCount = upcomingEventsCountRes.count ?? 0;
+
+  const totalEnrolments = totalEnrolmentsRes.data?.reduce((sum, booking) => sum + (booking.quantity || 0), 0) ?? 0;
+
   return {
     recentBookings,
     stats: {
         todaysBookings: todaysBookingsCount,
         totalRevenue: totalRevenue,
         upcomingSlots: upcomingBookingsCount,
-        chatbotInteractions: 412, // This is static as there is no data source
+        upcomingEventsCount: upcomingEventsCount,
+        totalEnrolments: totalEnrolments,
     },
     feedback: {
         ...latestReview,
@@ -174,16 +195,8 @@ export default async function DashboardPage() {
     { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar },
     { label: 'Total Revenue', value: `₹${stats.totalRevenue.toLocaleString('en-IN')}`, icon: BarChartHorizontal },
     { label: 'Upcoming Slots', value: stats.upcomingSlots, icon: Clock },
-    { label: 'Chatbot Interactions', value: stats.chatbotInteractions, icon: MessageSquare },
+    { label: 'Upcoming Events', value: stats.upcomingEventsCount, icon: PartyPopper },
   ];
-
-  // This remains static as no data source was provided for it.
-  const chatbotStats = {
-    total: 412,
-    autoSolved: 25,
-    transfers: 6,
-    topIntent: 'Booking Inquiry',
-  };
 
   return (
     <>
@@ -297,17 +310,18 @@ export default async function DashboardPage() {
         </div>
 
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Chatbot Usage Today</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between"><span>Total Messages Handled</span><span className="font-semibold text-muted-foreground">{chatbotStats.total}</span></div>
-              <div className="flex justify-between"><span>Auto-Solved Queries</span><span className="text-muted-foreground">{chatbotStats.autoSolved}</span></div>
-              <div className="flex justify-between"><span>Live Support Transfers</span><span className="text-muted-foreground">{chatbotStats.transfers}</span></div>
-              <div className="flex justify-between"><span>Top Intent</span><span className="text-muted-foreground">{chatbotStats.topIntent}</span></div>
-            </CardContent>
-          </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Event Enrolments</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalEnrolments}</div>
+                    <p className="text-xs text-muted-foreground">
+                        Total attendees for all confirmed events.
+                    </p>
+                </CardContent>
+            </Card>
           <Card>
             <CardHeader>
               <CardTitle>Customer Feedback</CardTitle>
