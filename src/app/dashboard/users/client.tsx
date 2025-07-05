@@ -13,7 +13,6 @@ import { StatusBadge } from '@/components/status-badge';
 import { Pencil } from 'lucide-react';
 import { updateUser } from './actions';
 import { useToast } from "@/hooks/use-toast";
-import { DebugButton } from '@/components/debug-button';
 
 type User = {
   id: number;
@@ -70,7 +69,6 @@ export function UsersClientPage({ users, error }: { users: User[], error: any })
             <h1 className="text-3xl font-bold">Users</h1>
             <p className="text-muted-foreground">Manage your users and their permissions.</p>
           </div>
-          <DebugButton data={users} error={error} />
         </div>
         <Card>
           <CardContent className="pt-6">
