@@ -2,7 +2,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { parseISO, getDay, setUTCHours, setUTCMinutes, setUTCSeconds, setUTCMilliseconds } from 'date-fns';
+import { parseISO, getDay } from 'date-fns';
 
 const statusMapToDb: { [key: string]: number } = {
   'Cancelled': 0,
@@ -138,6 +138,9 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
     
     // 3. Prepare unavailability periods for comparison, ensuring all are in UTC
     const unavailabilityPeriods: { start: Date, end: Date }[] = [];
+    const year = selectedDate.getUTCFullYear();
+    const month = selectedDate.getUTCMonth();
+    const day = selectedDate.getUTCDate();
     
     // Process recurring unavailability for the day of the week
     recurringUnavailability?.forEach(block => {
@@ -145,9 +148,9 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
             const [startHour, startMinute] = block.start_time.split(':').map(Number);
             const [endHour, endMinute] = block.end_time.split(':').map(Number);
             
-            // Create UTC dates for comparison
-            const blockStart = setUTCMinutes(setUTCHours(selectedDate, startHour), startMinute);
-            const blockEnd = setUTCMinutes(setUTCHours(selectedDate, endHour), endMinute);
+            // Create UTC dates for comparison using native Date.UTC
+            const blockStart = new Date(Date.UTC(year, month, day, startHour, startMinute));
+            const blockEnd = new Date(Date.UTC(year, month, day, endHour, endMinute));
 
             unavailabilityPeriods.push({ start: blockStart, end: blockEnd });
         }
@@ -159,14 +162,14 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
 
         // If start/end times are null, block the whole day in UTC
         if (!block.start_time || !block.end_time) {
-            blockStart = setUTCMilliseconds(setUTCSeconds(setUTCMinutes(setUTCHours(selectedDate, 0), 0), 0), 0);
-            blockEnd = setUTCMilliseconds(setUTCSeconds(setUTCMinutes(setUTCHours(selectedDate, 23), 59), 59), 999);
+            blockStart = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+            blockEnd = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
         } else {
             const [startHour, startMinute] = block.start_time.split(':').map(Number);
             const [endHour, endMinute] = block.end_time.split(':').map(Number);
             
-            blockStart = setUTCMinutes(setUTCHours(selectedDate, startHour), startMinute);
-            blockEnd = setUTCMinutes(setUTCHours(selectedDate, endHour), endMinute);
+            blockStart = new Date(Date.UTC(year, month, day, startHour, startMinute));
+            blockEnd = new Date(Date.UTC(year, month, day, endHour, endMinute));
         }
         
         unavailabilityPeriods.push({ start: blockStart, end: blockEnd });

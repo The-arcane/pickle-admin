@@ -16,8 +16,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type BookingFromDb = {
+// Types for Court Bookings
+type CourtBookingFromDb = {
   id: number;
   status: number;
   court_id: number;
@@ -27,7 +29,7 @@ type BookingFromDb = {
   timeslots: { date: string | null; start_time: string | null, end_time: string | null } | null;
 };
 
-type ProcessedBooking = {
+type ProcessedCourtBooking = {
   id: number;
   user: string;
   court: string;
@@ -37,6 +39,25 @@ type ProcessedBooking = {
   court_id: number;
   timeslot_id: number;
   raw_date: Date | undefined;
+};
+
+// Types for Event Bookings
+type EventBookingFromDb = {
+    id: number;
+    booking_time: string | null;
+    quantity: number | null;
+    status: number;
+    user: { name: string; } | null;
+    events: { title: string; } | null;
+};
+
+type ProcessedEventBooking = {
+    id: number;
+    user: string;
+    event: string;
+    quantity: number;
+    date: string;
+    status: string;
 };
 
 type Court = {
@@ -64,12 +85,10 @@ const formatTime = (timeString: string | null) => {
     if (!timeString) return '';
     try {
         const date = new Date(timeString);
-        // Check if the date is valid. `new Date()` can return 'Invalid Date'.
         if (isNaN(date.getTime())) {
             console.error(`Failed to parse time: Invalid date from string "${timeString}"`);
             return "Invalid Time";
         }
-        // 'p' is for localized time like '1:00 PM'
         return format(date, 'p');
     } catch (e) {
         console.error(`Error formatting time: ${timeString}`, e);
@@ -77,29 +96,53 @@ const formatTime = (timeString: string | null) => {
     }
 }
 
-export function BookingsClientPage({ bookings: initialBookings, courts: allCourts, users: allUsers, bookingStatuses }: { bookings: BookingFromDb[], courts: Court[], users: User[], bookingStatuses: BookingStatus[] }) {
+export function BookingsClientPage({ 
+    initialCourtBookings, 
+    initialEventBookings,
+    courts: allCourts, 
+    users: allUsers, 
+    courtBookingStatuses,
+    eventBookingStatuses
+}: { 
+    initialCourtBookings: CourtBookingFromDb[], 
+    initialEventBookings: EventBookingFromDb[],
+    courts: Court[], 
+    users: User[], 
+    courtBookingStatuses: BookingStatus[],
+    eventBookingStatuses: BookingStatus[],
+}) {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-    const [selectedBooking, setSelectedBooking] = useState<ProcessedBooking | null>(null);
+    const [selectedBooking, setSelectedBooking] = useState<ProcessedCourtBooking | null>(null);
     const { toast } = useToast();
     
-    const [processedBookings, setProcessedBookings] = useState<ProcessedBooking[]>([]);
+    const [processedCourtBookings, setProcessedCourtBookings] = useState<ProcessedCourtBooking[]>([]);
+    const [processedEventBookings, setProcessedEventBookings] = useState<ProcessedEventBooking[]>([]);
     const [isClient, setIsClient] = useState(false);
 
-    const statusMap = useMemo(() => {
-        return bookingStatuses.reduce((acc, status) => {
+    // Court Booking Status Map
+    const courtStatusMap = useMemo(() => {
+        return courtBookingStatuses.reduce((acc, status) => {
             acc[status.id] = status.label;
             return acc;
         }, {} as { [key: number]: string });
-    }, [bookingStatuses]);
+    }, [courtBookingStatuses]);
 
+    // Event Booking Status Map
+    const eventStatusMap = useMemo(() => {
+        return eventBookingStatuses.reduce((acc, status) => {
+            acc[status.id] = status.label;
+            return acc;
+        }, {} as { [key: number]: string });
+    }, [eventBookingStatuses]);
+
+    // Process Court Bookings
     useEffect(() => {
         setIsClient(true);
-        const bookings = initialBookings.map((booking) => {
+        const bookings = initialCourtBookings.map((booking) => {
             const user = booking.user;
             const court = booking.courts;
             const timeslot = booking.timeslots;
-
             const date = timeslot?.date ? parseISO(timeslot.date) : new Date();
             
             return {
@@ -108,14 +151,28 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                 court: court?.name ?? 'N/A',
                 date: timeslot?.date ? format(date, 'MMM d, yyyy') : 'N/A',
                 time: `${formatTime(timeslot?.start_time)} - ${formatTime(timeslot?.end_time)}`,
-                status: statusMap[booking.status] ?? 'Unknown',
+                status: courtStatusMap[booking.status] ?? 'Unknown',
                 court_id: booking.court_id,
                 timeslot_id: booking.timeslot_id,
                 raw_date: timeslot?.date ? date : undefined
             };
         });
-        setProcessedBookings(bookings);
-    }, [initialBookings, statusMap]);
+        setProcessedCourtBookings(bookings);
+    }, [initialCourtBookings, courtStatusMap]);
+
+    // Process Event Bookings
+    useEffect(() => {
+        const bookings = initialEventBookings.map((booking) => ({
+            id: booking.id,
+            user: booking.user?.name ?? 'N/A',
+            event: booking.events?.title ?? 'N/A',
+            quantity: booking.quantity ?? 1,
+            date: booking.booking_time ? format(parseISO(booking.booking_time), 'MMM d, yyyy') : 'N/A',
+            status: eventStatusMap[booking.status] ?? 'Unknown',
+        }));
+        setProcessedEventBookings(bookings);
+    }, [initialEventBookings, eventStatusMap]);
+
 
     // State for Edit Dialog
     const [selectedCourtId, setSelectedCourtId] = useState<string>('');
@@ -138,8 +195,6 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
             getTimeslots(Number(selectedCourtId), dateString, selectedBooking?.id)
                 .then((slots) => {
                     setAvailableTimeslots(slots);
-                    // If the previously selected timeslot is still in the new list, keep it selected.
-                    // Otherwise, the selection will be reset.
                     if (!slots.some(slot => slot.id.toString() === selectedTimeslotId)) {
                         setSelectedTimeslotId('');
                     }
@@ -164,7 +219,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
     }, [addCourtId, addDate, isAddDialogOpen]);
 
 
-    const handleEditClick = (booking: ProcessedBooking) => {
+    const handleEditClick = (booking: ProcessedCourtBooking) => {
         setSelectedBooking(booking);
         setSelectedCourtId(booking.court_id.toString());
         setSelectedDate(booking.raw_date);
@@ -207,10 +262,10 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
         }
     }
 
-    const memoizedBookings = useMemo(() => {
+    const memoizedCourtBookings = useMemo(() => {
         if (!isClient) {
             return Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={`skeleton-${index}`}>
+                <TableRow key={`skeleton-court-${index}`}>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
@@ -221,17 +276,17 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
             ));
         }
 
-        if (processedBookings.length === 0) {
+        if (processedCourtBookings.length === 0) {
             return (
                 <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground">
-                        No bookings found.
+                        No court bookings found.
                     </TableCell>
                 </TableRow>
             );
         }
 
-        return processedBookings.map((booking) => (
+        return processedCourtBookings.map((booking) => (
             <TableRow key={booking.id}>
                 <TableCell className="font-medium">{booking.user}</TableCell>
                 <TableCell>{booking.court}</TableCell>
@@ -248,45 +303,113 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                 </TableCell>
             </TableRow>
         ));
-    }, [isClient, processedBookings]);
+    }, [isClient, processedCourtBookings]);
+
+    const memoizedEventBookings = useMemo(() => {
+        if (!isClient) {
+            return Array.from({ length: 3 }).map((_, index) => (
+                <TableRow key={`skeleton-event-${index}`}>
+                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                </TableRow>
+            ));
+        }
+
+        if (processedEventBookings.length === 0) {
+            return (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                        No event bookings found.
+                    </TableCell>
+                </TableRow>
+            );
+        }
+
+        return processedEventBookings.map((booking) => (
+            <TableRow key={booking.id}>
+                <TableCell className="font-medium">{booking.event}</TableCell>
+                <TableCell>{booking.user}</TableCell>
+                <TableCell>{booking.quantity}</TableCell>
+                <TableCell>{booking.date}</TableCell>
+                <TableCell>
+                    <StatusBadge status={booking.status} />
+                </TableCell>
+            </TableRow>
+        ));
+    }, [isClient, processedEventBookings]);
 
   return (
     <>
-        <div className="space-y-8">
+        <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div>
                 <h1 className="text-3xl font-bold">Bookings</h1>
-                <p className="text-muted-foreground">A list of all recent bookings.</p>
+                <p className="text-muted-foreground">Manage court and event bookings.</p>
                 </div>
-                <Button onClick={() => setIsAddDialogOpen(true)}>Add Booking</Button>
             </div>
-            <Card>
-                <CardContent className="pt-6">
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>User</TableHead>
-                        <TableHead>Court</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Time</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {memoizedBookings}
-                    </TableBody>
-                </Table>
-                </CardContent>
-            </Card>
+
+            <Tabs defaultValue="courts" className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <TabsList>
+                        <TabsTrigger value="courts">Court Bookings</TabsTrigger>
+                        <TabsTrigger value="events">Event Bookings</TabsTrigger>
+                    </TabsList>
+                    <Button onClick={() => setIsAddDialogOpen(true)}>+ Add Court Booking</Button>
+                </div>
+                <TabsContent value="courts">
+                    <Card>
+                        <CardContent className="pt-6">
+                        <Table>
+                            <TableHeader>
+                            <TableRow>
+                                <TableHead>User</TableHead>
+                                <TableHead>Court</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Time</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {memoizedCourtBookings}
+                            </TableBody>
+                        </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="events">
+                    <Card>
+                        <CardContent className="pt-6">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Event</TableHead>
+                                        <TableHead>User</TableHead>
+                                        <TableHead>Quantity</TableHead>
+                                        <TableHead>Booking Date</TableHead>
+                                        <TableHead>Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {memoizedEventBookings}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+
         </div>
 
-        {/* Edit Booking Dialog */}
+        {/* Edit Court Booking Dialog */}
         {selectedBooking && (
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Edit Booking</DialogTitle>
+                    <DialogTitle>Edit Court Booking</DialogTitle>
                 </DialogHeader>
                 <form action={handleUpdateFormAction}>
                     <input type="hidden" name="id" value={selectedBooking.id} />
@@ -355,7 +478,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                                     <SelectValue placeholder="Select status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {bookingStatuses.map((status) => (
+                                    {courtBookingStatuses.map((status) => (
                                         <SelectItem key={status.id} value={status.label}>{status.label}</SelectItem>
                                     ))}
                                 </SelectContent>
@@ -373,11 +496,11 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
             </Dialog>
         )}
 
-        {/* Add Booking Dialog */}
+        {/* Add Court Booking Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Add New Booking</DialogTitle>
+                    <DialogTitle>Add New Court Booking</DialogTitle>
                 </DialogHeader>
                 <form action={handleAddFormAction}>
                     <div className="space-y-4 py-4">
@@ -459,7 +582,7 @@ export function BookingsClientPage({ bookings: initialBookings, courts: allCourt
                                     <SelectValue placeholder="Select status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                     {bookingStatuses.map((status) => (
+                                     {courtBookingStatuses.map((status) => (
                                         <SelectItem key={status.id} value={status.label}>{status.label}</SelectItem>
                                     ))}
                                 </SelectContent>
