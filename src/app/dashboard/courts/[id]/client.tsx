@@ -108,6 +108,22 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         setUnavailability(newUnavailability);
     };
 
+    const scrollToSection = (id: string) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    const navSections = [
+        { id: 'court-info', label: 'Court Info' },
+        { id: 'court-availability', label: 'Availability' },
+        { id: 'images-pricing', label: 'Images & Pricing' },
+        { id: 'court-gallery', label: 'Gallery' },
+        { id: 'court-rules', label: 'Rules' },
+        { id: 'contact-info', label: 'Contact' },
+    ];
+
     return (
         <form action={handleFormAction} className="space-y-8 max-w-4xl mx-auto">
             <div className="flex items-center justify-between">
@@ -118,8 +134,18 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                 </div>
             </div>
 
-            {/* Court Info Section */}
             <Card>
+                <CardContent className="p-4 flex flex-wrap gap-2">
+                    {navSections.map(section => (
+                        <Button key={section.id} type="button" variant="outline" onClick={() => scrollToSection(section.id)}>
+                            {section.label}
+                        </Button>
+                    ))}
+                </CardContent>
+            </Card>
+
+            {/* Court Info Section */}
+            <Card id="court-info">
                 <CardHeader>
                     <CardTitle>Court Info</CardTitle>
                     <CardDescription>Basic details about the court.</CardDescription>
@@ -152,7 +178,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
             </Card>
 
             {/* Availability Section */}
-            <Card>
+            <Card id="court-availability">
                 <CardHeader>
                     <CardTitle>Court Availability</CardTitle>
                     <CardDescription>Set business hours, one-off unavailable dates, and recurring weekly unavailable times.</CardDescription>
@@ -212,7 +238,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
             </Card>
 
             {/* Images & Pricing Section */}
-            <Card>
+            <Card id="images-pricing">
                 <CardHeader><CardTitle>Images &amp; Pricing</CardTitle><CardDescription>Manage court images, pricing, and other metadata.</CardDescription></CardHeader>
                 <CardContent className="space-y-6">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -228,7 +254,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
             </Card>
             
             {/* Gallery Section */}
-            <Card>
+            <Card id="court-gallery">
                 <CardHeader><CardTitle>Court Gallery</CardTitle><CardDescription>Add or remove images from the court's gallery.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -247,7 +273,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
             </Card>
 
             {/* Rules Section */}
-            <Card>
+            <Card id="court-rules">
                 <CardHeader><CardTitle>Court Rules</CardTitle><CardDescription>Define the rules for using this court.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
@@ -263,7 +289,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
             </Card>
 
              {/* Contact Section */}
-            <Card>
+            <Card id="contact-info">
                 <CardHeader><CardTitle>Contact Information</CardTitle><CardDescription>Provide contact details for the court.</CardDescription></CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
