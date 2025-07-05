@@ -21,8 +21,6 @@ type User = {
   phone: string | null;
   status: string;
   avatar: string | null;
-  organisation: string;
-  role: string;
 };
 
 const getInitials = (name: string) => {
@@ -79,8 +77,7 @@ export function UsersClientPage({ users }: { users: User[] }) {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Organisation</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -98,8 +95,7 @@ export function UsersClientPage({ users }: { users: User[] }) {
                       </div>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.organisation}</TableCell>
-                    <TableCell>{user.role}</TableCell>
+                    <TableCell>{user.phone ?? 'N/A'}</TableCell>
                     <TableCell>
                       <StatusBadge status={user.status} />
                     </TableCell>

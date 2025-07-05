@@ -4,17 +4,16 @@ import { UsersClientPage } from './client';
 export default async function UsersPage() {
   const supabase = createServer();
   
-  // This single query fetches users who are linked to organisation_id = 1
-  // and includes their related organisation and role names, exactly
-  // mirroring the logic of the user's provided SQL query.
+  // This query replicates the user's provided SQL:
+  // SELECT u.name, u.email, u.phone, CASE WHEN u.is_deleted = false THEN 'Active' ELSE 'Inactive' END AS status
+  // FROM public.user_organisations uo
+  // JOIN public."user" u ON u.id = uo.user_id
+  // WHERE uo.organisation_id = 1 AND uo.role_id IS NOT NULL;
   const { data, error } = await supabase
     .from('user_organisations')
-    .select(`
-      user:user_id!inner(id, name, email, phone, profile_image_url, is_deleted),
-      organisation:organisations(name),
-      role:organisation_roles(name)
-    `)
-    .eq('organisation_id', 1);
+    .select('user:user_id!inner(id, name, email, phone, profile_image_url, is_deleted)')
+    .eq('organisation_id', 1)
+    .not('role_id', 'is', null);
 
   if (error) {
     console.error('Error fetching users:', error);
@@ -33,8 +32,6 @@ export default async function UsersPage() {
             phone: item.user.phone,
             status: item.user.is_deleted ? 'Inactive' : 'Active',
             avatar: item.user.profile_image_url,
-            organisation: item.organisation?.name ?? 'N/A',
-            role: item.role?.name ?? 'N/A',
         }
     })
     .filter(Boolean) as any[] // Remove nulls and satisfy type
