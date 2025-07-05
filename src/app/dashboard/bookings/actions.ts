@@ -2,7 +2,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { parseISO, getDay, parse } from 'date-fns';
+import { parseISO, getDay, setUTCHours, setUTCMinutes, setUTCSeconds, setUTCMilliseconds } from 'date-fns';
 
 const statusMapToDb: { [key: string]: number } = {
   'Cancelled': 0,
@@ -89,7 +89,6 @@ function isOverlapping(slotStart: Date, slotEnd: Date, blockStart: Date, blockEn
 }
 
 export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number) {
-    console.log(`[getTimeslots] Fetching for courtId: ${courtId}, date: ${dateString}, excluding: ${bookingIdToExclude}`);
     const supabase = createServer();
     
     if (!dateString) {
@@ -97,22 +96,22 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         return [];
     }
     
+    // Use parseISO to ensure we get a date object at midnight UTC
     const selectedDate = parseISO(dateString);
-    const dayOfWeek = getDay(selectedDate); // 0 = Sunday, 1 = Monday, ...
+    const dayOfWeek = getDay(selectedDate); // 0 = Sunday, 1 = Monday, ... (date-fns standard)
 
     // 1. Fetch all data needed for filtering in parallel
     const [
         { data: allTimeslots, error: timeslotsError },
         { data: recurringUnavailability, error: recurringError },
-        { data: oneOffUnavailability, error: oneOffError }
+        { data: oneOffUnavailability, error: oneOffError },
+        { data: bookingsData, error: bookingsError }
     ] = await Promise.all([
         supabase.from('timeslots').select('id, start_time, end_time').eq('court_id', courtId).eq('date', dateString).order('start_time'),
         supabase.from('recurring_unavailability').select('start_time, end_time').eq('court_id', courtId).eq('day_of_week', dayOfWeek).eq('active', true),
-        supabase.from('availability_blocks').select('start_time, end_time').eq('court_id', courtId).eq('date', dateString)
+        supabase.from('availability_blocks').select('start_time, end_time').eq('court_id', courtId).eq('date', dateString),
+        supabase.from('bookings').select('id, timeslot_id')
     ]);
-    
-    // Fetch bookings separately as it doesn't depend on the date directly
-    const { data: bookingsData, error: bookingsError } = await supabase.from('bookings').select('id, timeslot_id');
 
     if (timeslotsError || bookingsError || recurringError || oneOffError) {
         console.error('Error fetching availability data:', { timeslotsError, bookingsError, recurringError, oneOffError });
@@ -120,7 +119,6 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
     }
 
     if (!allTimeslots || allTimeslots.length === 0) {
-        console.log(`[getTimeslots] No timeslots found in DB for court ${courtId} on ${dateString}.`);
         return [];
     }
 
@@ -138,31 +136,40 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         slot => !bookedTimeslotIds.has(slot.id)
     );
     
-    // 3. Prepare unavailability periods for comparison
+    // 3. Prepare unavailability periods for comparison, ensuring all are in UTC
     const unavailabilityPeriods: { start: Date, end: Date }[] = [];
     
     // Process recurring unavailability for the day of the week
     recurringUnavailability?.forEach(block => {
         if(block.start_time && block.end_time) {
-            const start = parse(`${dateString}T${block.start_time}`);
-            const end = parse(`${dateString}T${block.end_time}`);
-            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-                unavailabilityPeriods.push({ start, end });
-            }
+            const [startHour, startMinute] = block.start_time.split(':').map(Number);
+            const [endHour, endMinute] = block.end_time.split(':').map(Number);
+            
+            // Create UTC dates for comparison
+            const blockStart = setUTCMinutes(setUTCHours(selectedDate, startHour), startMinute);
+            const blockEnd = setUTCMinutes(setUTCHours(selectedDate, endHour), endMinute);
+
+            unavailabilityPeriods.push({ start: blockStart, end: blockEnd });
         }
     });
 
     // Process one-off unavailability blocks for the specific date
     oneOffUnavailability?.forEach(block => {
-        const startOfDay = new Date(selectedDate.setHours(0, 0, 0, 0));
-        const endOfDay = new Date(selectedDate.setHours(23, 59, 59, 999));
+        let blockStart, blockEnd;
 
-        const start = block.start_time ? parse(`${dateString}T${block.start_time}`) : startOfDay;
-        const end = block.end_time ? parse(`${dateString}T${block.end_time}`) : endOfDay;
-        
-        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-            unavailabilityPeriods.push({ start, end });
+        // If start/end times are null, block the whole day in UTC
+        if (!block.start_time || !block.end_time) {
+            blockStart = setUTCMilliseconds(setUTCSeconds(setUTCMinutes(setUTCHours(selectedDate, 0), 0), 0), 0);
+            blockEnd = setUTCMilliseconds(setUTCSeconds(setUTCMinutes(setUTCHours(selectedDate, 23), 59), 59), 999);
+        } else {
+            const [startHour, startMinute] = block.start_time.split(':').map(Number);
+            const [endHour, endMinute] = block.end_time.split(':').map(Number);
+            
+            blockStart = setUTCMinutes(setUTCHours(selectedDate, startHour), startMinute);
+            blockEnd = setUTCMinutes(setUTCHours(selectedDate, endHour), endMinute);
         }
+        
+        unavailabilityPeriods.push({ start: blockStart, end: blockEnd });
     });
 
     // 4. Filter slots based on all unavailability periods
@@ -170,6 +177,7 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         availableTimeslots = availableTimeslots.filter(slot => {
             if (!slot.start_time || !slot.end_time) return false;
             
+            // Timeslots from DB are timestamptz, parseISO handles them correctly into UTC Date objects
             const slotStart = parseISO(slot.start_time);
             const slotEnd = parseISO(slot.end_time);
 
@@ -182,7 +190,6 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
             return !isUnavailable; // Keep the slot if it is NOT unavailable
         });
     }
-
-    console.log(`[getTimeslots] Returning ${availableTimeslots.length} available timeslots after all filters.`);
+    
     return availableTimeslots;
 }
