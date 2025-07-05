@@ -37,6 +37,7 @@ export type AvailabilityBlock = {
     date: string | null;
     start_time: string | null;
     end_time: string | null;
+    reason: string | null;
 };
 
 export type RecurringUnavailability = {

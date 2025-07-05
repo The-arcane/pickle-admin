@@ -68,26 +68,26 @@ export async function addCourt(formData: FormData) {
     if (rules.length > 0) {
       const rulesToInsert = rules.map(r => ({ rule: r.rule, court_id: courtId }));
       const { error } = await supabase.from('court_rules').insert(rulesToInsert);
-      if(error) { console.error('Error adding rules:', error); }
+      if(error) { console.error('Error adding rules:', error); return { error: `Failed to save rules: ${error.message}` }; }
     }
     if (gallery.length > 0) {
       const galleryToInsert = gallery.map(g => ({ image_url: g.image_url, court_id: courtId }));
       const { error } = await supabase.from('court_gallery').insert(galleryToInsert);
-      if(error) { console.error('Error adding gallery:', error); }
+      if(error) { console.error('Error adding gallery:', error); return { error: `Failed to save gallery: ${error.message}` };}
     }
     if (contact.phone || contact.email) {
       const { error } = await supabase.from('court_contacts').insert({ ...contact, court_id: courtId });
-      if(error) { console.error('Error adding contact:', error); }
+      if(error) { console.error('Error adding contact:', error); return { error: `Failed to save contact info: ${error.message}` };}
     }
     if (availability.length > 0) {
       const availabilityToInsert = availability.map(a => ({ ...a, court_id: courtId }));
       const { error } = await supabase.from('availability_blocks').insert(availabilityToInsert);
-      if(error) { console.error('Error adding availability:', error); }
+      if(error) { console.error('Error adding availability:', error); return { error: `Failed to save availability: ${error.message}` };}
     }
     if (unavailability.length > 0) {
       const unavailabilityToInsert = unavailability.map(u => ({ ...u, court_id: courtId }));
       const { error } = await supabase.from('recurring_unavailability').insert(unavailabilityToInsert);
-      if(error) { console.error('Error adding unavailability:', error); }
+      if(error) { console.error('Error adding unavailability:', error); return { error: `Failed to save recurring unavailability: ${error.message}` };}
     }
 
 
@@ -125,70 +125,83 @@ export async function updateCourt(formData: FormData) {
 
     // --- 2. Sync Rules (Delete removed, then upsert all) ---
     const { data: existingRules } = await supabase.from('court_rules').select('id').eq('court_id', id);
-    const existingRuleIds = existingRules?.map(r => r.id) ?? [];
+    if (!existingRules) { return { error: "Could not fetch existing court rules." }; }
+    const existingRuleIds = existingRules.map(r => r.id);
     const newRuleIds = rules.map(r => r.id).filter(Boolean);
     const rulesToDelete = existingRuleIds.filter(ruleId => !newRuleIds.includes(ruleId as number));
     
     if (rulesToDelete.length > 0) {
-        await supabase.from('court_rules').delete().in('id', rulesToDelete);
+        const { error } = await supabase.from('court_rules').delete().in('id', rulesToDelete);
+        if (error) { console.error('Error deleting rules:', error); return { error: `Failed to delete old rules: ${error.message}` }; }
     }
     if(rules.length > 0) {
-      const rulesToUpsert = rules.map(r => ({ id: r.id, rule: r.rule, court_id: id }));
-      await supabase.from('court_rules').upsert(rulesToUpsert);
+      const rulesToUpsert = rules.map(({id: ruleId, rule}) => ({ id: ruleId, rule, court_id: id }));
+      const { error } = await supabase.from('court_rules').upsert(rulesToUpsert);
+      if (error) { console.error('Error upserting rules:', error); return { error: `Failed to save rules: ${error.message}` }; }
     }
     
     // --- 3. Sync Gallery (similar to rules) ---
     const { data: existingGallery } = await supabase.from('court_gallery').select('id').eq('court_id', id);
-    const existingGalleryIds = existingGallery?.map(g => g.id) ?? [];
+    if (!existingGallery) { return { error: "Could not fetch existing gallery." }; }
+    const existingGalleryIds = existingGallery.map(g => g.id);
     const newGalleryIds = gallery.map(g => g.id).filter(Boolean);
     const galleryToDelete = existingGalleryIds.filter(galleryId => !newGalleryIds.includes(galleryId as number));
     
     if(galleryToDelete.length > 0) {
-        await supabase.from('court_gallery').delete().in('id', galleryToDelete);
+        const { error } = await supabase.from('court_gallery').delete().in('id', galleryToDelete);
+        if (error) { console.error('Error deleting gallery images:', error); return { error: `Failed to delete old gallery images: ${error.message}` }; }
     }
     if(gallery.length > 0) {
-      const galleryToUpsert = gallery.map(g => ({ id: g.id, image_url: g.image_url, court_id: id }));
-      await supabase.from('court_gallery').upsert(galleryToUpsert);
+      const galleryToUpsert = gallery.map(({id: galleryId, image_url}) => ({ id: galleryId, image_url, court_id: id }));
+      const { error } = await supabase.from('court_gallery').upsert(galleryToUpsert);
+      if (error) { console.error('Error upserting gallery:', error); return { error: `Failed to save gallery: ${error.message}` }; }
     }
 
     // --- 4. Sync Contact ---
     const { data: existingContact } = await supabase.from('court_contacts').select('id').eq('court_id', id).maybeSingle();
-    
     const hasNewContactInfo = contact.phone || contact.email;
     
     if (hasNewContactInfo) {
         const contactData = { ...contact, id: existingContact?.id, court_id: id };
-        await supabase.from('court_contacts').upsert(contactData);
+        const { error } = await supabase.from('court_contacts').upsert(contactData);
+        if (error) { console.error('Error upserting contact:', error); return { error: `Failed to save contact info: ${error.message}` }; }
     } else if (existingContact) {
-      await supabase.from('court_contacts').delete().eq('id', existingContact.id);
+      const { error } = await supabase.from('court_contacts').delete().eq('id', existingContact.id);
+      if (error) { console.error('Error deleting contact:', error); return { error: `Failed to delete old contact info: ${error.message}` }; }
     }
 
     // --- 5. Sync Availability Blocks ---
     const { data: existingAvailability } = await supabase.from('availability_blocks').select('id').eq('court_id', id);
-    const existingAvailabilityIds = existingAvailability?.map(a => a.id) ?? [];
+    if (!existingAvailability) { return { error: "Could not fetch existing availability." }; }
+    const existingAvailabilityIds = existingAvailability.map(a => a.id);
     const newAvailabilityIds = availability.map(a => a.id).filter(Boolean);
     const availabilityToDelete = existingAvailabilityIds.filter(aId => !newAvailabilityIds.includes(aId as number));
 
     if (availabilityToDelete.length > 0) {
-        await supabase.from('availability_blocks').delete().in('id', availabilityToDelete);
+        const { error } = await supabase.from('availability_blocks').delete().in('id', availabilityToDelete);
+        if (error) { console.error('Error deleting availability:', error); return { error: `Failed to delete old availability blocks: ${error.message}` }; }
     }
     if(availability.length > 0) {
-      const availabilityToUpsert = availability.map(a => ({ id: a.id, court_id: id, date: a.date, start_time: a.start_time, end_time: a.end_time }));
-      await supabase.from('availability_blocks').upsert(availabilityToUpsert);
+      const availabilityToUpsert = availability.map(a => ({ id: a.id, court_id: id, date: a.date, start_time: a.start_time, end_time: a.end_time, reason: a.reason }));
+      const { error } = await supabase.from('availability_blocks').upsert(availabilityToUpsert);
+      if (error) { console.error('Error upserting availability:', error); return { error: `Failed to save availability: ${error.message}` }; }
     }
     
     // --- 6. Sync Recurring Unavailability ---
     const { data: existingUnavailability } = await supabase.from('recurring_unavailability').select('id').eq('court_id', id);
-    const existingUnavailabilityIds = existingUnavailability?.map(u => u.id) ?? [];
+    if (!existingUnavailability) { return { error: "Could not fetch existing recurring unavailability." }; }
+    const existingUnavailabilityIds = existingUnavailability.map(u => u.id);
     const newUnavailabilityIds = unavailability.map(u => u.id).filter(Boolean);
     const unavailabilityToDelete = existingUnavailabilityIds.filter(uId => !newUnavailabilityIds.includes(uId as number));
     
     if(unavailabilityToDelete.length > 0) {
-        await supabase.from('recurring_unavailability').delete().in('id', unavailabilityToDelete);
+        const { error } = await supabase.from('recurring_unavailability').delete().in('id', unavailabilityToDelete);
+        if (error) { console.error('Error deleting recurring unavailability:', error); return { error: `Failed to delete old recurring unavailability: ${error.message}` }; }
     }
     if(unavailability.length > 0) {
       const unavailabilityToUpsert = unavailability.map(u => ({ id: u.id, court_id: id, day_of_week: u.day_of_week, start_time: u.start_time, end_time: u.end_time, reason: u.reason, active: u.active ?? true }));
-      await supabase.from('recurring_unavailability').upsert(unavailabilityToUpsert);
+      const { error } = await supabase.from('recurring_unavailability').upsert(unavailabilityToUpsert);
+      if (error) { console.error('Error upserting recurring unavailability:', error); return { error: `Failed to save recurring unavailability: ${error.message}` }; }
     }
 
 

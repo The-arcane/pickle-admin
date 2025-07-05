@@ -91,7 +91,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     const handleRemoveImage = (index: number) => setGallery(gallery.filter((_, i) => i !== index));
 
     // For one-off unavailability (availability_blocks)
-    const handleAddAvailability = () => setAvailability([...availability, { date: null, start_time: null, end_time: null }]);
+    const handleAddAvailability = () => setAvailability([...availability, { date: null, start_time: null, end_time: null, reason: '' }]);
     const handleRemoveAvailability = (index: number) => setAvailability(availability.filter((_, i) => i !== index));
     const handleAvailabilityChange = (index: number, field: keyof AvailabilityBlock, value: any) => {
         const newAvailability = [...availability] as any[];
@@ -100,7 +100,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     };
 
     // For recurring unavailability
-    const handleAddUnavailability = () => setUnavailability([...unavailability, { day_of_week: 1, start_time: '12:00', end_time: '13:00', reason: '' }]);
+    const handleAddUnavailability = () => setUnavailability([...unavailability, { day_of_week: 1, start_time: '12:00', end_time: '13:00', reason: '', active: true }]);
     const handleRemoveUnavailability = (index: number) => setUnavailability(unavailability.filter((_, i) => i !== index));
     const handleUnavailabilityChange = (index: number, field: keyof RecurringUnavailability, value: string | number) => {
         const newUnavailability = [...unavailability];
@@ -173,7 +173,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                         <Label className="text-base font-medium">One-off Unavailability</Label>
                         <CardDescription>Block specific dates and times (e.g., for maintenance or special events). Leave times blank to block the entire day.</CardDescription>
                         {availability.map((block, index) => (
-                            <div key={index} className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 p-2 border rounded-md">
+                            <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_0.75fr_0.75fr_1fr_auto] items-center gap-2 p-2 border rounded-md">
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !block.date && "text-muted-foreground")}>
@@ -185,6 +185,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                 </Popover>
                                 <Input type="time" placeholder="Start (optional)" value={block.start_time ?? ''} onChange={(e) => handleAvailabilityChange(index, 'start_time', e.target.value || null)} />
                                 <Input type="time" placeholder="End (optional)" value={block.end_time ?? ''} onChange={(e) => handleAvailabilityChange(index, 'end_time', e.target.value || null)} />
+                                <Input placeholder="Reason (optional)" value={block.reason || ''} onChange={(e) => handleAvailabilityChange(index, 'reason', e.target.value)} />
                                 <Button type="button" variant="ghost" size="icon" className="justify-self-end" onClick={() => handleRemoveAvailability(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                             </div>
                         ))}
