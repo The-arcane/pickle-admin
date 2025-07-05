@@ -1,35 +1,47 @@
 import { createServer } from '@/lib/supabase/server';
 import { UsersClientPage } from './client';
 
-type User = {
-    id: number;
-    name: string;
-    email: string;
-    phone: string | null;
-    profile_image_url: string | null;
-    is_deleted: boolean;
-};
-
 export default async function UsersPage() {
   const supabase = createServer();
   
-  // As per the user's request, fetching users based on their organisation.
-  // This query fetches all users associated with `organisation_id = 1`
-  // via the `user_organisations` join table.
-  const { data: userOrgsData, error } = await supabase
+  // The user requested to fetch users based on a specific SQL query joining
+  // user_organisations with the user table for organisation_id = 1.
+  // To implement this robustly with the Supabase client, we'll do it in two steps:
+  // 1. Fetch all `user_id`s from the `user_organisations` junction table.
+  // 2. Fetch the details for those specific users from the `user` table.
+
+  // Step 1: Get user IDs from the junction table for organisation_id = 1
+  const { data: userOrgLinks, error: linksError } = await supabase
     .from('user_organisations')
-    .select('user:user_id(id, name, email, phone, profile_image_url, is_deleted)')
+    .select('user_id')
     .eq('organisation_id', 1);
 
-  if (error) {
-    console.error('Error fetching users:', error);
+  if (linksError) {
+    console.error('Error fetching user-organisation links:', linksError);
+    return <UsersClientPage users={[]} />; // Render page with no users on error
   }
   
-  const users = userOrgsData
-    ?.map(orgUser => {
-        const user = orgUser.user as User | null; // Cast to access properties
-        if (!user) return null;
+  const userIds = userOrgLinks.map(link => link.user_id);
 
+  if (!userIds || userIds.length === 0) {
+    // No users found for this organisation
+    return <UsersClientPage users={[]} />;
+  }
+
+  // Step 2: Fetch all users whose IDs are in the list we just retrieved
+  const { data: usersData, error: usersError } = await supabase
+    .from('user')
+    .select('id, name, email, phone, profile_image_url, is_deleted')
+    .in('id', userIds);
+
+  if (usersError) {
+    console.error('Error fetching users by ID:', usersError);
+    return <UsersClientPage users={[]} />;
+  }
+  
+  const users = usersData
+    ?.map(user => {
+        if (!user) return null;
         return {
             id: user.id,
             name: user.name,
@@ -39,7 +51,7 @@ export default async function UsersPage() {
             avatar: user.profile_image_url,
         }
     })
-    .filter(Boolean) // Remove nulls from the array
+    .filter(Boolean) as any[] // Remove nulls and satisfy type
     || [];
 
   return <UsersClientPage users={users} />;
