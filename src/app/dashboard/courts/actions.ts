@@ -2,8 +2,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import type { CourtRule, CourtGalleryImage, CourtContact } from './[id]/types';
+import type { CourtRule, CourtGalleryImage, CourtContact, AvailabilityBlock, RecurringUnavailability } from './[id]/types';
 
 function getCourtDataFromFormData(formData: FormData) {
     return {
@@ -25,6 +24,8 @@ function getCourtDataFromFormData(formData: FormData) {
         cover_image: formData.get('cover_image') as string,
         feature: formData.get('feature') as string,
         badge_type: formData.get('badge_type') as string,
+        c_start_time: formData.get('c_start_time') || null,
+        c_end_time: formData.get('c_end_time') || null,
     };
 }
 
@@ -38,8 +39,8 @@ export async function addCourt(formData: FormData) {
     if (!courtData.name || !courtData.organisation_id || !courtData.sport_id) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
     }
-    if (courtData.lat === null || courtData.lng === null) {
-      return { error: 'Latitude and Longitude are required.' };
+    if (courtData.lat === null || courtData.lng === null || isNaN(courtData.lat) || isNaN(courtData.lng)) {
+      return { error: 'Valid Latitude and Longitude are required.' };
     }
 
     // --- 1. Insert the main court record ---
@@ -60,6 +61,9 @@ export async function addCourt(formData: FormData) {
     const rules = JSON.parse(formData.get('rules') as string) as Partial<CourtRule>[];
     const gallery = JSON.parse(formData.get('gallery') as string) as Partial<CourtGalleryImage>[];
     const contact = JSON.parse(formData.get('contact') as string) as Partial<CourtContact>;
+    const availability = JSON.parse(formData.get('availability') as string) as Partial<AvailabilityBlock>[];
+    const unavailability = JSON.parse(formData.get('unavailability') as string) as Partial<RecurringUnavailability>[];
+
 
     if (rules.length > 0) {
       const rulesToInsert = rules.map(r => ({ rule: r.rule, court_id: courtId }));
@@ -75,6 +79,17 @@ export async function addCourt(formData: FormData) {
       const { error } = await supabase.from('court_contacts').insert({ ...contact, court_id: courtId });
       if(error) { console.error('Error adding contact:', error); }
     }
+    if (availability.length > 0) {
+      const availabilityToInsert = availability.map(a => ({ ...a, court_id: courtId }));
+      const { error } = await supabase.from('availability_blocks').insert(availabilityToInsert);
+      if(error) { console.error('Error adding availability:', error); }
+    }
+    if (unavailability.length > 0) {
+      const unavailabilityToInsert = unavailability.map(u => ({ ...u, court_id: courtId }));
+      const { error } = await supabase.from('recurring_unavailability').insert(unavailabilityToInsert);
+      if(error) { console.error('Error adding unavailability:', error); }
+    }
+
 
   } catch (e: any) {
     console.error('Server action error in addCourt:', e);
@@ -95,6 +110,9 @@ export async function updateCourt(formData: FormData) {
     const rules = JSON.parse(formData.get('rules') as string) as Partial<CourtRule>[];
     const gallery = JSON.parse(formData.get('gallery') as string) as Partial<CourtGalleryImage>[];
     const contact = JSON.parse(formData.get('contact') as string) as Partial<CourtContact>;
+    const availability = JSON.parse(formData.get('availability') as string) as Partial<AvailabilityBlock>[];
+    const unavailability = JSON.parse(formData.get('unavailability') as string) as Partial<RecurringUnavailability>[];
+
 
     if (!id) return { error: 'Court ID is missing.' };
     if (!courtData.name || !courtData.organisation_id || !courtData.sport_id) {
@@ -109,7 +127,7 @@ export async function updateCourt(formData: FormData) {
     const { data: existingRules } = await supabase.from('court_rules').select('id').eq('court_id', id);
     const existingRuleIds = existingRules?.map(r => r.id) ?? [];
     const newRuleIds = rules.map(r => r.id).filter(Boolean);
-    const rulesToDelete = existingRuleIds.filter(ruleId => !newRuleIds.includes(ruleId));
+    const rulesToDelete = existingRuleIds.filter(ruleId => !newRuleIds.includes(ruleId as number));
     
     if (rulesToDelete.length > 0) {
         await supabase.from('court_rules').delete().in('id', rulesToDelete);
@@ -123,7 +141,7 @@ export async function updateCourt(formData: FormData) {
     const { data: existingGallery } = await supabase.from('court_gallery').select('id').eq('court_id', id);
     const existingGalleryIds = existingGallery?.map(g => g.id) ?? [];
     const newGalleryIds = gallery.map(g => g.id).filter(Boolean);
-    const galleryToDelete = existingGalleryIds.filter(galleryId => !newGalleryIds.includes(galleryId));
+    const galleryToDelete = existingGalleryIds.filter(galleryId => !newGalleryIds.includes(galleryId as number));
     
     if(galleryToDelete.length > 0) {
         await supabase.from('court_gallery').delete().in('id', galleryToDelete);
@@ -142,9 +160,37 @@ export async function updateCourt(formData: FormData) {
         const contactData = { ...contact, id: existingContact?.id, court_id: id };
         await supabase.from('court_contacts').upsert(contactData);
     } else if (existingContact) {
-      // If phone and email are empty, but a contact used to exist, delete it.
       await supabase.from('court_contacts').delete().eq('id', existingContact.id);
     }
+
+    // --- 5. Sync Availability ---
+    const { data: existingAvailability } = await supabase.from('availability_blocks').select('id').eq('court_id', id);
+    const existingAvailabilityIds = existingAvailability?.map(a => a.id) ?? [];
+    const newAvailabilityIds = availability.map(a => a.id).filter(Boolean);
+    const availabilityToDelete = existingAvailabilityIds.filter(aId => !newAvailabilityIds.includes(aId as number));
+
+    if (availabilityToDelete.length > 0) {
+        await supabase.from('availability_blocks').delete().in('id', availabilityToDelete);
+    }
+    if(availability.length > 0) {
+      const availabilityToUpsert = availability.map(a => ({ id: a.id, court_id: id, day_of_week: a.day_of_week, start_time: a.start_time, end_time: a.end_time }));
+      await supabase.from('availability_blocks').upsert(availabilityToUpsert);
+    }
+    
+    // --- 6. Sync Recurring Unavailability ---
+    const { data: existingUnavailability } = await supabase.from('recurring_unavailability').select('id').eq('court_id', id);
+    const existingUnavailabilityIds = existingUnavailability?.map(u => u.id) ?? [];
+    const newUnavailabilityIds = unavailability.map(u => u.id).filter(Boolean);
+    const unavailabilityToDelete = existingUnavailabilityIds.filter(uId => !newUnavailabilityIds.includes(uId as number));
+    
+    if(unavailabilityToDelete.length > 0) {
+        await supabase.from('recurring_unavailability').delete().in('id', unavailabilityToDelete);
+    }
+    if(unavailability.length > 0) {
+      const unavailabilityToUpsert = unavailability.map(u => ({ id: u.id, court_id: id, day_of_week: u.day_of_week, start_time: u.start_time, end_time: u.end_time, reason: u.reason }));
+      await supabase.from('recurring_unavailability').upsert(unavailabilityToUpsert);
+    }
+
 
   } catch (e: any) {
     console.error('Server action error in updateCourt:', e);

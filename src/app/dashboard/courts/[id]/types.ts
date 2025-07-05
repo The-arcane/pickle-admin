@@ -31,6 +31,23 @@ export type CourtContact = {
     closed_days: string[] | null;
 };
 
+export type AvailabilityBlock = {
+    id: number;
+    court_id: number;
+    day_of_week: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+    start_time: string;
+    end_time: string;
+};
+
+export type RecurringUnavailability = {
+    id: number;
+    court_id: number;
+    day_of_week: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+    start_time: string;
+    end_time: string;
+    reason: string | null;
+};
+
 
 // Based on the provided schema for the 'courts' table and its relations
 export type Court = {
@@ -56,6 +73,8 @@ export type Court = {
   is_equipment_available: boolean | null;
   surface: string | null;
   has_floodlights: boolean | null;
+  c_start_time: string | null;
+  c_end_time: string | null;
   
   // Nested relations
   organisations: Organisation | null;
@@ -63,4 +82,6 @@ export type Court = {
   court_rules: CourtRule[];
   court_gallery: CourtGalleryImage[];
   court_contacts: CourtContact[];
+  availability_blocks: AvailabilityBlock[];
+  recurring_unavailability: RecurringUnavailability[];
 };

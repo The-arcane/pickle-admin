@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { addCourt, updateCourt } from '../actions';
-import type { Court, Organisation, Sport, CourtRule, CourtGalleryImage, CourtContact } from './types';
+import type { Court, Organisation, Sport, CourtRule, CourtGalleryImage, CourtContact, AvailabilityBlock, RecurringUnavailability } from './types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,8 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     const [gallery, setGallery] = useState<Partial<CourtGalleryImage>[]>(court?.court_gallery ?? []);
     const [contact, setContact] = useState<Partial<CourtContact>>(court?.court_contacts?.[0] ?? {});
     const [newImageUrl, setNewImageUrl] = useState('');
+    const [availability, setAvailability] = useState<Partial<AvailabilityBlock>[]>(court?.availability_blocks ?? []);
+    const [unavailability, setUnavailability] = useState<Partial<RecurringUnavailability>[]>(court?.recurring_unavailability ?? []);
 
     const handleFormAction = async (formData: FormData) => {
         formData.append('is_equipment_available', String(equipmentRental));
@@ -38,6 +40,9 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         formData.append('rules', JSON.stringify(rules.filter(r => r.rule && r.rule.trim() !== '')));
         formData.append('gallery', JSON.stringify(gallery));
         formData.append('contact', JSON.stringify(contact));
+        formData.append('availability', JSON.stringify(availability.filter(a => a.day_of_week && a.start_time && a.end_time)));
+        formData.append('unavailability', JSON.stringify(unavailability.filter(u => u.day_of_week && u.start_time && u.end_time)));
+
 
         const action = isAdding ? addCourt : updateCourt;
         if (!isAdding && court) {
@@ -51,6 +56,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         } else {
             toast({ title: "Success", description: `Court ${isAdding ? 'added' : 'updated'} successfully.` });
             router.push('/dashboard/courts');
+            router.refresh();
         }
     };
     
@@ -69,6 +75,25 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         }
     };
     const handleRemoveImage = (index: number) => setGallery(gallery.filter((_, i) => i !== index));
+
+    const handleAddAvailability = () => setAvailability([...availability, { day_of_week: 'Monday', start_time: '09:00', end_time: '17:00' }]);
+    const handleRemoveAvailability = (index: number) => setAvailability(availability.filter((_, i) => i !== index));
+    const handleAvailabilityChange = (index: number, field: keyof AvailabilityBlock, value: string) => {
+        const newAvailability = [...availability];
+        (newAvailability[index] as any)[field] = value;
+        setAvailability(newAvailability);
+    };
+
+    const handleAddUnavailability = () => setUnavailability([...unavailability, { day_of_week: 'Monday', start_time: '12:00', end_time: '13:00', reason: '' }]);
+    const handleRemoveUnavailability = (index: number) => setUnavailability(unavailability.filter((_, i) => i !== index));
+    const handleUnavailabilityChange = (index: number, field: keyof RecurringUnavailability, value: string) => {
+        const newUnavailability = [...unavailability];
+        (newUnavailability[index] as any)[field] = value;
+        setUnavailability(newUnavailability);
+    };
+
+    const daysOfWeek: AvailabilityBlock['day_of_week'][] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 
     return (
         <form action={handleFormAction} className="space-y-8 max-w-4xl mx-auto">
@@ -109,6 +134,59 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="flex items-center justify-between rounded-lg border p-4"><Label htmlFor="has_floodlights" className="text-base font-medium flex items-center gap-2"><Lightbulb className="h-4 w-4"/> Floodlights Available</Label><Switch id="has_floodlights" name="has_floodlights" checked={floodlights} onCheckedChange={setFloodlights}/></div>
                         <div className="flex items-center justify-between rounded-lg border p-4"><Label htmlFor="is_equipment_available" className="text-base font-medium">Equipment Rental Available</Label><Switch id="is_equipment_available" name="is_equipment_available" checked={equipmentRental} onCheckedChange={setEquipmentRental}/></div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Availability Section */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Court Availability</CardTitle>
+                    <CardDescription>Set the general business hours and weekly availability for this court.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="c_start_time">Business Hours Start</Label>
+                            <Input id="c_start_time" name="c_start_time" type="time" defaultValue={court?.c_start_time || ''} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="c_end_time">Business Hours End</Label>
+                            <Input id="c_end_time" name="c_end_time" type="time" defaultValue={court?.c_end_time || ''} />
+                        </div>
+                    </div>
+                    <Separator />
+                    <div className="space-y-4">
+                        <Label className="text-base font-medium">Weekly Availability Blocks</Label>
+                        {availability.map((block, index) => (
+                            <div key={index} className="grid grid-cols-1 md:grid-cols-4 items-center gap-2 p-2 border rounded-md">
+                                <Select value={block.day_of_week} onValueChange={(val) => handleAvailabilityChange(index, 'day_of_week', val as any)}>
+                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                    <SelectContent>{daysOfWeek.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <Input type="time" value={block.start_time} onChange={(e) => handleAvailabilityChange(index, 'start_time', e.target.value)} />
+                                <Input type="time" value={block.end_time} onChange={(e) => handleAvailabilityChange(index, 'end_time', e.target.value)} />
+                                <Button type="button" variant="ghost" size="icon" className="justify-self-end" onClick={() => handleRemoveAvailability(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                            </div>
+                        ))}
+                        <Button type="button" variant="outline" onClick={handleAddAvailability}><Plus className="mr-2 h-4 w-4" /> Add Availability</Button>
+                    </div>
+                    <Separator />
+                    <div className="space-y-4">
+                        <Label className="text-base font-medium">Recurring Unavailability</Label>
+                         {unavailability.map((block, index) => (
+                            <div key={index} className="grid grid-cols-1 md:grid-cols-5 items-center gap-2 p-2 border rounded-md">
+                                <Select value={block.day_of_week} onValueChange={(val) => handleUnavailabilityChange(index, 'day_of_week', val as any)}>
+                                     <SelectTrigger><SelectValue/></SelectTrigger>
+                                    <SelectContent>{daysOfWeek.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <Input type="time" value={block.start_time} onChange={(e) => handleUnavailabilityChange(index, 'start_time', e.target.value)} />
+                                <Input type="time" value={block.end_time} onChange={(e) => handleUnavailabilityChange(index, 'end_time', e.target.value)} />
+                                <Input className="md:col-span-2" placeholder="Reason (e.g., Maintenance)" value={block.reason || ''} onChange={(e) => handleUnavailabilityChange(index, 'reason', e.target.value)} />
+                                <Button type="button" variant="ghost" size="icon" className="md:col-start-6 justify-self-end" onClick={() => handleRemoveUnavailability(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                            </div>
+                        ))}
+                        <Button type="button" variant="outline" onClick={handleAddUnavailability}><Plus className="mr-2 h-4 w-4" /> Add Unavailability</Button>
                     </div>
                 </CardContent>
             </Card>
@@ -172,7 +250,6 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                         <div className="space-y-2"><Label htmlFor="contact_phone">Phone Number</Label><Input id="contact_phone" value={contact.phone || ''} onChange={(e) => setContact({...contact, phone: e.target.value})}/></div>
                         <div className="space-y-2"><Label htmlFor="contact_email">Email Address</Label><Input id="contact_email" type="email" value={contact.email || ''} onChange={(e) => setContact({...contact, email: e.target.value})}/></div>
                     </div>
-                    {/* A more complex UI would be needed for editing closed_days array */}
                 </CardContent>
             </Card>
 
