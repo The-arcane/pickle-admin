@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { login } from './actions';
 
+export const dynamic = 'force-dynamic';
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
