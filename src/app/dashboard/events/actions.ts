@@ -4,6 +4,34 @@ import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { SubEvent, GalleryImage, WhatToBringItem, EventCategory, EventTag } from './[id]/types';
 
+// Helper to upload a file to Supabase Storage for events
+async function handleEventImageUpload(supabase: any, file: File | null, eventId: string): Promise<string | null> {
+    if (!file || file.size === 0) {
+        return null;
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `cover-${Date.now()}.${fileExt}`;
+    // Store images in a public folder, organized by event ID
+    const filePath = `public/${eventId}/${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage
+        .from('events') // The new bucket name
+        .upload(filePath, file);
+
+    if (uploadError) {
+        console.error(`Error uploading event cover image:`, uploadError);
+        throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
+    }
+
+    const { data: publicUrlData } = supabase.storage
+        .from('events')
+        .getPublicUrl(filePath);
+    
+    return publicUrlData.publicUrl;
+}
+
+
 function getEventDataFromFormData(formData: FormData) {
     const isFree = formData.get('is_free') === 'true';
     const startTime = formData.get('start_time') as string;
@@ -33,7 +61,6 @@ function getEventDataFromFormData(formData: FormData) {
         currency: isFree ? null : formData.get('currency') as string,
         amount: isFree ? null : Number(formData.get('amount')),
         pricing_notes: formData.get('pricing_notes') as string,
-        cover_image: formData.get('cover_image') as string,
         video_url: formData.get('video_url') as string,
         max_total_capacity: Number(formData.get('max_total_capacity')),
     };
@@ -45,7 +72,7 @@ export async function addEvent(formData: FormData) {
   try {
     const eventData = getEventDataFromFormData(formData);
     
-    // --- 1. Insert the main event record ---
+    // --- 1. Insert the main event record (without image first) ---
     const { data: newEvent, error: eventError } = await supabase
       .from('events')
       .insert(eventData)
@@ -58,8 +85,27 @@ export async function addEvent(formData: FormData) {
     }
     
     const eventId = newEvent.id;
+    const eventUpdateData: { cover_image?: string } = {};
 
-    // --- 2. Handle related tables ---
+    // --- 2. Upload image and prepare update payload ---
+    const coverImageFile = formData.get('cover_image_file') as File | null;
+    const coverImageUrl = await handleEventImageUpload(supabase, coverImageFile, eventId.toString());
+    if (coverImageUrl) eventUpdateData.cover_image = coverImageUrl;
+    
+    // --- 3. Update event with image URL if it was uploaded ---
+    if (Object.keys(eventUpdateData).length > 0) {
+        const { error: imageUpdateError } = await supabase
+            .from('events')
+            .update(eventUpdateData)
+            .eq('id', eventId);
+        if (imageUpdateError) {
+            console.error('Error updating event with image:', imageUpdateError);
+            return { error: `Event added, but failed to save cover image: ${imageUpdateError.message}` };
+        }
+    }
+
+
+    // --- 4. Handle related tables ---
     const subEvents = JSON.parse(formData.get('sub_events') as string) as Partial<SubEvent>[];
     const gallery = JSON.parse(formData.get('gallery') as string) as Partial<GalleryImage>[];
     const whatToBring = JSON.parse(formData.get('what_to_bring') as string) as Partial<WhatToBringItem>[];
@@ -104,10 +150,16 @@ export async function updateEvent(formData: FormData) {
   try {
     if (!id) return { error: 'Event ID is missing.' };
     
-    const eventData = getEventDataFromFormData(formData);
+    const eventUpdateData = getEventDataFromFormData(formData) as any;
+    
+    // --- Handle Image Upload ---
+    const coverImageFile = formData.get('cover_image_file') as File | null;
+    const coverImageUrl = await handleEventImageUpload(supabase, coverImageFile, id.toString());
+    if (coverImageUrl) eventUpdateData.cover_image = coverImageUrl;
+
 
     // --- 1. Update main event table ---
-    const { error: eventError } = await supabase.from('events').update(eventData).eq('id', id);
+    const { error: eventError } = await supabase.from('events').update(eventUpdateData).eq('id', id);
     if (eventError) { console.error('Error updating event:', eventError); return { error: `Failed to update event. ${eventError.message}` };}
 
     const subEvents = JSON.parse(formData.get('sub_events') as string) as Partial<SubEvent>[];
@@ -125,7 +177,7 @@ export async function updateEvent(formData: FormData) {
         if (error) { return { error: `Failed to delete old sub-events: ${error.message}` }; }
     }
     if(subEvents.length > 0) {
-        const mainEventDateString = eventData.start_time ? new Date(eventData.start_time).toISOString().split('T')[0] : null;
+        const mainEventDateString = eventUpdateData.start_time ? new Date(eventUpdateData.start_time).toISOString().split('T')[0] : null;
         const createTimestamp = (timeStr: string | null | undefined) => !timeStr || !mainEventDateString ? null : new Date(`${mainEventDateString}T${timeStr}:00.000Z`).toISOString();
         
         const toUpsert = subEvents.map(item => {
