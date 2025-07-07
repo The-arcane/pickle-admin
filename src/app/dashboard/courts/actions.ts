@@ -281,7 +281,7 @@ async function handleGalleryImageUpload(supabase: any, file: File, courtId: stri
     const filePath = `public/${courtId}/gallery/${fileName}`;
     
     const { error: uploadError } = await supabase.storage
-        .from('court-gallery') // Use court-gallery bucket
+        .from('courts') // Use courts bucket for gallery
         .upload(filePath, file);
 
     if (uploadError) {
@@ -290,7 +290,7 @@ async function handleGalleryImageUpload(supabase: any, file: File, courtId: stri
     }
 
     const { data: publicUrlData } = supabase.storage
-        .from('court-gallery')
+        .from('courts')
         .getPublicUrl(filePath);
     
     return publicUrlData.publicUrl;
@@ -351,9 +351,9 @@ export async function deleteCourtGalleryImage(formData: FormData) {
     try {
         // 1. Delete from storage
         const url = new URL(imageUrl);
-        const filePath = decodeURIComponent(url.pathname.split('/court-gallery/')[1]);
+        const filePath = decodeURIComponent(url.pathname.split('/courts/')[1]);
         
-        const { error: storageError } = await supabase.storage.from('court-gallery').remove([filePath]);
+        const { error: storageError } = await supabase.storage.from('courts').remove([filePath]);
         if (storageError) {
             console.error("Error deleting from storage:", storageError);
             return { error: `Failed to delete image from storage: ${storageError.message}`};
