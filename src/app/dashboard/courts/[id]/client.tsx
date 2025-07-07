@@ -75,6 +75,10 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     
     const [imageInPreview, setImageInPreview] = useState<string | null>(null);
 
+    const galleryFormRef = useRef<HTMLFormElement>(null);
+    const [galleryFiles, setGalleryFiles] = useState<FileList | null>(null);
+
+
     const navSections = [
         { id: 'court-info', label: 'Court Info' },
         { id: 'court-availability', label: 'Availability' },
@@ -129,6 +133,17 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
             toast({ title: "Success", description: `Court ${isAdding ? 'added' : 'updated'} successfully.` });
             router.push('/dashboard/courts');
             router.refresh();
+        }
+    };
+
+    const handleGallerySubmit = async (formData: FormData) => {
+        const result = await addCourtGalleryImages(formData);
+        if (result?.error) {
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        } else {
+            toast({ title: "Success", description: "Gallery images uploaded." });
+            setGalleryFiles(null);
+            galleryFormRef.current?.reset();
         }
     };
     
@@ -425,14 +440,31 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                             <CardDescription>Upload multiple images for the court gallery. These will be visible to users.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <form action={addCourtGalleryImages} className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center">
+                            <form ref={galleryFormRef} action={handleGallerySubmit} className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center">
                                  <input type="hidden" name="court_id" value={court.id} />
                                  <Label htmlFor="gallery-images" className="mb-4 cursor-pointer">
                                     <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
                                     <span className="mt-2 block font-semibold text-primary">Click to upload or drag & drop</span>
                                     <span className="mt-1 block text-sm text-muted-foreground">PNG, JPG, GIF up to 10MB</span>
                                  </Label>
-                                 <Input id="gallery-images" name="images" type="file" multiple className="sr-only" />
+                                 <Input
+                                    id="gallery-images"
+                                    name="images"
+                                    type="file"
+                                    multiple
+                                    className="sr-only"
+                                    onChange={(e) => setGalleryFiles(e.target.files)}
+                                 />
+                                {galleryFiles && galleryFiles.length > 0 && (
+                                    <div className="my-4 w-full max-w-md text-left">
+                                        <p className="font-medium text-sm mb-2">Selected files ({galleryFiles.length}):</p>
+                                        <div className="space-y-1 border rounded-md p-2 max-h-32 overflow-y-auto">
+                                            {Array.from(galleryFiles).map((file, index) => (
+                                                <p key={index} className="text-xs text-muted-foreground truncate">{file.name}</p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                                  <GalleryUploadButton />
                             </form>
                             
