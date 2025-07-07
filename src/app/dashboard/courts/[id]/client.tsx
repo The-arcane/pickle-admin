@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -20,6 +20,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { uploadImage } from '@/lib/upload-images'; 
+
+
 
 const daysOfWeek = [
     { value: 1, label: 'Monday' },
@@ -45,11 +48,16 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     const [gallery, setGallery] = useState<Partial<CourtGalleryImage>[]>(court?.court_gallery ?? []);
     const [contact, setContact] = useState<Partial<CourtContact>>(court?.court_contacts?.[0] ?? {});
     const [newImageUrl, setNewImageUrl] = useState('');
+    const [mainImageFile, setMainImageFile] = useState<File | null>(null);
+    const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+    const [mainImagePreview, setMainImagePreview] = useState<string | null>(court?.image || null);
+    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(court?.cover_image || null);
+    const mainImageRef = useRef<HTMLInputElement>(null);
+    const coverImageRef = useRef<HTMLInputElement>(null);
     const [availability, setAvailability] = useState<Partial<AvailabilityBlock>[]>(court?.availability_blocks ?? []);
-    const [unavailability, setUnavailability] = useState<Partial<RecurringUnavailability>[]>(court?.recurring_unavailability ?? []);
-    
+    const [unavailability, setUnavailability] = useState<Partial<RecurringUnavailability>[]>(court?.recurring_unavailability ?? []);  
     const [activeSection, setActiveSection] = useState('court-info');
-
+    
     const navSections = [
         { id: 'court-info', label: 'Court Info' },
         { id: 'court-availability', label: 'Availability' },
@@ -92,6 +100,20 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         formData.append('availability', JSON.stringify(availability.filter(a => a.date)));
         formData.append('unavailability', JSON.stringify(unavailability.filter(u => u.day_of_week !== undefined && u.start_time && u.end_time)));
 
+        try {
+            if (mainImageFile) {
+              const mainImageUrl = await uploadImage(mainImageFile, 'main-images');
+              formData.append('image', mainImageUrl);
+            }
+          
+            if (coverImageFile) {
+              const coverImageUrl = await uploadImage(coverImageFile, 'cover-images');
+              formData.append('cover_image', coverImageUrl);
+            }
+          } catch (err: any) {
+            toast({ variant: 'destructive', title: 'Image Upload Failed', description: err.message });
+            return;
+          }
 
         const action = isAdding ? addCourt : updateCourt;
         if (!isAdding && court) {
@@ -238,7 +260,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                 <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_0.75fr_0.75fr_1fr_auto] items-center gap-2 p-2 border rounded-md">
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !block.date && "text-muted-foreground")}>
+                                            <Button type="button" variant="outline" className={cn("w-full justify-start text-left font-normal", !block.date && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                 {block.date ? format(new Date(block.date), "PPP") : <span>Pick a date</span>}
                                             </Button>
@@ -275,12 +297,77 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
 
                 {/* Images & Pricing Section */}
                 <Card id="images-pricing" className="scroll-mt-24">
-                    <CardHeader><CardTitle>Images &amp; Pricing</CardTitle><CardDescription>Manage court images, pricing, and other metadata.</CardDescription></CardHeader>
+                    <CardHeader>
+                        <CardTitle>Images &amp; Pricing</CardTitle>
+                        <CardDescription>Manage court images, pricing, and other metadata.</CardDescription>
+                    </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2"><Label htmlFor="image">Main Image URL</Label><Input id="image" name="image" defaultValue={court?.image || ''} placeholder="URL for the court's main image" /></div>
-                            <div className="space-y-2"><Label htmlFor="cover_image">Cover Image URL</Label><Input id="cover_image" name="cover_image" defaultValue={court?.cover_image || ''} placeholder="URL for the court's cover image" /></div>
+                            {/* Main Image */}
+                            <div className="space-y-2">
+                                <Label>Main Image</Label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    ref={mainImageRef}
+                                    name="main_image"
+                                    className="hidden"
+                                    onChange={e => {
+                                        const f = e.target.files?.[0];
+                                        if (f) {
+                                            setMainImageFile(f);
+                                            setMainImagePreview(URL.createObjectURL(f));
+                                        }
+                                    }}
+                                />
+                                <Button type="button" onClick={() => mainImageRef.current?.click()}>
+                                    <ImagePlus className="mr-2 h-4 w-4" /> Upload Main Image
+                                </Button>
+                                {mainImagePreview && (
+                                    <div className="mt-3 relative aspect-video w-full max-w-sm">
+                                        <Image
+                                            src={mainImagePreview}
+                                            alt="Main Court Preview"
+                                            fill
+                                            className="rounded-md object-cover"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Cover Image */}
+                            <div className="space-y-2">
+                                <Label>Cover Image</Label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    ref={coverImageRef}
+                                    name="cover_image"
+                                    className="hidden"
+                                    onChange={e => {
+                                        const f = e.target.files?.[0];
+                                        if (f) {
+                                            setCoverImageFile(f);
+                                            setCoverImagePreview(URL.createObjectURL(f));
+                                        }
+                                    }}
+                                />
+                                <Button type="button" onClick={() => coverImageRef.current?.click()}>
+                                    <ImagePlus className="mr-2 h-4 w-4" /> Upload Cover Image
+                                </Button>
+                                {coverImagePreview && (
+                                    <div className="mt-3 relative aspect-video w-full max-w-sm">
+                                        <Image
+                                            src={coverImagePreview}
+                                            alt="Cover Court Preview"
+                                            fill
+                                            className="rounded-md object-cover"
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2"><Label htmlFor="price">Base Price (per hour)</Label><div className="flex items-center gap-2"><span className="text-lg font-semibold">₹</span><Input id="price" name="price" type="number" defaultValue={court?.price ?? undefined} className="w-32" /></div></div>
                             <div className="space-y-2"><Label htmlFor="discount">Discount (%)</Label><div className="flex items-center gap-2"><Input id="discount" name="discount" type="number" defaultValue={court?.discount ?? undefined} placeholder="e.g. 10" className="w-24" /><span className="text-muted-foreground">%</span></div></div>
@@ -288,7 +375,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                         <div className="space-y-2"><Label htmlFor="badge_type">Badge Text</Label><Input id="badge_type" name="badge_type" defaultValue={court?.badge_type || ''} placeholder="e.g., 'New', 'Popular', 'Featured'" /></div>
                     </CardContent>
                 </Card>
-                
+
                 {/* Gallery Section */}
                 <Card id="court-gallery" className="scroll-mt-24">
                     <CardHeader><CardTitle>Court Gallery</CardTitle><CardDescription>Add or remove images from the court's gallery.</CardDescription></CardHeader>
@@ -296,7 +383,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {gallery.map((img, index) => (
                                 <div key={index} className="relative group aspect-video">
-                                    <Image src={img.image_url || 'https://placehold.co/300x200.png'} alt={`Court image ${index + 1}`} layout="fill" className="rounded-md object-cover"/>
+                                    <Image src={img.image_url || 'https://placehold.co/300x200.png'} alt={`Court image ${index + 1}`} fill className="rounded-md object-cover"/>
                                     <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveImage(index)}><X className="h-4 w-4"/></Button>
                                 </div>
                             ))}
