@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const daysOfWeek = [
     { value: 1, label: 'Monday' },
@@ -53,6 +54,8 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     const [unavailability, setUnavailability] = useState<Partial<RecurringUnavailability>[]>(court?.recurring_unavailability ?? []);  
     const [activeSection, setActiveSection] = useState('court-info');
     
+    const [imageInPreview, setImageInPreview] = useState<string | null>(null);
+
     const navSections = [
         { id: 'court-info', label: 'Court Info' },
         { id: 'court-availability', label: 'Availability' },
@@ -293,17 +296,19 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     <ImagePlus className="mr-2 h-4 w-4" /> Upload Main Image
                                 </Button>
                                 {mainImagePreview && (
-                                    <div className="mt-3 relative w-full max-w-sm">
+                                    <button
+                                        type="button"
+                                        className="mt-3 block w-full max-w-sm rounded-md overflow-hidden cursor-pointer"
+                                        onClick={() => setImageInPreview(mainImagePreview)}
+                                    >
                                         <Image
                                             src={mainImagePreview}
                                             alt="Main Court Preview"
-                                            width={0}
-                                            height={0}
-                                            sizes="100vw"
-                                            style={{ width: '100%', height: 'auto' }}
-                                            className="rounded-md"
+                                            width={600}
+                                            height={400}
+                                            className="object-cover aspect-video w-full h-auto"
                                         />
-                                    </div>
+                                    </button>
                                 )}
                             </div>
 
@@ -327,17 +332,19 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     <ImagePlus className="mr-2 h-4 w-4" /> Upload Cover Image
                                 </Button>
                                 {coverImagePreview && (
-                                    <div className="mt-3 relative w-full max-w-sm">
+                                     <button
+                                        type="button"
+                                        className="mt-3 block w-full max-w-sm rounded-md overflow-hidden cursor-pointer"
+                                        onClick={() => setImageInPreview(coverImagePreview)}
+                                    >
                                         <Image
                                             src={coverImagePreview}
                                             alt="Cover Court Preview"
-                                            width={0}
-                                            height={0}
-                                            sizes="100vw"
-                                            style={{ width: '100%', height: 'auto' }}
-                                            className="rounded-md"
+                                            width={600}
+                                            height={400}
+                                            className="object-cover aspect-video w-full h-auto"
                                         />
-                                    </div>
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -384,6 +391,25 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                     <Button type="submit">Save Changes</Button>
                 </div>
             </form>
+            
+            <Dialog open={!!imageInPreview} onOpenChange={(isOpen) => !isOpen && setImageInPreview(null)}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Image Preview</DialogTitle>
+                    </DialogHeader>
+                    {imageInPreview && (
+                        <Image
+                            src={imageInPreview}
+                            alt="Full preview"
+                            width={1200}
+                            height={800}
+                            sizes="100vw"
+                            style={{ width: '100%', height: 'auto' }}
+                            className="rounded-md mx-auto"
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
