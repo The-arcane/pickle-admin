@@ -1,3 +1,4 @@
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
@@ -55,7 +56,34 @@ export async function middleware(request: NextRequest) {
   );
 
   // refreshing the session cookie
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+  
+  if (user) {
+      const { data: userProfile } = await supabase
+          .from('user')
+          .select('user_type')
+          .eq('user_uuid', user.id)
+          .single();
+
+      const userType = userProfile?.user_type;
+
+      // If user is trying to access admin dashboard, but is not an admin (type 2)
+      if (pathname.startsWith('/dashboard') && userType !== 2) {
+          return NextResponse.redirect(new URL('/login?error=Access%20Denied', request.url));
+      }
+
+      // If user is trying to access employee dashboard, but is not an employee (type 4)
+      if (pathname.startsWith('/employee') && userType !== 4) {
+          return NextResponse.redirect(new URL('/login?error=Access%20Denied&type=employee', request.url));
+      }
+  } else {
+      // If no user, redirect to login page, but allow access to login/signup pages
+      if (pathname.startsWith('/dashboard') || pathname.startsWith('/employee')) {
+          return NextResponse.redirect(new URL('/login', request.url));
+      }
+  }
 
   return response;
 }
