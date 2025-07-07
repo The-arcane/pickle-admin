@@ -1,5 +1,5 @@
 
-import { EventsClientPage } from '@/app/dashboard/events/client';
+import { EmployeeEventsClientPage } from './client';
 import { createServer } from '@/lib/supabase/server';
 import { format } from 'date-fns';
 
@@ -26,5 +26,5 @@ export default async function EmployeeEventsPage() {
     status: new Date(event.end_time) < new Date() ? 'Completed' : 'Upcoming',
   })) || [];
 
-  return <EventsClientPage events={events} />;
+  return <EmployeeEventsClientPage events={events} />;
 }
