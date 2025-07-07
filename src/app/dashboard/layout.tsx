@@ -79,7 +79,7 @@ export default async function DashboardLayout({
           </div>
 
           <div className="ml-auto">
-            <UserNav user={userProfile} />
+            <UserNav user={userProfile} basePath="/dashboard" />
           </div>
         </header>
         <main className="flex-1 p-6">

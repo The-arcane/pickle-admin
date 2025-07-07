@@ -22,7 +22,7 @@ type UserProfile = {
   profile_image_url: string | null;
 };
 
-export function UserNav({ user }: { user: UserProfile }) {
+export function UserNav({ user, basePath = '/dashboard' }: { user: UserProfile, basePath?: string }) {
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -61,13 +61,13 @@ export function UserNav({ user }: { user: UserProfile }) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard/profile">
+            <Link href={`${basePath}/profile`}>
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard/settings">
+            <Link href={`${basePath}/settings`}>
               <Settings className="mr-2 h-4 w-4" />
               <span>Settings</span>
             </Link>

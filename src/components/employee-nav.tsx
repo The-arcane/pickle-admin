@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { QrCode, Calendar, PartyPopper, BarChart } from 'lucide-react';
+import { QrCode, Calendar, PartyPopper, BarChart, User, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -11,6 +10,8 @@ const navItems = [
   { href: '/employee/scan', label: 'Scan QR', icon: QrCode },
   { href: '/employee/bookings', label: 'Bookings', icon: Calendar },
   { href: '/employee/events', label: 'Events', icon: PartyPopper },
+  { href: '/employee/profile', label: 'Profile', icon: User },
+  { href: '/employee/settings', label: 'Settings', icon: Settings },
 ];
 
 export function EmployeeNav() {

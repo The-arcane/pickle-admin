@@ -1,4 +1,3 @@
-
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Cuboid, PanelLeft } from 'lucide-react';
@@ -73,7 +72,7 @@ export default async function EmployeeLayout({
           </div>
 
           <div className="ml-auto">
-            <UserNav user={userProfile} />
+            <UserNav user={userProfile} basePath="/employee" />
           </div>
         </header>
         <main className="flex-1 p-6">
