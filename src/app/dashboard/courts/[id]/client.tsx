@@ -34,6 +34,16 @@ const daysOfWeek = [
     { value: 0, 'label': 'Sunday' },
 ];
 
+const isValidUrl = (url: string | null | undefined): boolean => {
+    if (!url) return false;
+    try {
+        new URL(url);
+        return true;
+    } catch (e) {
+        return false;
+    }
+};
+
 export function EditCourtClientPage({ court, organisations, sports }: { court: Court | null, organisations: Organisation[], sports: Sport[] }) {
     const router = useRouter();
     const { toast } = useToast();
@@ -323,7 +333,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                 <Button type="button" onClick={() => mainImageRef.current?.click()}>
                                     <ImagePlus className="mr-2 h-4 w-4" /> Upload Main Image
                                 </Button>
-                                {mainImagePreview && (
+                                {mainImagePreview && isValidUrl(mainImagePreview) && (
                                     <div className="mt-3 relative aspect-video w-full max-w-sm">
                                         <Image
                                             src={mainImagePreview}
@@ -355,7 +365,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                 <Button type="button" onClick={() => coverImageRef.current?.click()}>
                                     <ImagePlus className="mr-2 h-4 w-4" /> Upload Cover Image
                                 </Button>
-                                {coverImagePreview && (
+                                {coverImagePreview && isValidUrl(coverImagePreview) && (
                                     <div className="mt-3 relative aspect-video w-full max-w-sm">
                                         <Image
                                             src={coverImagePreview}
@@ -383,7 +393,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {gallery.map((img, index) => (
                                 <div key={index} className="relative group aspect-video">
-                                    <Image src={img.image_url || 'https://placehold.co/300x200.png'} alt={`Court image ${index + 1}`} fill className="rounded-md object-cover"/>
+                                    <Image src={isValidUrl(img.image_url) ? img.image_url! : 'https://placehold.co/300x200.png'} alt={`Court image ${index + 1}`} fill className="rounded-md object-cover"/>
                                     <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveImage(index)}><X className="h-4 w-4"/></Button>
                                 </div>
                             ))}
