@@ -2,7 +2,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import type { SubEvent, GalleryImage, WhatToBringItem, EventCategory, EventTag } from './[id]/types';
+import type { SubEvent, GalleryImage, WhatToBringItem } from './[id]/types';
 
 // Helper to upload a file to Supabase Storage for events
 async function handleEventImageUpload(supabase: any, file: File | null, eventId: string): Promise<string | null> {
@@ -34,29 +34,31 @@ async function handleEventImageUpload(supabase: any, file: File | null, eventId:
 
 function getEventDataFromFormData(formData: FormData) {
     const isFree = formData.get('is_free') === 'true';
-    const startTime = formData.get('start_time') as string;
-    const endTime = formData.get('end_time') as string;
+    const organiserType = formData.get('organiser_type');
+    const organiserUserId = formData.get('organiser_user_id');
+    const organiserOrgId = formData.get('organiser_org_id');
     
-    const organiserId = formData.get('organiser_org_id');
-    const lat = formData.get('latitude');
-    const lng = formData.get('longitude');
-    const amount = formData.get('amount');
-    const maxCapacity = formData.get('max_total_capacity');
+    const getNullOrNumber = (key: string) => {
+        const val = formData.get(key);
+        // Ensure empty string becomes null, otherwise convert to number
+        return val !== null && val !== '' ? Number(val) : null;
+    };
 
     return {
         title: formData.get('title') as string,
-        slug: (formData.get('title') as string).toLowerCase().replace(/\s+/g, '-'),
+        slug: (formData.get('title') as string).toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, ''),
         description: formData.get('description') as string,
         type: formData.get('type') as string,
         access_type: formData.get('access_type') as string,
-        organiser_org_id: organiserId ? Number(organiserId) : null,
-        start_time: startTime ? new Date(startTime).toISOString() : null,
-        end_time: endTime ? new Date(endTime).toISOString() : null,
+        organiser_user_id: organiserType === 'user' && organiserUserId ? Number(organiserUserId) : null,
+        organiser_org_id: organiserType === 'organisation' && organiserOrgId ? Number(organiserOrgId) : null,
+        start_time: formData.get('start_time') as string,
+        end_time: formData.get('end_time') as string,
         timezone: formData.get('timezone') as string,
         location_name: formData.get('location_name') as string,
         address: formData.get('address') as string,
-        latitude: lat ? Number(lat) : null,
-        longitude: lng ? Number(lng) : null,
+        latitude: getNullOrNumber('latitude'),
+        longitude: getNullOrNumber('longitude'),
         is_family_friendly: formData.get('is_family_friendly') === 'on',
         is_outdoor: formData.get('is_outdoor') === 'on',
         has_parking: formData.get('has_parking') === 'on',
@@ -65,10 +67,14 @@ function getEventDataFromFormData(formData: FormData) {
         security_on_site: formData.get('security_on_site') === 'on',
         is_free: isFree,
         currency: isFree ? null : formData.get('currency') as string,
-        amount: isFree ? null : (amount ? Number(amount) : null),
+        amount: isFree ? null : getNullOrNumber('amount'),
         pricing_notes: formData.get('pricing_notes') as string,
         video_url: formData.get('video_url') as string,
-        max_total_capacity: maxCapacity ? Number(maxCapacity) : null,
+        requires_login: formData.get('requires_login') === 'on',
+        requires_invitation_code: formData.get('requires_invitation_code') === 'on',
+        is_discoverable: formData.get('is_discoverable') === 'on',
+        max_bookings_per_user: getNullOrNumber('max_bookings_per_user'),
+        max_total_capacity: getNullOrNumber('max_total_capacity'),
     };
 }
 

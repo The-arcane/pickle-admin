@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { addEvent, updateEvent } from '../actions';
-import type { Event, SubEvent, GalleryImage, WhatToBringItem, Organisation, EventCategory, EventTag } from './types';
+import type { Event, SubEvent, GalleryImage, WhatToBringItem, Organisation, EventCategory, EventTag, User } from './types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,8 +22,9 @@ import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-export function EditEventClientPage({ event, organisations, categories, tags }: { event: Event | null, organisations: Organisation[], categories: EventCategory[], tags: EventTag[] }) {
+export function EditEventClientPage({ event, organisations, users, categories, tags }: { event: Event | null, organisations: Organisation[], users: User[], categories: EventCategory[], tags: EventTag[] }) {
     const router = useRouter();
     const { toast } = useToast();
     const isAdding = !event;
@@ -35,6 +36,7 @@ export function EditEventClientPage({ event, organisations, categories, tags }: 
 
     // Form State
     const [isFree, setIsFree] = useState(event?.is_free ?? true);
+    const [organiserType, setOrganiserType] = useState<'user' | 'organisation'>(event?.organiser_user_id ? 'user' : 'organisation');
     const [startDate, setStartDate] = useState<Date | undefined>(event?.start_time ? parseISO(event.start_time) : undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(event?.end_time ? parseISO(event.end_time) : undefined);
     
@@ -42,11 +44,9 @@ export function EditEventClientPage({ event, organisations, categories, tags }: 
     const coverImageRef = useRef<HTMLInputElement>(null);
     const [imageInPreview, setImageInPreview] = useState<string | null>(null);
 
-
     const formatTimeToInputValue = (isoString: string | null | undefined): string => {
         if (!isoString) return '';
         try {
-            // new Date(isoString) works fine with full ISO strings
             return format(new Date(isoString), 'HH:mm');
         } catch (e) {
             console.error("Failed to format time", e);
@@ -187,14 +187,61 @@ export function EditEventClientPage({ event, organisations, categories, tags }: 
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Organization & Pricing</CardTitle>
-                        <CardDescription>Organizer details and event pricing.</CardDescription>
+                        <CardTitle>Organization & Access</CardTitle>
+                        <CardDescription>Set the event organizer and access rules.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2"><Label htmlFor="organiser_org_id">Organiser</Label><Select name="organiser_org_id" defaultValue={event?.organiser_org_id?.toString() || ''}><SelectTrigger><SelectValue placeholder="Select an organiser" /></SelectTrigger><SelectContent>{organisations.map(org => <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>)}</SelectContent></Select></div>
-                            <div className="space-y-2"><Label htmlFor="type">Event Type</Label><Input id="type" name="type" defaultValue={event?.type || ''} placeholder="e.g., Tournament, Workshop, Social" /></div>
+                         <div className="space-y-3">
+                            <Label>Organiser Type</Label>
+                             <RadioGroup name="organiser_type" value={organiserType} onValueChange={(val) => setOrganiserType(val as 'user' | 'organisation')} className="flex gap-4">
+                                 <div className="flex items-center space-x-2">
+                                     <RadioGroupItem value="organisation" id="r_org" />
+                                     <Label htmlFor="r_org">Organisation</Label>
+                                 </div>
+                                 <div className="flex items-center space-x-2">
+                                     <RadioGroupItem value="user" id="r_user" />
+                                     <Label htmlFor="r_user">User</Label>
+                                 </div>
+                             </RadioGroup>
                         </div>
+                        
+                        {organiserType === 'organisation' ? (
+                            <div className="space-y-2"><Label htmlFor="organiser_org_id">Organiser Organisation</Label><Select name="organiser_org_id" defaultValue={event?.organiser_org_id?.toString() || ''}><SelectTrigger><SelectValue placeholder="Select an organisation" /></SelectTrigger><SelectContent>{organisations.map(org => <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>)}</SelectContent></Select></div>
+                        ) : (
+                             <div className="space-y-2"><Label htmlFor="organiser_user_id">Organiser User</Label><Select name="organiser_user_id" defaultValue={event?.organiser_user_id?.toString() || ''}><SelectTrigger><SelectValue placeholder="Select a user" /></SelectTrigger><SelectContent>{users.map(user => <SelectItem key={user.id} value={user.id.toString()}>{user.name}</SelectItem>)}</SelectContent></Select></div>
+                        )}
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="access_type">Access Type</Label>
+                                <Select name="access_type" defaultValue={event?.access_type || 'public'}>
+                                    <SelectTrigger><SelectValue placeholder="Select access type" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="public">Public</SelectItem>
+                                        <SelectItem value="private">Private</SelectItem>
+                                        <SelectItem value="invite-only">Invite Only</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="timezone">Timezone</Label>
+                                <Input id="timezone" name="timezone" defaultValue={event?.timezone || 'Asia/Kolkata'} placeholder="e.g., Asia/Kolkata" />
+                            </div>
+                        </div>
+
+                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="flex items-center gap-2 rounded-lg border p-3"><Switch id="is_discoverable" name="is_discoverable" defaultChecked={event?.is_discoverable ?? true}/><Label htmlFor="is_discoverable">Discoverable</Label></div>
+                            <div className="flex items-center gap-2 rounded-lg border p-3"><Switch id="requires_login" name="requires_login" defaultChecked={event?.requires_login ?? false}/><Label htmlFor="requires_login">Requires Login</Label></div>
+                            <div className="flex items-center gap-2 rounded-lg border p-3"><Switch id="requires_invitation_code" name="requires_invitation_code" defaultChecked={event?.requires_invitation_code ?? false}/><Label htmlFor="requires_invitation_code">Invitation Code</Label></div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Pricing & Capacity</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
                         <div className="flex items-center justify-between rounded-lg border p-4">
                             <Label htmlFor="is_free" className="text-base font-medium">Is this a free event?</Label>
                             <Switch id="is_free" checked={isFree} onCheckedChange={setIsFree}/>
@@ -206,56 +253,36 @@ export function EditEventClientPage({ event, organisations, categories, tags }: 
                                 <div className="md:col-span-2 space-y-2"><Label htmlFor="pricing_notes">Pricing Notes</Label><Textarea id="pricing_notes" name="pricing_notes" defaultValue={event?.pricing_notes || ''} placeholder="e.g., Tickets are non-refundable"/></div>
                             </div>
                         )}
-                        <div className="space-y-2"><Label htmlFor="max_total_capacity">Max Capacity</Label><Input id="max_total_capacity" name="max_total_capacity" type="number" defaultValue={event?.max_total_capacity ?? ''} placeholder="Total number of attendees" /></div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2"><Label htmlFor="max_total_capacity">Max Total Capacity</Label><Input id="max_total_capacity" name="max_total_capacity" type="number" defaultValue={event?.max_total_capacity ?? ''} placeholder="Total number of attendees" /></div>
+                            <div className="space-y-2"><Label htmlFor="max_bookings_per_user">Max Bookings Per User</Label><Input id="max_bookings_per_user" name="max_bookings_per_user" type="number" defaultValue={event?.max_bookings_per_user ?? ''} placeholder="Limit per user account" /></div>
+                        </div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Event Media</CardTitle>
-                        <CardDescription>Upload a cover image for your event.</CardDescription>
+                        <CardTitle>Media & Links</CardTitle>
+                        <CardDescription>Upload a cover image and add a video link for your event.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
                             <div className="flex items-center">
                                 <Label htmlFor="cover_image_file">Cover Image</Label>
-                                <input
-                                    type="file"
-                                    id="cover_image_file"
-                                    accept="image/*"
-                                    ref={coverImageRef}
-                                    name="cover_image_file"
-                                    className="hidden"
-                                    onChange={e => {
-                                        const f = e.target.files?.[0];
-                                        if (f) {
-                                            setCoverImagePreview(URL.createObjectURL(f));
-                                        }
-                                    }}
-                                />
+                                <input type="file" id="cover_image_file" accept="image/*" ref={coverImageRef} name="cover_image_file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { setCoverImagePreview(URL.createObjectURL(f)); } }} />
                                 <Button type="button" variant="outline" size="sm" className="h-auto py-1.5 ml-auto" onClick={() => coverImageRef.current?.click()}>
                                     <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
                                 </Button>
                             </div>
                             {coverImagePreview && (
-                                <button
-                                    type="button"
-                                    className="mt-3 block w-full max-w-sm rounded-md overflow-hidden cursor-pointer"
-                                    onClick={() => setImageInPreview(coverImagePreview)}
-                                >
-                                    <Image
-                                        src={coverImagePreview}
-                                        alt="Event Cover Preview"
-                                        width={600}
-                                        height={400}
-                                        className="w-full h-auto object-cover"
-                                        style={{
-                                            width: '100%',
-                                            height: 'auto',
-                                        }}
-                                    />
+                                <button type="button" className="mt-3 block w-full max-w-sm rounded-md overflow-hidden cursor-pointer" onClick={() => setImageInPreview(coverImagePreview)}>
+                                    <Image src={coverImagePreview} alt="Event Cover Preview" width={600} height={400} className="w-full h-auto object-cover" />
                                 </button>
                             )}
+                        </div>
+                        <div className="space-y-2">
+                           <Label htmlFor="video_url">Video URL</Label>
+                           <Input id="video_url" name="video_url" defaultValue={event?.video_url ?? ''} placeholder="e.g., https://youtube.com/watch?v=..." />
                         </div>
                     </CardContent>
                 </Card>
@@ -272,24 +299,6 @@ export function EditEventClientPage({ event, organisations, categories, tags }: 
                             </div>
                         ))}
                         <Button type="button" variant="outline" onClick={handleAddSubEvent}><Plus className="mr-2 h-4 w-4" /> Add Schedule Item</Button>
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardHeader><CardTitle>Event Gallery</CardTitle><CardDescription>Add images for the event.</CardDescription></CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {gallery.map((img, index) => (
-                                <div key={index} className="relative group aspect-video">
-                                    <img src={img.image_url || 'https://placehold.co/300x200.png'} alt={`Event image ${index + 1}`} className="rounded-md object-cover w-full h-full"/>
-                                    <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveImage(index)}><X className="h-4 w-4"/></Button>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex gap-2">
-                            <Input placeholder="Enter new image URL" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} />
-                            <Button type="button" onClick={handleAddImage}><ImagePlus className="mr-2 h-4 w-4"/> Add Image</Button>
-                        </div>
                     </CardContent>
                 </Card>
 

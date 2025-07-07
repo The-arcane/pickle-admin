@@ -5,6 +5,11 @@ export type Organisation = {
     name: string;
 };
 
+export type User = {
+    id: number;
+    name: string;
+}
+
 export type EventCategory = {
     id: number;
     name: string;
@@ -38,13 +43,15 @@ export type WhatToBringItem = {
     item: string;
 };
 
+// This type now reflects the full table structure
 export type Event = {
   id: number;
   title: string;
   slug: string;
   description: string | null;
   type: string | null;
-  access_type: string | null;
+  access_type: 'public' | 'private' | 'invite-only' | null;
+  organiser_user_id: number | null;
   organiser_org_id: number | null;
   start_time: string;
   end_time: string;
@@ -65,6 +72,10 @@ export type Event = {
   pricing_notes: string | null;
   cover_image: string | null;
   video_url: string | null;
+  requires_login: boolean | null;
+  requires_invitation_code: boolean | null;
+  is_discoverable: boolean | null;
+  max_bookings_per_user: number | null;
   max_total_capacity: number | null;
   
   // Nested relations

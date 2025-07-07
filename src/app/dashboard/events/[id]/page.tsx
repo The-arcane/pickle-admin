@@ -32,17 +32,20 @@ export default async function EditEventPage({ params }: { params: { id: string }
   }
   
   const { data: organisationsData, error: orgsError } = await supabase.from('organisations').select('id, name');
+  // Fetch users for organizer dropdown
+  const { data: usersData, error: usersError } = await supabase.from('user').select('id, name');
   const { data: categoriesData, error: catsError } = await supabase.from('event_categories').select('id, name');
   const { data: tagsData, error: tagsError } = await supabase.from('event_tags').select('id, name');
 
-  if (orgsError || catsError || tagsError) {
-    console.error("Error fetching related data for event form", orgsError || catsError || tagsError);
+  if (orgsError || catsError || tagsError || usersError) {
+    console.error("Error fetching related data for event form", orgsError || catsError || tagsError || usersError);
   }
 
   return (
     <EditEventClientPage
       event={event}
       organisations={organisationsData || []}
+      users={usersData || []} // Pass users to client
       categories={categoriesData || []}
       tags={tagsData || []}
     />
