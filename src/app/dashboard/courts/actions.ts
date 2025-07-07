@@ -2,10 +2,10 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import type { CourtRule, CourtGalleryImage, CourtContact, AvailabilityBlock, RecurringUnavailability } from './[id]/types';
+import type { CourtRule, CourtContact, AvailabilityBlock, RecurringUnavailability } from './[id]/types';
 
 // Helper to upload a file to Supabase Storage
-async function handleImageUpload(supabase: any, file: File | null, courtId: string, imageType: 'main' | 'cover' | 'gallery'): Promise<string | null> {
+async function handleImageUpload(supabase: any, file: File | null, courtId: string, imageType: 'main' | 'cover'): Promise<string | null> {
     if (!file || file.size === 0) {
         return null;
     }
@@ -171,28 +171,9 @@ export async function updateCourt(formData: FormData) {
     // --- 1. Update main court table ---
     const { error: courtError } = await supabase.from('courts').update(courtUpdateData).eq('id', id);
     if (courtError) { console.error('Error updating court:', courtError); return { error: `Failed to update court. ${courtError.message}` };}
-
-    // --- 2. Handle New Gallery Images ---
-    const galleryFiles = formData.getAll('gallery_files') as File[];
-    const uploadedGalleryUrls: { court_id: string; image_url: string }[] = [];
-    for (const file of galleryFiles) {
-      if (file && file.size > 0) {
-        const url = await handleImageUpload(supabase, file, id, 'gallery');
-        if (url) {
-          uploadedGalleryUrls.push({ court_id: id, image_url: url });
-        }
-      }
-    }
-    if (uploadedGalleryUrls.length > 0) {
-        const { error: galleryInsertError } = await supabase.from('court_gallery').insert(uploadedGalleryUrls);
-        if (galleryInsertError) {
-            console.error('Error inserting new gallery images:', galleryInsertError);
-            // Non-fatal, we can continue
-        }
-    }
     
 
-    // --- 3. Sync Existing Rules (Delete removed, then upsert all) ---
+    // --- 2. Sync Existing Rules (Delete removed, then upsert all) ---
     const rules = JSON.parse(formData.get('rules') as string) as Partial<CourtRule>[];
     const { data: existingRules } = await supabase.from('court_rules').select('id').eq('court_id', id);
     if (!existingRules) { return { error: "Could not fetch existing court rules." }; }
@@ -214,20 +195,7 @@ export async function updateCourt(formData: FormData) {
       if (error) { console.error('Error upserting rules:', error); return { error: `Failed to save rules: ${error.message}` }; }
     }
     
-    // --- 4. Sync Existing Gallery (handles deletions) ---
-    const gallery = JSON.parse(formData.get('gallery') as string) as Partial<CourtGalleryImage>[];
-    const { data: existingGallery } = await supabase.from('court_gallery').select('id').eq('court_id', id);
-    if (!existingGallery) { return { error: "Could not fetch existing gallery." }; }
-    const existingGalleryIds = existingGallery.map(g => g.id);
-    const newGalleryIds = gallery.map(g => g.id).filter(Boolean);
-    const galleryToDelete = existingGalleryIds.filter(galleryId => !newGalleryIds.includes(galleryId as number));
-    
-    if(galleryToDelete.length > 0) {
-        const { error } = await supabase.from('court_gallery').delete().in('id', galleryToDelete);
-        if (error) { console.error('Error deleting gallery images:', error); return { error: `Failed to delete old gallery images: ${error.message}` }; }
-    }
-
-    // --- 5. Sync Contact ---
+    // --- 3. Sync Contact ---
     const contact = JSON.parse(formData.get('contact') as string) as Partial<CourtContact>;
     const { data: existingContact } = await supabase.from('court_contacts').select('id').eq('court_id', id).maybeSingle();
     const hasNewContactInfo = contact.phone || contact.email;
@@ -244,7 +212,7 @@ export async function updateCourt(formData: FormData) {
       if (error) { console.error('Error deleting contact:', error); return { error: `Failed to delete old contact info: ${error.message}` }; }
     }
 
-    // --- 6. Sync Availability Blocks ---
+    // --- 4. Sync Availability Blocks ---
     const availability = JSON.parse(formData.get('availability') as string) as Partial<AvailabilityBlock>[];
     const { data: existingAvailability } = await supabase.from('availability_blocks').select('id').eq('court_id', id);
     if (!existingAvailability) { return { error: "Could not fetch existing availability." }; }
@@ -266,7 +234,7 @@ export async function updateCourt(formData: FormData) {
       if (error) { console.error('Error upserting availability:', error); return { error: `Failed to save availability: ${error.message}` }; }
     }
     
-    // --- 7. Sync Recurring Unavailability ---
+    // --- 5. Sync Recurring Unavailability ---
     const unavailability = JSON.parse(formData.get('unavailability') as string) as Partial<RecurringUnavailability>[];
     const { data: existingUnavailability } = await supabase.from('recurring_unavailability').select('id').eq('court_id', id);
     if (!existingUnavailability) { return { error: "Could not fetch existing recurring unavailability." }; }

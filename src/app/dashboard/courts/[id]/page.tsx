@@ -17,7 +17,6 @@ export default async function EditCourtPage({ params }: { params: { id: string }
         organisations(*),
         sports(*),
         court_rules(*),
-        court_gallery(*),
         court_contacts(*),
         availability_blocks(*),
         recurring_unavailability(*)

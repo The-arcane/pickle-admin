@@ -17,12 +17,6 @@ export type CourtRule = {
     rule: string;
 };
 
-export type CourtGalleryImage = {
-    id: number;
-    court_id: number;
-    image_url: string;
-};
-
 export type CourtContact = {
     id: number;
     court_id: number;
@@ -82,7 +76,6 @@ export type Court = {
   organisations: Organisation | null;
   sports: Sport | null;
   court_rules: CourtRule[];
-  court_gallery: CourtGalleryImage[];
   court_contacts: CourtContact[];
   availability_blocks: AvailabilityBlock[];
   recurring_unavailability: RecurringUnavailability[];

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { addCourt, updateCourt } from '../actions';
-import type { Court, Organisation, Sport, CourtRule, CourtGalleryImage, CourtContact, AvailabilityBlock, RecurringUnavailability } from './types';
+import type { Court, Organisation, Sport, CourtRule, CourtContact, AvailabilityBlock, RecurringUnavailability } from './types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Lightbulb, Plus, Trash2, ImagePlus, X, Calendar as CalendarIcon, Upload } from 'lucide-react';
+import { Lightbulb, Plus, Trash2, ImagePlus, Calendar as CalendarIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -52,26 +52,21 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     
     // State for related tables
     const [rules, setRules] = useState<Partial<CourtRule>[]>(court?.court_rules ?? [{ rule: '' }]);
-    const [gallery, setGallery] = useState<Partial<CourtGalleryImage>[]>(court?.court_gallery ?? []);
     const [contact, setContact] = useState<Partial<CourtContact>>(court?.court_contacts?.[0] ?? {});
     
     const [mainImagePreview, setMainImagePreview] = useState<string | null>(court?.image || null);
     const [coverImagePreview, setCoverImagePreview] = useState<string | null>(court?.cover_image || null);
     const mainImageRef = useRef<HTMLInputElement>(null);
     const coverImageRef = useRef<HTMLInputElement>(null);
-    const galleryFilesRef = useRef<HTMLInputElement>(null);
     
     const [availability, setAvailability] = useState<Partial<AvailabilityBlock>[]>(court?.availability_blocks ?? []);
     const [unavailability, setUnavailability] = useState<Partial<RecurringUnavailability>[]>(court?.recurring_unavailability ?? []);  
     const [activeSection, setActiveSection] = useState('court-info');
-
-    const [newGalleryPreviews, setNewGalleryPreviews] = useState<string[]>([]);
     
     const navSections = [
         { id: 'court-info', label: 'Court Info' },
         { id: 'court-availability', label: 'Availability' },
         { id: 'images-pricing', label: 'Images & Pricing' },
-        { id: 'court-gallery', label: 'Gallery' },
         { id: 'court-rules', label: 'Rules' },
         { id: 'contact-info', label: 'Contact' },
     ];
@@ -104,7 +99,6 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         formData.append('is_equipment_available', String(equipmentRental));
         formData.append('has_floodlights', String(floodlights));
         formData.append('rules', JSON.stringify(rules.filter(r => r.rule && r.rule.trim() !== '')));
-        formData.append('gallery', JSON.stringify(gallery));
         formData.append('contact', JSON.stringify(contact));
         formData.append('availability', JSON.stringify(availability.filter(a => a.date)));
         formData.append('unavailability', JSON.stringify(unavailability.filter(u => u.day_of_week !== undefined && u.start_time && u.end_time)));
@@ -132,16 +126,6 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         newRules[index].rule = value;
         setRules(newRules);
     };
-
-    const handleRemoveGalleryImage = (index: number) => setGallery(gallery.filter((_, i) => i !== index));
-    const handleGalleryFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const files = Array.from(e.target.files);
-            const previews = files.map(file => URL.createObjectURL(file));
-            setNewGalleryPreviews(previews);
-        }
-    }
-
 
     // For one-off unavailability (availability_blocks)
     const handleAddAvailability = () => setAvailability([...availability, { date: null, start_time: null, end_time: null, reason: '' }]);
@@ -369,45 +353,6 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                         <div className="space-y-2"><Label htmlFor="badge_type">Badge Text</Label><Input id="badge_type" name="badge_type" defaultValue={court?.badge_type || ''} placeholder="e.g., 'New', 'Popular', 'Featured'" /></div>
                     </CardContent>
                 </Card>
-
-                {/* Gallery Section */}
-                {!isAdding && (
-                    <Card id="court-gallery" className="scroll-mt-24">
-                        <CardHeader><CardTitle>Court Gallery</CardTitle><CardDescription>Manage images in the court's gallery.</CardDescription></CardHeader>
-                        <CardContent className="space-y-4">
-                            {(gallery.length > 0 || newGalleryPreviews.length > 0) && (
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {gallery.map((img, index) => (
-                                        <div key={img.id || `existing-${index}`} className="relative group aspect-video">
-                                            <Image src={isValidUrl(img.image_url) ? img.image_url! : 'https://placehold.co/300x200.png'} alt={`Court image ${index + 1}`} fill className="rounded-md object-cover"/>
-                                            <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveGalleryImage(index)}><X className="h-4 w-4"/></Button>
-                                        </div>
-                                    ))}
-                                    {newGalleryPreviews.map((src, index) => (
-                                         <div key={`new-${index}`} className="relative group aspect-video">
-                                            <Image src={src} alt={`New image preview ${index + 1}`} fill className="rounded-md object-cover"/>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                            <div>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    ref={galleryFilesRef}
-                                    name="gallery_files"
-                                    className="hidden"
-                                    onChange={handleGalleryFileChange}
-                                />
-                                <Button type="button" variant="outline" onClick={() => galleryFilesRef.current?.click()}>
-                                    <Upload className="mr-2 h-4 w-4" /> Upload New Images
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
 
                 {/* Rules Section */}
                 <Card id="court-rules" className="scroll-mt-24">
