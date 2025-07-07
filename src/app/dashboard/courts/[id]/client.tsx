@@ -20,9 +20,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { uploadImage } from '@/lib/upload-images'; 
-
-
 
 const daysOfWeek = [
     { value: 1, label: 'Monday' },
@@ -58,8 +55,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     const [gallery, setGallery] = useState<Partial<CourtGalleryImage>[]>(court?.court_gallery ?? []);
     const [contact, setContact] = useState<Partial<CourtContact>>(court?.court_contacts?.[0] ?? {});
     const [newImageUrl, setNewImageUrl] = useState('');
-    const [mainImageFile, setMainImageFile] = useState<File | null>(null);
-    const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+    
     const [mainImagePreview, setMainImagePreview] = useState<string | null>(court?.image || null);
     const [coverImagePreview, setCoverImagePreview] = useState<string | null>(court?.cover_image || null);
     const mainImageRef = useRef<HTMLInputElement>(null);
@@ -109,21 +105,6 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         formData.append('contact', JSON.stringify(contact));
         formData.append('availability', JSON.stringify(availability.filter(a => a.date)));
         formData.append('unavailability', JSON.stringify(unavailability.filter(u => u.day_of_week !== undefined && u.start_time && u.end_time)));
-
-        try {
-            if (mainImageFile) {
-              const mainImageUrl = await uploadImage(mainImageFile);
-              formData.append('image', mainImageUrl);
-            }
-          
-            if (coverImageFile) {
-              const coverImageUrl = await uploadImage(coverImageFile);
-              formData.append('cover_image', coverImageUrl);
-            }
-          } catch (err: any) {
-            toast({ variant: 'destructive', title: 'Image Upload Failed', description: err.message });
-            return;
-          }
 
         const action = isAdding ? addCourt : updateCourt;
         if (!isAdding && court) {
@@ -320,12 +301,11 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     type="file"
                                     accept="image/*"
                                     ref={mainImageRef}
-                                    name="main_image"
+                                    name="main_image_file"
                                     className="hidden"
                                     onChange={e => {
                                         const f = e.target.files?.[0];
                                         if (f) {
-                                            setMainImageFile(f);
                                             setMainImagePreview(URL.createObjectURL(f));
                                         }
                                     }}
@@ -352,12 +332,11 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     type="file"
                                     accept="image/*"
                                     ref={coverImageRef}
-                                    name="cover_image"
+                                    name="cover_image_file"
                                     className="hidden"
                                     onChange={e => {
                                         const f = e.target.files?.[0];
                                         if (f) {
-                                            setCoverImageFile(f);
                                             setCoverImagePreview(URL.createObjectURL(f));
                                         }
                                     }}

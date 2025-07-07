@@ -4,7 +4,34 @@ import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { CourtRule, CourtGalleryImage, CourtContact, AvailabilityBlock, RecurringUnavailability } from './[id]/types';
 
-function getCourtDataFromFormData(formData: FormData) {
+// Helper to upload a file to Supabase Storage
+async function handleImageUpload(supabase: any, file: File | null): Promise<string | null> {
+    if (!file || file.size === 0) {
+        return null;
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+        .from('court-images')
+        .upload(fileName, file);
+
+    if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+    }
+
+    const { data: publicUrlData } = supabase.storage
+        .from('court-images')
+        .getPublicUrl(fileName);
+    
+    return publicUrlData.publicUrl;
+}
+
+
+// Extracts court data (excluding images) from FormData
+function getCourtFields(formData: FormData) {
     return {
         name: formData.get('name') as string,
         address: formData.get('address') as string,
@@ -20,8 +47,6 @@ function getCourtDataFromFormData(formData: FormData) {
         has_floodlights: formData.get('has_floodlights') === 'true',
         price: formData.get('price') ? Number(formData.get('price')) : null,
         discount: formData.get('discount') ? Number(formData.get('discount')) : null,
-        image: formData.get('image') as string,
-        cover_image: formData.get('cover_image') as string,
         feature: formData.get('feature') as string,
         badge_type: formData.get('badge_type') as string,
         c_start_time: formData.get('c_start_time') || null,
@@ -34,14 +59,25 @@ export async function addCourt(formData: FormData) {
   const supabase = createServer();
   
   try {
-    const courtData = getCourtDataFromFormData(formData);
+    const courtFields = getCourtFields(formData);
 
-    if (!courtData.name || !courtData.organisation_id || !courtData.sport_id) {
+    if (!courtFields.name || !courtFields.organisation_id || !courtFields.sport_id) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
     }
-    if (courtData.lat === null || courtData.lng === null || isNaN(courtData.lat) || isNaN(courtData.lng)) {
+    if (courtFields.lat === null || courtFields.lng === null || isNaN(courtFields.lat) || isNaN(courtFields.lng)) {
       return { error: 'Valid Latitude and Longitude are required.' };
     }
+    
+    const courtData: any = { ...courtFields };
+
+    const mainImageFile = formData.get('main_image_file') as File | null;
+    const coverImageFile = formData.get('cover_image_file') as File | null;
+    
+    const mainImageUrl = await handleImageUpload(supabase, mainImageFile);
+    if (mainImageUrl) courtData.image = mainImageUrl;
+    
+    const coverImageUrl = await handleImageUpload(supabase, coverImageFile);
+    if (coverImageUrl) courtData.cover_image = coverImageUrl;
 
     // --- 1. Insert the main court record ---
     const { data: newCourt, error: courtError } = await supabase
@@ -105,25 +141,31 @@ export async function updateCourt(formData: FormData) {
   const id = Number(formData.get('id'));
 
   try {
-    const courtData = getCourtDataFromFormData(formData);
-    
-    const rules = JSON.parse(formData.get('rules') as string) as Partial<CourtRule>[];
-    const gallery = JSON.parse(formData.get('gallery') as string) as Partial<CourtGalleryImage>[];
-    const contact = JSON.parse(formData.get('contact') as string) as Partial<CourtContact>;
-    const availability = JSON.parse(formData.get('availability') as string) as Partial<AvailabilityBlock>[];
-    const unavailability = JSON.parse(formData.get('unavailability') as string) as Partial<RecurringUnavailability>[];
-
-
     if (!id) return { error: 'Court ID is missing.' };
-    if (!courtData.name || !courtData.organisation_id || !courtData.sport_id) {
+    
+    const courtFields = getCourtFields(formData);
+
+    if (!courtFields.name || !courtFields.organisation_id || !courtFields.sport_id) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
     }
+    
+    const courtData: any = { ...courtFields };
+    
+    const mainImageFile = formData.get('main_image_file') as File | null;
+    const coverImageFile = formData.get('cover_image_file') as File | null;
+    
+    const mainImageUrl = await handleImageUpload(supabase, mainImageFile);
+    if (mainImageUrl) courtData.image = mainImageUrl;
+    
+    const coverImageUrl = await handleImageUpload(supabase, coverImageFile);
+    if (coverImageUrl) courtData.cover_image = coverImageUrl;
 
     // --- 1. Update main court table ---
     const { error: courtError } = await supabase.from('courts').update(courtData).eq('id', id);
     if (courtError) { console.error('Error updating court:', courtError); return { error: `Failed to update court. ${courtError.message}` };}
 
     // --- 2. Sync Rules (Delete removed, then upsert all) ---
+    const rules = JSON.parse(formData.get('rules') as string) as Partial<CourtRule>[];
     const { data: existingRules } = await supabase.from('court_rules').select('id').eq('court_id', id);
     if (!existingRules) { return { error: "Could not fetch existing court rules." }; }
     const existingRuleIds = existingRules.map(r => r.id);
@@ -145,6 +187,7 @@ export async function updateCourt(formData: FormData) {
     }
     
     // --- 3. Sync Gallery (similar to rules) ---
+    const gallery = JSON.parse(formData.get('gallery') as string) as Partial<CourtGalleryImage>[];
     const { data: existingGallery } = await supabase.from('court_gallery').select('id').eq('court_id', id);
     if (!existingGallery) { return { error: "Could not fetch existing gallery." }; }
     const existingGalleryIds = existingGallery.map(g => g.id);
@@ -166,6 +209,7 @@ export async function updateCourt(formData: FormData) {
     }
 
     // --- 4. Sync Contact ---
+    const contact = JSON.parse(formData.get('contact') as string) as Partial<CourtContact>;
     const { data: existingContact } = await supabase.from('court_contacts').select('id').eq('court_id', id).maybeSingle();
     const hasNewContactInfo = contact.phone || contact.email;
     
@@ -182,6 +226,7 @@ export async function updateCourt(formData: FormData) {
     }
 
     // --- 5. Sync Availability Blocks ---
+    const availability = JSON.parse(formData.get('availability') as string) as Partial<AvailabilityBlock>[];
     const { data: existingAvailability } = await supabase.from('availability_blocks').select('id').eq('court_id', id);
     if (!existingAvailability) { return { error: "Could not fetch existing availability." }; }
     const existingAvailabilityIds = existingAvailability.map(a => a.id);
@@ -203,6 +248,7 @@ export async function updateCourt(formData: FormData) {
     }
     
     // --- 6. Sync Recurring Unavailability ---
+    const unavailability = JSON.parse(formData.get('unavailability') as string) as Partial<RecurringUnavailability>[];
     const { data: existingUnavailability } = await supabase.from('recurring_unavailability').select('id').eq('court_id', id);
     if (!existingUnavailability) { return { error: "Could not fetch existing recurring unavailability." }; }
     const existingUnavailabilityIds = existingUnavailability.map(u => u.id);
