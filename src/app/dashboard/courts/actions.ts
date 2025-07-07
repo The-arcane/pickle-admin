@@ -266,3 +266,110 @@ export async function updateCourt(formData: FormData) {
   revalidatePath(`/dashboard/courts/${id}`);
   return { success: true };
 }
+
+
+// --- Gallery Actions ---
+
+async function handleGalleryImageUpload(supabase: any, file: File, courtId: string): Promise<string | null> {
+    if (!file || file.size === 0) {
+        return null;
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `gallery-${Date.now()}.${fileExt}`;
+    // Store images in a public folder, organized by court ID in a gallery subfolder
+    const filePath = `public/${courtId}/gallery/${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage
+        .from('court-gallery') // Use court-gallery bucket
+        .upload(filePath, file);
+
+    if (uploadError) {
+        console.error(`Error uploading gallery image:`, uploadError);
+        throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
+    }
+
+    const { data: publicUrlData } = supabase.storage
+        .from('court-gallery')
+        .getPublicUrl(filePath);
+    
+    return publicUrlData.publicUrl;
+}
+
+export async function addCourtGalleryImages(formData: FormData) {
+    const supabase = createServer();
+    const courtId = formData.get('court_id') as string;
+    const images = formData.getAll('images') as File[];
+
+    if (!courtId || images.length === 0) {
+        return { error: 'Court ID and images are required.' };
+    }
+
+    try {
+        const uploadPromises = images
+            .filter(img => img.size > 0)
+            .map(img => handleGalleryImageUpload(supabase, img, courtId));
+        
+        const imageUrls = await Promise.all(uploadPromises);
+
+        const validUrls = imageUrls.filter((url): url is string => url !== null);
+        
+        if (validUrls.length > 0) {
+            const recordsToInsert = validUrls.map(url => ({
+                court_id: Number(courtId),
+                image_url: url
+            }));
+
+            const { error: insertError } = await supabase.from('court_gallery').insert(recordsToInsert);
+            if (insertError) {
+                console.error("Error inserting gallery images to db:", insertError);
+                return { error: `Images uploaded, but failed to save to gallery: ${insertError.message}`};
+            }
+        } else {
+             return { error: 'No valid images were uploaded.' };
+        }
+
+    } catch (e: any) {
+        return { error: e.message };
+    }
+
+    revalidatePath(`/dashboard/courts/${courtId}`);
+    return { success: true };
+}
+
+
+export async function deleteCourtGalleryImage(formData: FormData) {
+    const supabase = createServer();
+    const courtId = formData.get('court_id') as string;
+    const imageId = formData.get('image_id') as string;
+    const imageUrl = formData.get('image_url') as string;
+
+    if (!imageId || !imageUrl || !courtId) {
+        return { error: 'Missing required fields to delete image.' };
+    }
+
+    try {
+        // 1. Delete from storage
+        const url = new URL(imageUrl);
+        const filePath = decodeURIComponent(url.pathname.split('/court-gallery/')[1]);
+        
+        const { error: storageError } = await supabase.storage.from('court-gallery').remove([filePath]);
+        if (storageError) {
+            console.error("Error deleting from storage:", storageError);
+            return { error: `Failed to delete image from storage: ${storageError.message}`};
+        }
+
+        // 2. Delete from database
+        const { error: dbError } = await supabase.from('court_gallery').delete().eq('id', imageId);
+        if (dbError) {
+            console.error("Error deleting from db:", dbError);
+            return { error: `Image deleted from storage, but failed to remove from gallery: ${dbError.message}`};
+        }
+
+    } catch (e: any) {
+        return { error: e.message };
+    }
+
+    revalidatePath(`/dashboard/courts/${courtId}`);
+    return { success: true };
+}

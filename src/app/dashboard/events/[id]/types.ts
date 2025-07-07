@@ -34,6 +34,11 @@ export type WhatToBringItem = {
     item: string;
 };
 
+export type EventGalleryImage = {
+    id: number;
+    image_url: string;
+};
+
 // This type now reflects the full table structure
 export type Event = {
   id: number;
@@ -72,4 +77,5 @@ export type Event = {
   // Nested relations
   event_sub_events: SubEvent[];
   event_what_to_bring: WhatToBringItem[];
+  event_gallery: EventGalleryImage[];
 };

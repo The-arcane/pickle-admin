@@ -16,7 +16,8 @@ export default async function EditEventPage({ params }: { params: { id: string }
       .select(`
         *,
         event_sub_events(*),
-        event_what_to_bring(*)
+        event_what_to_bring(*),
+        event_gallery(*)
       `)
       .eq('id', id)
       .single();

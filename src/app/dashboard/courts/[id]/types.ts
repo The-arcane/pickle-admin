@@ -44,6 +44,11 @@ export type RecurringUnavailability = {
     active: boolean;
 };
 
+export type CourtGalleryImage = {
+    id: number;
+    image_url: string;
+};
+
 
 // Based on the provided schema for the 'courts' table and its relations
 export type Court = {
@@ -79,4 +84,5 @@ export type Court = {
   court_contacts: CourtContact[];
   availability_blocks: AvailabilityBlock[];
   recurring_unavailability: RecurringUnavailability[];
+  court_gallery: CourtGalleryImage[];
 };

@@ -19,7 +19,8 @@ export default async function EditCourtPage({ params }: { params: { id: string }
         court_rules(*),
         court_contacts(*),
         availability_blocks(*),
-        recurring_unavailability(*)
+        recurring_unavailability(*),
+        court_gallery(*)
       `)
       .eq('id', id)
       .single();
