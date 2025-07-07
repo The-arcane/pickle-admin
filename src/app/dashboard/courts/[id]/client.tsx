@@ -112,12 +112,12 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
 
         try {
             if (mainImageFile) {
-              const mainImageUrl = await uploadImage(mainImageFile, 'main-images');
+              const mainImageUrl = await uploadImage(mainImageFile);
               formData.append('image', mainImageUrl);
             }
           
             if (coverImageFile) {
-              const coverImageUrl = await uploadImage(coverImageFile, 'cover-images');
+              const coverImageUrl = await uploadImage(coverImageFile);
               formData.append('cover_image', coverImageUrl);
             }
           } catch (err: any) {

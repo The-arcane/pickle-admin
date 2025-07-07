@@ -2,14 +2,14 @@
 
 import { createClient } from '../lib/supabase/client';
 
-export async function uploadImage(file: File, path = 'court-images') {
+export async function uploadImage(file: File) {
   const supabase = createClient();
   const fileExt = file.name.split('.').pop();
   const fileName = `${Date.now()}.${fileExt}`;
-  const filePath = `${path}/${fileName}`;
+  const filePath = `court-images/${fileName}`;
 
   const { data, error } = await supabase.storage
-    .from('court-images') // 
+    .from('court-images')
     .upload(filePath, file, {
       cacheControl: '3600',
       upsert: false,
