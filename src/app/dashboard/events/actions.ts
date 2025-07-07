@@ -277,7 +277,7 @@ export async function addEventGalleryImages(formData: FormData) {
                 image_url: url
             }));
 
-            const { error: insertError } = await supabase.from('event_gallery').insert(recordsToInsert);
+            const { error: insertError } = await supabase.from('event_gallery_images').insert(recordsToInsert);
             if (insertError) {
                 return { error: `Images uploaded, but failed to save to gallery: ${insertError.message}`};
             }
@@ -315,7 +315,7 @@ export async function deleteEventGalleryImage(formData: FormData) {
         }
 
         // 2. Delete from database
-        const { error: dbError } = await supabase.from('event_gallery').delete().eq('id', imageId);
+        const { error: dbError } = await supabase.from('event_gallery_images').delete().eq('id', imageId);
         if (dbError) {
             return { error: `Image deleted from storage, but failed to remove from gallery: ${dbError.message}`};
         }

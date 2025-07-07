@@ -77,5 +77,5 @@ export type Event = {
   // Nested relations
   event_sub_events: SubEvent[];
   event_what_to_bring: WhatToBringItem[];
-  event_gallery: EventGalleryImage[];
+  event_gallery_images: EventGalleryImage[];
 };

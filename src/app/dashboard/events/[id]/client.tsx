@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { addEvent, updateEvent, addEventGalleryImages, deleteEventGalleryImage } from '../actions';
-import type { Event, SubEvent, WhatToBringItem, Organisation, EventCategory, EventTag, User } from './types';
+import type { Event, SubEvent, WhatToBringItem, Organisation, EventCategory, EventTag, User, EventGalleryImage } from './types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -364,9 +364,9 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                 <GalleryUploadButton />
                             </form>
                             
-                            {event.event_gallery && event.event_gallery.length > 0 ? (
+                            {event.event_gallery_images && event.event_gallery_images.length > 0 ? (
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                    {event.event_gallery.map((image) => (
+                                    {event.event_gallery_images.map((image) => (
                                         <div key={image.id} className="relative group">
                                             <Image
                                                 src={image.image_url}
