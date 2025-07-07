@@ -293,12 +293,15 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     <ImagePlus className="mr-2 h-4 w-4" /> Upload Main Image
                                 </Button>
                                 {mainImagePreview && (
-                                    <div className="mt-3 relative aspect-video w-full max-w-sm">
+                                    <div className="mt-3 relative w-full max-w-sm">
                                         <Image
                                             src={mainImagePreview}
                                             alt="Main Court Preview"
-                                            fill
-                                            className="rounded-md object-cover"
+                                            width={0}
+                                            height={0}
+                                            sizes="100vw"
+                                            style={{ width: '100%', height: 'auto' }}
+                                            className="rounded-md"
                                         />
                                     </div>
                                 )}
@@ -324,12 +327,15 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     <ImagePlus className="mr-2 h-4 w-4" /> Upload Cover Image
                                 </Button>
                                 {coverImagePreview && (
-                                    <div className="mt-3 relative aspect-video w-full max-w-sm">
+                                    <div className="mt-3 relative w-full max-w-sm">
                                         <Image
                                             src={coverImagePreview}
                                             alt="Cover Court Preview"
-                                            fill
-                                            className="rounded-md object-cover"
+                                            width={0}
+                                            height={0}
+                                            sizes="100vw"
+                                            style={{ width: '100%', height: 'auto' }}
+                                            className="rounded-md"
                                         />
                                     </div>
                                 )}
