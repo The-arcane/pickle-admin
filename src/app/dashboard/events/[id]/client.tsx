@@ -294,7 +294,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="space-y-2">
-                                <div className="flex items-center">
+                                <div className="flex items-center justify-between">
                                     <Label htmlFor="cover_image_file">Cover Image</Label>
                                     <input type="file" id="cover_image_file" accept="image/*" ref={coverImageRef} name="cover_image_file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { setCoverImagePreview(URL.createObjectURL(f)); } }} />
                                     <Button type="button" variant="outline" size="sm" className="h-auto py-1.5 ml-auto" onClick={() => coverImageRef.current?.click()}>

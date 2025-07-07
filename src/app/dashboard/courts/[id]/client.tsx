@@ -299,7 +299,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Main Image */}
                                 <div className="space-y-2">
-                                    <div className="flex items-center">
+                                    <div className="flex items-center justify-between">
                                         <Label>Main Image</Label>
                                         <input
                                             type="file"
@@ -314,7 +314,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                                 }
                                             }}
                                         />
-                                        <Button type="button" variant="outline" size="sm" className="h-auto py-1.5 ml-auto" onClick={() => mainImageRef.current?.click()}>
+                                        <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={() => mainImageRef.current?.click()}>
                                             <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
                                         </Button>
                                     </div>
@@ -337,7 +337,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
 
                                 {/* Cover Image */}
                                 <div className="space-y-2">
-                                    <div className="flex items-center">
+                                    <div className="flex items-center justify-between">
                                         <Label>Cover Image</Label>
                                         <input
                                             type="file"
@@ -352,7 +352,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                                 }
                                             }}
                                         />
-                                        <Button type="button" variant="outline" size="sm" className="h-auto py-1.5 ml-auto" onClick={() => coverImageRef.current?.click()}>
+                                        <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={() => coverImageRef.current?.click()}>
                                             <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
                                         </Button>
                                     </div>
@@ -427,7 +427,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                         <CardContent className="space-y-6">
                             <form action={addCourtGalleryImages} className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center">
                                  <input type="hidden" name="court_id" value={court.id} />
-                                 <Label htmlFor="gallery-images" className="mb-4">
+                                 <Label htmlFor="gallery-images" className="mb-4 cursor-pointer">
                                     <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
                                     <span className="mt-2 block font-semibold text-primary">Click to upload or drag & drop</span>
                                     <span className="mt-1 block text-sm text-muted-foreground">PNG, JPG, GIF up to 10MB</span>
