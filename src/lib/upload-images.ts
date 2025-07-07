@@ -2,9 +2,8 @@
 
 import { createClient } from '../lib/supabase/client';
 
-const supabase = createClient();
-
 export async function uploadImage(file: File, path = 'court-images') {
+  const supabase = createClient();
   const fileExt = file.name.split('.').pop();
   const fileName = `${Date.now()}.${fileExt}`;
   const filePath = `${path}/${fileName}`;
