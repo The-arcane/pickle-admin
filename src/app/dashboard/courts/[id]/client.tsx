@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Lightbulb, Plus, Trash2, ImagePlus, X, Calendar as CalendarIcon } from 'lucide-react';
+import { Lightbulb, Plus, Trash2, ImagePlus, X, Calendar as CalendarIcon, Upload } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -54,15 +54,18 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     const [rules, setRules] = useState<Partial<CourtRule>[]>(court?.court_rules ?? [{ rule: '' }]);
     const [gallery, setGallery] = useState<Partial<CourtGalleryImage>[]>(court?.court_gallery ?? []);
     const [contact, setContact] = useState<Partial<CourtContact>>(court?.court_contacts?.[0] ?? {});
-    const [newImageUrl, setNewImageUrl] = useState('');
     
     const [mainImagePreview, setMainImagePreview] = useState<string | null>(court?.image || null);
     const [coverImagePreview, setCoverImagePreview] = useState<string | null>(court?.cover_image || null);
     const mainImageRef = useRef<HTMLInputElement>(null);
     const coverImageRef = useRef<HTMLInputElement>(null);
+    const galleryFilesRef = useRef<HTMLInputElement>(null);
+    
     const [availability, setAvailability] = useState<Partial<AvailabilityBlock>[]>(court?.availability_blocks ?? []);
     const [unavailability, setUnavailability] = useState<Partial<RecurringUnavailability>[]>(court?.recurring_unavailability ?? []);  
     const [activeSection, setActiveSection] = useState('court-info');
+
+    const [newGalleryPreviews, setNewGalleryPreviews] = useState<string[]>([]);
     
     const navSections = [
         { id: 'court-info', label: 'Court Info' },
@@ -130,13 +133,15 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         setRules(newRules);
     };
 
-    const handleAddImage = () => {
-        if (newImageUrl.trim()) {
-            setGallery([...gallery, { image_url: newImageUrl.trim() }]);
-            setNewImageUrl('');
+    const handleRemoveGalleryImage = (index: number) => setGallery(gallery.filter((_, i) => i !== index));
+    const handleGalleryFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const files = Array.from(e.target.files);
+            const previews = files.map(file => URL.createObjectURL(file));
+            setNewGalleryPreviews(previews);
         }
-    };
-    const handleRemoveImage = (index: number) => setGallery(gallery.filter((_, i) => i !== index));
+    }
+
 
     // For one-off unavailability (availability_blocks)
     const handleAddAvailability = () => setAvailability([...availability, { date: null, start_time: null, end_time: null, reason: '' }]);
@@ -366,23 +371,43 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                 </Card>
 
                 {/* Gallery Section */}
-                <Card id="court-gallery" className="scroll-mt-24">
-                    <CardHeader><CardTitle>Court Gallery</CardTitle><CardDescription>Add or remove images from the court's gallery.</CardDescription></CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {gallery.map((img, index) => (
-                                <div key={index} className="relative group aspect-video">
-                                    <Image src={isValidUrl(img.image_url) ? img.image_url! : 'https://placehold.co/300x200.png'} alt={`Court image ${index + 1}`} fill className="rounded-md object-cover"/>
-                                    <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveImage(index)}><X className="h-4 w-4"/></Button>
+                {!isAdding && (
+                    <Card id="court-gallery" className="scroll-mt-24">
+                        <CardHeader><CardTitle>Court Gallery</CardTitle><CardDescription>Manage images in the court's gallery.</CardDescription></CardHeader>
+                        <CardContent className="space-y-4">
+                            {(gallery.length > 0 || newGalleryPreviews.length > 0) && (
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {gallery.map((img, index) => (
+                                        <div key={img.id || `existing-${index}`} className="relative group aspect-video">
+                                            <Image src={isValidUrl(img.image_url) ? img.image_url! : 'https://placehold.co/300x200.png'} alt={`Court image ${index + 1}`} fill className="rounded-md object-cover"/>
+                                            <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveGalleryImage(index)}><X className="h-4 w-4"/></Button>
+                                        </div>
+                                    ))}
+                                    {newGalleryPreviews.map((src, index) => (
+                                         <div key={`new-${index}`} className="relative group aspect-video">
+                                            <Image src={src} alt={`New image preview ${index + 1}`} fill className="rounded-md object-cover"/>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                        <div className="flex gap-2">
-                            <Input placeholder="Enter new image URL" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} />
-                            <Button type="button" onClick={handleAddImage}><ImagePlus className="mr-2 h-4 w-4"/> Add Image</Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                            )}
+                            <div>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    ref={galleryFilesRef}
+                                    name="gallery_files"
+                                    className="hidden"
+                                    onChange={handleGalleryFileChange}
+                                />
+                                <Button type="button" variant="outline" onClick={() => galleryFilesRef.current?.click()}>
+                                    <Upload className="mr-2 h-4 w-4" /> Upload New Images
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
 
                 {/* Rules Section */}
                 <Card id="court-rules" className="scroll-mt-24">

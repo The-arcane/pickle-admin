@@ -5,26 +5,28 @@ import { revalidatePath } from 'next/cache';
 import type { CourtRule, CourtGalleryImage, CourtContact, AvailabilityBlock, RecurringUnavailability } from './[id]/types';
 
 // Helper to upload a file to Supabase Storage
-async function handleImageUpload(supabase: any, file: File | null): Promise<string | null> {
+async function handleImageUpload(supabase: any, file: File | null, courtId: string, imageType: 'main' | 'cover' | 'gallery'): Promise<string | null> {
     if (!file || file.size === 0) {
         return null;
     }
 
     const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
+    const fileName = `${imageType}-${Date.now()}.${fileExt}`;
+    // Store images in a public folder, organized by court ID
+    const filePath = `public/${courtId}/${fileName}`;
     
     const { error: uploadError } = await supabase.storage
         .from('court-images')
-        .upload(fileName, file);
+        .upload(filePath, file);
 
     if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
+        console.error(`Error uploading ${imageType} image:`, uploadError);
+        throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
     }
 
     const { data: publicUrlData } = supabase.storage
         .from('court-images')
-        .getPublicUrl(fileName);
+        .getPublicUrl(filePath);
     
     return publicUrlData.publicUrl;
 }
@@ -68,21 +70,10 @@ export async function addCourt(formData: FormData) {
       return { error: 'Valid Latitude and Longitude are required.' };
     }
     
-    const courtData: any = { ...courtFields };
-
-    const mainImageFile = formData.get('main_image_file') as File | null;
-    const coverImageFile = formData.get('cover_image_file') as File | null;
-    
-    const mainImageUrl = await handleImageUpload(supabase, mainImageFile);
-    if (mainImageUrl) courtData.image = mainImageUrl;
-    
-    const coverImageUrl = await handleImageUpload(supabase, coverImageFile);
-    if (coverImageUrl) courtData.cover_image = coverImageUrl;
-
-    // --- 1. Insert the main court record ---
+    // --- 1. Insert the main court record (without images first) ---
     const { data: newCourt, error: courtError } = await supabase
       .from('courts')
-      .insert(courtData)
+      .insert(courtFields)
       .select()
       .single();
 
@@ -91,25 +82,42 @@ export async function addCourt(formData: FormData) {
       return { error: `Failed to add court. ${courtError?.message}` };
     }
     
-    const courtId = newCourt.id;
+    const courtId = newCourt.id.toString();
+    const courtUpdateData: { image?: string; cover_image?: string } = {};
 
-    // --- 2. Handle related tables ---
+    // --- 2. Upload images and prepare update payload ---
+    const mainImageFile = formData.get('main_image_file') as File | null;
+    const coverImageFile = formData.get('cover_image_file') as File | null;
+    
+    const mainImageUrl = await handleImageUpload(supabase, mainImageFile, courtId, 'main');
+    if (mainImageUrl) courtUpdateData.image = mainImageUrl;
+    
+    const coverImageUrl = await handleImageUpload(supabase, coverImageFile, courtId, 'cover');
+    if (coverImageUrl) courtUpdateData.cover_image = coverImageUrl;
+
+    // --- 3. Update court with image URLs if they were uploaded ---
+    if (Object.keys(courtUpdateData).length > 0) {
+        const { error: imageUpdateError } = await supabase
+            .from('courts')
+            .update(courtUpdateData)
+            .eq('id', courtId);
+        if (imageUpdateError) {
+            console.error('Error updating court with images:', imageUpdateError);
+            // Decide if we should return error or just log it
+            return { error: `Court added, but failed to save images: ${imageUpdateError.message}` };
+        }
+    }
+
+    // --- 4. Handle related tables ---
     const rules = JSON.parse(formData.get('rules') as string) as Partial<CourtRule>[];
-    const gallery = JSON.parse(formData.get('gallery') as string) as Partial<CourtGalleryImage>[];
     const contact = JSON.parse(formData.get('contact') as string) as Partial<CourtContact>;
     const availability = JSON.parse(formData.get('availability') as string) as Partial<AvailabilityBlock>[];
     const unavailability = JSON.parse(formData.get('unavailability') as string) as Partial<RecurringUnavailability>[];
-
 
     if (rules.length > 0) {
       const rulesToInsert = rules.map(r => ({ rule: r.rule, court_id: courtId }));
       const { error } = await supabase.from('court_rules').insert(rulesToInsert);
       if(error) { console.error('Error adding rules:', error); return { error: `Failed to save rules: ${error.message}` }; }
-    }
-    if (gallery.length > 0) {
-      const galleryToInsert = gallery.map(g => ({ image_url: g.image_url, court_id: courtId }));
-      const { error } = await supabase.from('court_gallery').insert(galleryToInsert);
-      if(error) { console.error('Error adding gallery:', error); return { error: `Failed to save gallery: ${error.message}` };}
     }
     if (contact.phone || contact.email) {
       const { error } = await supabase.from('court_contacts').insert({ ...contact, court_id: courtId });
@@ -126,7 +134,6 @@ export async function addCourt(formData: FormData) {
       if(error) { console.error('Error adding unavailability:', error); return { error: `Failed to save recurring unavailability: ${error.message}` };}
     }
 
-
   } catch (e: any) {
     console.error('Server action error in addCourt:', e);
     return { error: `An unexpected error occurred: ${e.message}` };
@@ -138,7 +145,7 @@ export async function addCourt(formData: FormData) {
 
 export async function updateCourt(formData: FormData) {
   const supabase = createServer();
-  const id = Number(formData.get('id'));
+  const id = formData.get('id') as string;
 
   try {
     if (!id) return { error: 'Court ID is missing.' };
@@ -149,22 +156,43 @@ export async function updateCourt(formData: FormData) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
     }
     
-    const courtData: any = { ...courtFields };
+    const courtUpdateData: any = { ...courtFields };
     
+    // --- Handle Image Uploads ---
     const mainImageFile = formData.get('main_image_file') as File | null;
     const coverImageFile = formData.get('cover_image_file') as File | null;
     
-    const mainImageUrl = await handleImageUpload(supabase, mainImageFile);
-    if (mainImageUrl) courtData.image = mainImageUrl;
+    const mainImageUrl = await handleImageUpload(supabase, mainImageFile, id, 'main');
+    if (mainImageUrl) courtUpdateData.image = mainImageUrl;
     
-    const coverImageUrl = await handleImageUpload(supabase, coverImageFile);
-    if (coverImageUrl) courtData.cover_image = coverImageUrl;
+    const coverImageUrl = await handleImageUpload(supabase, coverImageFile, id, 'cover');
+    if (coverImageUrl) courtUpdateData.cover_image = coverImageUrl;
 
     // --- 1. Update main court table ---
-    const { error: courtError } = await supabase.from('courts').update(courtData).eq('id', id);
+    const { error: courtError } = await supabase.from('courts').update(courtUpdateData).eq('id', id);
     if (courtError) { console.error('Error updating court:', courtError); return { error: `Failed to update court. ${courtError.message}` };}
 
-    // --- 2. Sync Rules (Delete removed, then upsert all) ---
+    // --- 2. Handle New Gallery Images ---
+    const galleryFiles = formData.getAll('gallery_files') as File[];
+    const uploadedGalleryUrls: { court_id: string; image_url: string }[] = [];
+    for (const file of galleryFiles) {
+      if (file && file.size > 0) {
+        const url = await handleImageUpload(supabase, file, id, 'gallery');
+        if (url) {
+          uploadedGalleryUrls.push({ court_id: id, image_url: url });
+        }
+      }
+    }
+    if (uploadedGalleryUrls.length > 0) {
+        const { error: galleryInsertError } = await supabase.from('court_gallery').insert(uploadedGalleryUrls);
+        if (galleryInsertError) {
+            console.error('Error inserting new gallery images:', galleryInsertError);
+            // Non-fatal, we can continue
+        }
+    }
+    
+
+    // --- 3. Sync Existing Rules (Delete removed, then upsert all) ---
     const rules = JSON.parse(formData.get('rules') as string) as Partial<CourtRule>[];
     const { data: existingRules } = await supabase.from('court_rules').select('id').eq('court_id', id);
     if (!existingRules) { return { error: "Could not fetch existing court rules." }; }
@@ -186,7 +214,7 @@ export async function updateCourt(formData: FormData) {
       if (error) { console.error('Error upserting rules:', error); return { error: `Failed to save rules: ${error.message}` }; }
     }
     
-    // --- 3. Sync Gallery (similar to rules) ---
+    // --- 4. Sync Existing Gallery (handles deletions) ---
     const gallery = JSON.parse(formData.get('gallery') as string) as Partial<CourtGalleryImage>[];
     const { data: existingGallery } = await supabase.from('court_gallery').select('id').eq('court_id', id);
     if (!existingGallery) { return { error: "Could not fetch existing gallery." }; }
@@ -198,17 +226,8 @@ export async function updateCourt(formData: FormData) {
         const { error } = await supabase.from('court_gallery').delete().in('id', galleryToDelete);
         if (error) { console.error('Error deleting gallery images:', error); return { error: `Failed to delete old gallery images: ${error.message}` }; }
     }
-    if(gallery.length > 0) {
-      const galleryToUpsert = gallery.map(g => {
-        const record: any = { image_url: g.image_url, court_id: id };
-        if (g.id) record.id = g.id;
-        return record;
-      });
-      const { error } = await supabase.from('court_gallery').upsert(galleryToUpsert);
-      if (error) { console.error('Error upserting gallery:', error); return { error: `Failed to save gallery: ${error.message}` }; }
-    }
 
-    // --- 4. Sync Contact ---
+    // --- 5. Sync Contact ---
     const contact = JSON.parse(formData.get('contact') as string) as Partial<CourtContact>;
     const { data: existingContact } = await supabase.from('court_contacts').select('id').eq('court_id', id).maybeSingle();
     const hasNewContactInfo = contact.phone || contact.email;
@@ -225,7 +244,7 @@ export async function updateCourt(formData: FormData) {
       if (error) { console.error('Error deleting contact:', error); return { error: `Failed to delete old contact info: ${error.message}` }; }
     }
 
-    // --- 5. Sync Availability Blocks ---
+    // --- 6. Sync Availability Blocks ---
     const availability = JSON.parse(formData.get('availability') as string) as Partial<AvailabilityBlock>[];
     const { data: existingAvailability } = await supabase.from('availability_blocks').select('id').eq('court_id', id);
     if (!existingAvailability) { return { error: "Could not fetch existing availability." }; }
@@ -247,7 +266,7 @@ export async function updateCourt(formData: FormData) {
       if (error) { console.error('Error upserting availability:', error); return { error: `Failed to save availability: ${error.message}` }; }
     }
     
-    // --- 6. Sync Recurring Unavailability ---
+    // --- 7. Sync Recurring Unavailability ---
     const unavailability = JSON.parse(formData.get('unavailability') as string) as Partial<RecurringUnavailability>[];
     const { data: existingUnavailability } = await supabase.from('recurring_unavailability').select('id').eq('court_id', id);
     if (!existingUnavailability) { return { error: "Could not fetch existing recurring unavailability." }; }
