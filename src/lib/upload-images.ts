@@ -6,7 +6,7 @@ export async function uploadImage(file: File) {
   const supabase = createClient();
   const fileExt = file.name.split('.').pop();
   const fileName = `${Date.now()}.${fileExt}`;
-  const filePath = `court-images/${fileName}`;
+  const filePath = fileName;
 
   const { data, error } = await supabase.storage
     .from('court-images')
