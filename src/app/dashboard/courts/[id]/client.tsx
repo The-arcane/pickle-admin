@@ -246,7 +246,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     <Button type="button" variant="ghost" size="icon" className="justify-self-end" onClick={() => handleRemoveAvailability(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                 </div>
                             ))}
-                            <Button type="button" variant="outline" size="sm" onClick={handleAddAvailability}><Plus className="mr-2 h-4 w-4" /> Add Date</Button>
+                            <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={handleAddAvailability}><Plus className="mr-2 h-4 w-4" /> Add Date</Button>
                         </div>
                         <Separator />
                         <div className="space-y-4">
@@ -263,7 +263,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     <Button type="button" variant="ghost" size="icon" className="justify-self-end" onClick={() => handleRemoveUnavailability(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                 </div>
                             ))}
-                            <Button type="button" variant="outline" size="sm" onClick={handleAddUnavailability}><Plus className="mr-2 h-4 w-4" /> Add Unavailability</Button>
+                            <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={handleAddUnavailability}><Plus className="mr-2 h-4 w-4" /> Add Unavailability</Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -292,7 +292,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                         }
                                     }}
                                 />
-                                <Button type="button" variant="outline" size="sm" onClick={() => mainImageRef.current?.click()}>
+                                <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={() => mainImageRef.current?.click()}>
                                     <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
                                 </Button>
                                 {mainImagePreview && (
@@ -306,7 +306,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                             alt="Main Court Preview"
                                             width={600}
                                             height={400}
-                                            className="object-cover w-full h-auto"
+                                            className="w-full h-auto object-cover"
                                         />
                                     </button>
                                 )}
@@ -328,7 +328,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                         }
                                     }}
                                 />
-                                <Button type="button" variant="outline" size="sm" onClick={() => coverImageRef.current?.click()}>
+                                <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={() => coverImageRef.current?.click()}>
                                     <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
                                 </Button>
                                 {coverImagePreview && (
@@ -342,7 +342,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                             alt="Cover Court Preview"
                                             width={600}
                                             height={400}
-                                            className="object-cover w-full h-auto"
+                                            className="w-full h-auto object-cover"
                                         />
                                     </button>
                                 )}
@@ -369,7 +369,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                 </div>
                             ))}
                         </div>
-                        <Button type="button" variant="outline" size="sm" onClick={handleAddRule}><Plus className="mr-2 h-4 w-4" /> Add Rule</Button>
+                        <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={handleAddRule}><Plus className="mr-2 h-4 w-4" /> Add Rule</Button>
                     </CardContent>
                 </Card>
 
