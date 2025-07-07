@@ -31,16 +31,6 @@ const daysOfWeek = [
     { value: 0, 'label': 'Sunday' },
 ];
 
-const isValidUrl = (url: string | null | undefined): boolean => {
-    if (!url) return false;
-    try {
-        new URL(url);
-        return true;
-    } catch (e) {
-        return false;
-    }
-};
-
 export function EditCourtClientPage({ court, organisations, sports }: { court: Court | null, organisations: Organisation[], sports: Sport[] }) {
     const router = useRouter();
     const { toast } = useToast();
@@ -302,7 +292,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                 <Button type="button" onClick={() => mainImageRef.current?.click()}>
                                     <ImagePlus className="mr-2 h-4 w-4" /> Upload Main Image
                                 </Button>
-                                {mainImagePreview && isValidUrl(mainImagePreview) && (
+                                {mainImagePreview && (
                                     <div className="mt-3 relative aspect-video w-full max-w-sm">
                                         <Image
                                             src={mainImagePreview}
@@ -333,7 +323,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                 <Button type="button" onClick={() => coverImageRef.current?.click()}>
                                     <ImagePlus className="mr-2 h-4 w-4" /> Upload Cover Image
                                 </Button>
-                                {coverImagePreview && isValidUrl(coverImagePreview) && (
+                                {coverImagePreview && (
                                     <div className="mt-3 relative aspect-video w-full max-w-sm">
                                         <Image
                                             src={coverImagePreview}
