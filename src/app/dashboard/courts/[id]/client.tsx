@@ -278,23 +278,25 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Main Image */}
                             <div className="space-y-2">
-                                <Label>Main Image</Label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    ref={mainImageRef}
-                                    name="main_image_file"
-                                    className="hidden"
-                                    onChange={e => {
-                                        const f = e.target.files?.[0];
-                                        if (f) {
-                                            setMainImagePreview(URL.createObjectURL(f));
-                                        }
-                                    }}
-                                />
-                                <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={() => mainImageRef.current?.click()}>
-                                    <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
-                                </Button>
+                                <div className="flex items-center">
+                                    <Label>Main Image</Label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        ref={mainImageRef}
+                                        name="main_image_file"
+                                        className="hidden"
+                                        onChange={e => {
+                                            const f = e.target.files?.[0];
+                                            if (f) {
+                                                setMainImagePreview(URL.createObjectURL(f));
+                                            }
+                                        }}
+                                    />
+                                    <Button type="button" variant="outline" size="sm" className="h-auto py-1.5 ml-auto" onClick={() => mainImageRef.current?.click()}>
+                                        <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
+                                    </Button>
+                                </div>
                                 {mainImagePreview && (
                                     <button
                                         type="button"
@@ -314,23 +316,25 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
 
                             {/* Cover Image */}
                             <div className="space-y-2">
-                                <Label>Cover Image</Label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    ref={coverImageRef}
-                                    name="cover_image_file"
-                                    className="hidden"
-                                    onChange={e => {
-                                        const f = e.target.files?.[0];
-                                        if (f) {
-                                            setCoverImagePreview(URL.createObjectURL(f));
-                                        }
-                                    }}
-                                />
-                                <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={() => coverImageRef.current?.click()}>
-                                    <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
-                                </Button>
+                                <div className="flex items-center">
+                                    <Label>Cover Image</Label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        ref={coverImageRef}
+                                        name="cover_image_file"
+                                        className="hidden"
+                                        onChange={e => {
+                                            const f = e.target.files?.[0];
+                                            if (f) {
+                                                setCoverImagePreview(URL.createObjectURL(f));
+                                            }
+                                        }}
+                                    />
+                                    <Button type="button" variant="outline" size="sm" className="h-auto py-1.5 ml-auto" onClick={() => coverImageRef.current?.click()}>
+                                        <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
+                                    </Button>
+                                </div>
                                 {coverImagePreview && (
                                      <button
                                         type="button"
