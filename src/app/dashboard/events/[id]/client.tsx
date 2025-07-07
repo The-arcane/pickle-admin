@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { addEvent, updateEvent } from '../actions';
-import type { Event, SubEvent, GalleryImage, WhatToBringItem, Organisation, EventCategory, EventTag, User } from './types';
+import type { Event, SubEvent, WhatToBringItem, Organisation, EventCategory, EventTag, User } from './types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, ImagePlus, X, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Plus, Trash2, ImagePlus, Calendar as CalendarIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -53,27 +53,24 @@ export function EditEventClientPage({ event, organisations, users, categories, t
             return '';
         }
     };
-
+    
     // Dynamic lists
     const [subEvents, setSubEvents] = useState<Partial<SubEvent>[]>(
         event?.event_sub_events.map(sub => ({
             ...sub,
             start_time: formatTimeToInputValue(sub.start_time),
             end_time: formatTimeToInputValue(sub.end_time),
-        })) ?? []
+        })) ?? [{ title: '', start_time: '', end_time: '' }]
     );
-    const [gallery, setGallery] = useState<Partial<GalleryImage>[]>(event?.event_gallery_images ?? []);
-    const [whatToBring, setWhatToBring] = useState<Partial<WhatToBringItem>[]>(event?.event_what_to_bring ?? []);
-    const [newImageUrl, setNewImageUrl] = useState('');
+    const [whatToBring, setWhatToBring] = useState<Partial<WhatToBringItem>[]>(event?.event_what_to_bring ?? [{ item: '' }]);
 
     const handleFormAction = async (formData: FormData) => {
         if(startDate) formData.append('start_time', startDate.toISOString());
         if(endDate) formData.append('end_time', endDate.toISOString());
         
         formData.append('is_free', String(isFree));
-        formData.append('sub_events', JSON.stringify(subEvents));
-        formData.append('gallery', JSON.stringify(gallery));
-        formData.append('what_to_bring', JSON.stringify(whatToBring));
+        formData.append('sub_events', JSON.stringify(subEvents.filter(s => s.title)));
+        formData.append('what_to_bring', JSON.stringify(whatToBring.filter(s => s.item)));
 
         const action = isAdding ? addEvent : updateEvent;
         if (!isAdding && event) {
@@ -99,15 +96,6 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         (newSubEvents[index] as any)[field] = value;
         setSubEvents(newSubEvents);
     };
-
-    // Gallery handlers
-    const handleAddImage = () => {
-        if (newImageUrl.trim()) {
-            setGallery([...gallery, { image_url: newImageUrl.trim() }]);
-            setNewImageUrl('');
-        }
-    };
-    const handleRemoveImage = (index: number) => setGallery(gallery.filter((_, i) => i !== index));
 
     // What to bring handlers
     const handleAddBringItem = () => setWhatToBring([...whatToBring, { item: '' }]);
@@ -137,6 +125,10 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-2"><Label htmlFor="title">Event Title</Label><Input id="title" name="title" defaultValue={event?.title || ''} placeholder="e.g., Summer Tennis Tournament" required/></div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <div className="space-y-2"><Label htmlFor="type">Event Type</Label><Input id="type" name="type" defaultValue={event?.type || ''} placeholder="e.g., Tournament, Workshop" /></div>
+                           <div className="space-y-2"><Label htmlFor="location_name">Location Name</Label><Input id="location_name" name="location_name" defaultValue={event?.location_name || ''} placeholder="e.g., City Sports Complex"/></div>
+                        </div>
                         <div className="space-y-2"><Label htmlFor="description">Description</Label><Textarea id="description" name="description" defaultValue={event?.description || ''} rows={4}/></div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
@@ -147,7 +139,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {startDate ? 
                                                 (isClient ? format(startDate, "PPP p") : <Skeleton className="h-4 w-[200px]" />) : 
-                                                (<span>Pick a date</span>)
+                                                (<span>Pick a date and time</span>)
                                             }
                                         </Button>
                                     </PopoverTrigger>
@@ -164,7 +156,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {endDate ? 
                                                 (isClient ? format(endDate, "PPP p") : <Skeleton className="h-4 w-[200px]" />) : 
-                                                (<span>Pick a date</span>)
+                                                (<span>Pick a date and time</span>)
                                             }
                                         </Button>
                                     </PopoverTrigger>
@@ -174,10 +166,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                 </Popover>
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2"><Label htmlFor="location_name">Location Name</Label><Input id="location_name" name="location_name" defaultValue={event?.location_name || ''} placeholder="e.g., City Sports Complex"/></div>
-                            <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" name="address" defaultValue={event?.address || ''} /></div>
-                        </div>
+                        <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" name="address" defaultValue={event?.address || ''} /></div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2"><Label htmlFor="latitude">Latitude</Label><Input id="latitude" name="latitude" type="number" step="any" defaultValue={event?.latitude ?? ''} /></div>
                             <div className="space-y-2"><Label htmlFor="longitude">Longitude</Label><Input id="longitude" name="longitude" type="number" step="any" defaultValue={event?.longitude ?? ''} /></div>
@@ -259,6 +248,24 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                         </div>
                     </CardContent>
                 </Card>
+                
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Sub-Events / Schedule</CardTitle>
+                        <CardDescription>Break down the event into smaller parts or a schedule.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {subEvents.map((sub, index) => (
+                            <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_0.5fr_0.5fr_auto] items-end gap-2 p-2 border rounded-md">
+                                <div className="space-y-2"><Label>Title</Label><Input value={sub.title || ''} onChange={(e) => handleSubEventChange(index, 'title', e.target.value)} placeholder="e.g., Registration" /></div>
+                                <div className="space-y-2"><Label>Start Time</Label><Input type="time" value={sub.start_time || ''} onChange={(e) => handleSubEventChange(index, 'start_time', e.target.value)} /></div>
+                                <div className="space-y-2"><Label>End Time</Label><Input type="time" value={sub.end_time || ''} onChange={(e) => handleSubEventChange(index, 'end_time', e.target.value)} /></div>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveSubEvent(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                            </div>
+                        ))}
+                        <Button type="button" variant="outline" size="sm" onClick={handleAddSubEvent}><Plus className="mr-2 h-4 w-4" /> Add Schedule Item</Button>
+                    </CardContent>
+                </Card>
 
                 <Card>
                     <CardHeader>
@@ -286,26 +293,11 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                         </div>
                     </CardContent>
                 </Card>
-
-                <Card>
-                    <CardHeader><CardTitle>Sub-Events / Schedule</CardTitle><CardDescription>Break down the event into smaller parts or a schedule.</CardDescription></CardHeader>
-                    <CardContent className="space-y-4">
-                        {subEvents.map((sub, index) => (
-                            <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_0.5fr_0.5fr_auto] items-end gap-2 p-2 border rounded-md">
-                                <div className="space-y-2"><Label>Title</Label><Input value={sub.title || ''} onChange={(e) => handleSubEventChange(index, 'title', e.target.value)} placeholder="e.g., Registration" /></div>
-                                <div className="space-y-2"><Label>Start Time</Label><Input type="time" value={sub.start_time || ''} onChange={(e) => handleSubEventChange(index, 'start_time', e.target.value)} /></div>
-                                <div className="space-y-2"><Label>End Time</Label><Input type="time" value={sub.end_time || ''} onChange={(e) => handleSubEventChange(index, 'end_time', e.target.value)} /></div>
-                                <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveSubEvent(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                            </div>
-                        ))}
-                        <Button type="button" variant="outline" onClick={handleAddSubEvent}><Plus className="mr-2 h-4 w-4" /> Add Schedule Item</Button>
-                    </CardContent>
-                </Card>
-
+                
                 <Card>
                     <CardHeader><CardTitle>Additional Information</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
+                    <CardContent className="space-y-6">
+                        <div className="space-y-4">
                             <Label>What to Bring</Label>
                             {whatToBring.map((item, index) => (
                                 <div key={index} className="flex items-center gap-2">

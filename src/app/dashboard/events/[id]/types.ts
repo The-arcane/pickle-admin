@@ -24,17 +24,8 @@ export type SubEvent = {
     id: number;
     event_id: number;
     title: string | null;
-    type: string | null;
-    description: string | null;
     start_time: string | null;
     end_time: string | null;
-    location: string | null;
-};
-
-export type GalleryImage = {
-    id: number;
-    event_id: number;
-    image_url: string;
 };
 
 export type WhatToBringItem = {
@@ -80,9 +71,5 @@ export type Event = {
   
   // Nested relations
   event_sub_events: SubEvent[];
-  event_gallery_images: GalleryImage[];
   event_what_to_bring: WhatToBringItem[];
-  // Mapped relations - simplified for form
-  event_categories: { category_id: number }[];
-  event_tags: { tag_id: number }[];
 };

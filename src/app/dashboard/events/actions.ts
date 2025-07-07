@@ -2,7 +2,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import type { SubEvent, GalleryImage, WhatToBringItem } from './[id]/types';
+import type { SubEvent, WhatToBringItem } from './[id]/types';
 
 // Helper to upload a file to Supabase Storage for events
 async function handleEventImageUpload(supabase: any, file: File | null, eventId: string): Promise<string | null> {
@@ -49,7 +49,7 @@ function getEventDataFromFormData(formData: FormData) {
         slug: (formData.get('title') as string).toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, ''),
         description: formData.get('description') as string,
         type: formData.get('type') as string,
-        access_type: formData.get('access_type') as string,
+        access_type: formData.get('access_type') as 'public' | 'private' | 'invite-only',
         organiser_user_id: organiserType === 'user' && organiserUserId ? Number(organiserUserId) : null,
         organiser_org_id: organiserType === 'organisation' && organiserOrgId ? Number(organiserOrgId) : null,
         start_time: formData.get('start_time') as string,
@@ -119,7 +119,6 @@ export async function addEvent(formData: FormData) {
 
     // --- 4. Handle related tables ---
     const subEvents = JSON.parse(formData.get('sub_events') as string) as Partial<SubEvent>[];
-    const gallery = JSON.parse(formData.get('gallery') as string) as Partial<GalleryImage>[];
     const whatToBring = JSON.parse(formData.get('what_to_bring') as string) as Partial<WhatToBringItem>[];
 
     if (subEvents.length > 0) {
@@ -135,11 +134,7 @@ export async function addEvent(formData: FormData) {
       const { error } = await supabase.from('event_sub_events').insert(toInsert);
       if(error) { console.error('Error adding sub-events:', error); return { error: `Failed to save sub-events: ${error.message}` }; }
     }
-    if (gallery.length > 0) {
-      const toInsert = gallery.map(item => ({ image_url: item.image_url, event_id: eventId }));
-      const { error } = await supabase.from('event_gallery_images').insert(toInsert);
-      if(error) { console.error('Error adding gallery:', error); return { error: `Failed to save gallery: ${error.message}` };}
-    }
+
     if (whatToBring.length > 0) {
       const toInsert = whatToBring.map(item => ({ item: item.item, event_id: eventId }));
       const { error } = await supabase.from('event_what_to_bring').insert(toInsert);
@@ -175,7 +170,6 @@ export async function updateEvent(formData: FormData) {
     if (eventError) { console.error('Error updating event:', eventError); return { error: `Failed to update event. ${eventError.message}` };}
 
     const subEvents = JSON.parse(formData.get('sub_events') as string) as Partial<SubEvent>[];
-    const gallery = JSON.parse(formData.get('gallery') as string) as Partial<GalleryImage>[];
     const whatToBring = JSON.parse(formData.get('what_to_bring') as string) as Partial<WhatToBringItem>[];
 
     // --- 2. Sync Sub-Events ---
@@ -193,10 +187,8 @@ export async function updateEvent(formData: FormData) {
         const createTimestamp = (timeStr: string | null | undefined) => !timeStr || !mainEventDateString ? null : new Date(`${mainEventDateString}T${timeStr}:00.000Z`).toISOString();
         
         const toUpsert = subEvents.map(item => {
-            const record: any = { ...item, event_id: id };
-            record.start_time = createTimestamp(item.start_time);
-            record.end_time = createTimestamp(item.end_time);
-            if (!record.id) delete record.id;
+            const record: any = { event_id: id, title: item.title, start_time: createTimestamp(item.start_time), end_time: createTimestamp(item.end_time) };
+            if (item.id) record.id = item.id;
             return record;
         });
 
@@ -204,28 +196,7 @@ export async function updateEvent(formData: FormData) {
       if (error) { return { error: `Failed to save sub-events: ${error.message}` }; }
     }
 
-    // --- 3. Sync Gallery ---
-    const { data: existingGallery } = await supabase.from('event_gallery_images').select('id').eq('event_id', id);
-    const existingGalleryIds = existingGallery?.map(g => g.id) || [];
-    const newGalleryIds = gallery.map(g => g.id).filter(Boolean);
-    const galleryToDelete = existingGalleryIds.filter(gId => !newGalleryIds.includes(gId as number));
-    
-    if(galleryToDelete.length > 0) {
-        const { error } = await supabase.from('event_gallery_images').delete().in('id', galleryToDelete);
-        if (error) { return { error: `Failed to delete old gallery images: ${error.message}` }; }
-    }
-    if(gallery.length > 0) {
-      const toUpsert = gallery.map(item => {
-        const record: any = { image_url: item.image_url, event_id: id };
-        if (item.id) record.id = item.id;
-        else delete record.id;
-        return record;
-      });
-      const { error } = await supabase.from('event_gallery_images').upsert(toUpsert);
-      if (error) { return { error: `Failed to save gallery: ${error.message}` }; }
-    }
-    
-    // --- 4. Sync What To Bring ---
+    // --- 3. Sync What To Bring ---
     const { data: existingBringItems } = await supabase.from('event_what_to_bring').select('id').eq('event_id', id);
     const existingBringIds = existingBringItems?.map(b => b.id) || [];
     const newBringIds = whatToBring.map(b => b.id).filter(Boolean);
@@ -239,7 +210,6 @@ export async function updateEvent(formData: FormData) {
       const toUpsert = whatToBring.map(item => {
         const record: any = { item: item.item, event_id: id };
         if (item.id) record.id = item.id;
-        else delete record.id;
         return record;
       });
       const { error } = await supabase.from('event_what_to_bring').upsert(toUpsert);
