@@ -121,6 +121,12 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         }
     };
 
+    const onGalleryFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        await handleGallerySubmit(formData);
+    }
+
     // Sub-events handlers
     const handleAddSubEvent = () => setSubEvents([...subEvents, { title: '', start_time: '', end_time: '' }]);
     const handleRemoveSubEvent = (index: number) => setSubEvents(subEvents.filter((_, i) => i !== index));
@@ -367,7 +373,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                             <CardDescription>Upload multiple images for the event gallery.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <form ref={galleryFormRef} action={handleGallerySubmit} className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center">
+                            <form ref={galleryFormRef} onSubmit={onGalleryFormSubmit} className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center">
                                 <input type="hidden" name="event_id" value={event.id} />
                                 <Label htmlFor="event-gallery-images" className="mb-4 cursor-pointer">
                                     <Upload className="mx-auto h-12 w-12 text-muted-foreground" />

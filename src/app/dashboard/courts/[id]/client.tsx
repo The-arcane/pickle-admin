@@ -146,6 +146,12 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
             galleryFormRef.current?.reset();
         }
     };
+
+    const onGalleryFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        await handleGallerySubmit(formData);
+    }
     
     const handleAddRule = () => setRules([...rules, { rule: '' }]);
     const handleRemoveRule = (index: number) => setRules(rules.filter((_, i) => i !== index));
@@ -440,7 +446,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                             <CardDescription>Upload multiple images for the court gallery. These will be visible to users.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <form ref={galleryFormRef} action={handleGallerySubmit} className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center">
+                            <form ref={galleryFormRef} onSubmit={onGalleryFormSubmit} className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center">
                                  <input type="hidden" name="court_id" value={court.id} />
                                  <Label htmlFor="gallery-images" className="mb-4 cursor-pointer">
                                     <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
