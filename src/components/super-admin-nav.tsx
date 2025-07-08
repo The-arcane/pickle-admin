@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper } from 'lucide-react';
+import { BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/super-admin/dashboard', label: 'Dashboard', icon: BarChart },
   { href: '/super-admin/organisations', label: 'Organizations', icon: Building },
   { href: '/super-admin/users', label: 'Users', icon: Users },
+  { href: '/super-admin/residences', label: 'Residences', icon: Home },
   { href: '/super-admin/courts', label: 'Courts', icon: List },
   { href: '/super-admin/bookings', label: 'Bookings', icon: Calendar },
   { href: '/super-admin/events', label: 'Events', icon: PartyPopper },

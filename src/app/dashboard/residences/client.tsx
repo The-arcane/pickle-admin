@@ -1,0 +1,218 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
+import { format } from 'date-fns';
+import { useToast } from "@/hooks/use-toast";
+import { inviteResidents, removeResidence } from './actions';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { StatusBadge } from '@/components/status-badge';
+import { Trash2, Send, PlusCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+type Residence = {
+    id: number;
+    status: string;
+    invited_at: string | null;
+    joined_at: string | null;
+    user: {
+        name: string;
+        email: string;
+        profile_image_url: string | null;
+    } | null;
+};
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? 'Sending...' : <><Send className="mr-2 h-4 w-4" /> Send Invitations</>}
+        </Button>
+    )
+}
+
+function getInitials(name: string | undefined | null) {
+  if (!name) return '';
+  const names = name.split(' ').filter(Boolean);
+  if (names.length > 1) {
+    return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+  }
+  return names[0]?.substring(0, 2).toUpperCase() ?? '';
+};
+
+
+export function ResidencesClientPage({ 
+    initialResidences, 
+    organisationId,
+    loading 
+}: { 
+    initialResidences: Residence[], 
+    organisationId: number | null,
+    loading: boolean,
+}) {
+    const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [deletingResidenceId, setDeletingResidenceId] = useState<number | null>(null);
+    const { toast } = useToast();
+    const formRef = useRef<HTMLFormElement>(null);
+
+    const handleInviteFormAction = async (formData: FormData) => {
+        if (!organisationId) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No organization selected.' });
+            return;
+        }
+        formData.append('organisation_id', organisationId.toString());
+
+        const result = await inviteResidents(formData);
+        if (result.error) {
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        } else {
+            toast({ title: "Success", description: result.message });
+            setIsInviteDialogOpen(false);
+            formRef.current?.reset();
+        }
+    }
+    
+    const openDeleteDialog = (residenceId: number) => {
+        setDeletingResidenceId(residenceId);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const handleDeleteAction = async () => {
+        if (!deletingResidenceId) return;
+
+        const formData = new FormData();
+        formData.append('id', deletingResidenceId.toString());
+        
+        const result = await removeResidence(formData);
+        if (result.error) {
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        } else {
+            toast({ title: "Success", description: result.message });
+        }
+        setIsDeleteDialogOpen(false);
+    }
+    
+    return (
+        <>
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Resident List</CardTitle>
+                            <CardDescription>A list of all invited and joined residents.</CardDescription>
+                        </div>
+                         <Button onClick={() => setIsInviteDialogOpen(true)} disabled={!organisationId || loading}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Invite Residents
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>User</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Invited At</TableHead>
+                                <TableHead>Joined At</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {loading ? (
+                                Array.from({ length: 5 }).map((_, i) => (
+                                    <TableRow key={`skel-${i}`}>
+                                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                        <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                                    </TableRow>
+                                ))
+                            ) : initialResidences.length > 0 ? (
+                                initialResidences.map((res) => (
+                                    <TableRow key={res.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar>
+                                                    <AvatarImage src={res.user?.profile_image_url ?? undefined} alt={res.user?.name} />
+                                                    <AvatarFallback>{getInitials(res.user?.name)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-medium">{res.user?.name}</p>
+                                                    <p className="text-sm text-muted-foreground">{res.user?.email}</p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell><StatusBadge status={res.status} /></TableCell>
+                                        <TableCell>{res.invited_at ? format(new Date(res.invited_at), 'PPp') : 'N/A'}</TableCell>
+                                        <TableCell>{res.joined_at ? format(new Date(res.joined_at), 'PPp') : 'N/A'}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(res.id)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                <span className="sr-only">Remove</span>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center h-24">
+                                        No residents found. Invite some to get started!
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+
+            <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Invite New Residents</DialogTitle>
+                        <DialogDescription>
+                            Enter email addresses separated by commas, semicolons, or new lines. New users will be created if they don't exist.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form ref={formRef} action={handleInviteFormAction} className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="emails">Email Addresses</Label>
+                            <Textarea
+                                id="emails"
+                                name="emails"
+                                rows={8}
+                                placeholder="example1@email.com, example2@email.com"
+                                required
+                            />
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                            <SubmitButton />
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>This will remove the resident from this organization. This action cannot be undone.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteAction} className="bg-destructive hover:bg-destructive/90">Remove</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    )
+}
