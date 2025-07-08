@@ -1,7 +1,9 @@
 export type Organization = {
   id: number;
   name: string;
-  status: 'active' | 'inactive';
+  address: string;
+  user_id: number;
+  logo: string | null;
 };
 
 export type User = {
