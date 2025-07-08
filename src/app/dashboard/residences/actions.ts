@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
@@ -85,12 +86,11 @@ export async function inviteResidents(formData: FormData) {
       const newUserRecords = usersToCreate.map(user => ({
           name: user.Name,
           email: user.email,
-          phone: user.phone?.toString(), // Store phone as text in user table if needed
-          username: user.email, // Use email as a unique username placeholder
-          // This is a placeholder to satisfy database constraints. The user will set their
-          // real password when they complete the sign-up process.
+          phone: user.phone?.toString(),
+          username: user.email,
           hashed_password: crypto.randomBytes(32).toString('hex'), 
-          user_type: 1 // Default to a standard user type
+          user_type: 1, // Default to a standard user type
+          profile_image_url: 'https://placehold.co/128x128.png', // Placeholder to satisfy not-null constraint
       }));
 
       const { data: insertedUsers, error: insertError } = await supabase
