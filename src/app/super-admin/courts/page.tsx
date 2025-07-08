@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { useOrganization } from '@/hooks/use-organization';
 import { Card } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/client';
@@ -19,12 +18,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function CourtsPage() {
   const supabase = createClient();
   const { selectedOrgId } = useOrganization();
-  const [courts, setCourts] = useState<Court[]>([]);
+  const [courts, setCourts] = useState<Pick<Court, 'id' | 'name' | 'surface'>[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!selectedOrgId) {
       setCourts([]);
+      setLoading(false);
       return;
     };
 
@@ -32,8 +32,8 @@ export default function CourtsPage() {
       setLoading(true);
       const { data, error } = await supabase
         .from('courts')
-        .select('*')
-        .eq('organization_id', selectedOrgId);
+        .select('id, name, surface')
+        .eq('organisation_id', selectedOrgId);
 
       if (error) {
         console.error('Error fetching courts:', error);
@@ -47,18 +47,6 @@ export default function CourtsPage() {
     fetchCourts();
   }, [selectedOrgId, supabase]);
 
-  const getStatusVariant = (status: 'available' | 'booked' | 'maintenance') => {
-    switch (status) {
-      case 'available':
-        return 'bg-green-500/20 text-green-700 border-green-500/20';
-      case 'booked':
-        return 'bg-yellow-500/20 text-yellow-700 border-yellow-500/20';
-      case 'maintenance':
-        return 'bg-red-500/20 text-red-700 border-red-500/20';
-      default:
-        return 'secondary';
-    }
-  };
 
   return (
     <>
@@ -71,8 +59,7 @@ export default function CourtsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Surface</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -81,24 +68,18 @@ export default function CourtsPage() {
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
                 </TableRow>
               ))
             ) : courts.length > 0 ? (
               courts.map((court) => (
                 <TableRow key={court.id}>
                   <TableCell className="font-medium">{court.name}</TableCell>
-                  <TableCell className='capitalize'>{court.type}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getStatusVariant(court.status)}>
-                      {court.status}
-                    </Badge>
-                  </TableCell>
+                  <TableCell className='capitalize'>{court.surface || 'N/A'}</TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center">
+                <TableCell colSpan={2} className="h-24 text-center">
                   No courts found for this organization.
                 </TableCell>
               </TableRow>

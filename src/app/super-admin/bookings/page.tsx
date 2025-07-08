@@ -12,20 +12,30 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useOrganization } from '@/hooks/use-organization';
 import { Card } from '@/components/ui/card';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
-import type { Booking } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+
+// A more specific type for the data we fetch
+type BookingWithDetails = {
+  id: number;
+  booking_status: { label: string } | null;
+  timeslots: { date: string | null } | null;
+  user: { name: string } | null;
+  courts: { name: string } | null;
+};
+
 
 export default function BookingsPage() {
   const supabase = createClient();
   const { selectedOrgId } = useOrganization();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!selectedOrgId) {
       setBookings([]);
+      setLoading(false);
       return;
     };
 
@@ -35,12 +45,13 @@ export default function BookingsPage() {
         .from('bookings')
         .select(`
           id,
-          booking_date,
-          status,
-          users (name),
-          courts (name)
+          booking_status ( label ),
+          timeslots ( date ),
+          user:user_id ( name ),
+          courts:court_id!inner ( name )
         `)
-        .eq('organization_id', selectedOrgId);
+        .eq('courts.organisation_id', selectedOrgId)
+        .order('id', { ascending: false });
       
       if (error) {
         console.error('Error fetching bookings:', error);
@@ -54,16 +65,23 @@ export default function BookingsPage() {
     fetchBookings();
   }, [selectedOrgId, supabase]);
 
-  const getStatusVariant = (status: 'confirmed' | 'cancelled') => {
+  const getStatusVariant = (status: string | undefined) => {
     switch (status) {
-      case 'confirmed':
+      case 'Confirmed':
         return 'bg-green-500/20 text-green-700 border-green-500/20';
-      case 'cancelled':
-        return 'bg-gray-500/20 text-gray-700 border-gray-500/20';
+      case 'Cancelled':
+        return 'bg-red-500/20 text-red-700 border-red-500/20';
+       case 'Pending':
+        return 'bg-yellow-500/20 text-yellow-700 border-yellow-500/20';
       default:
         return 'secondary';
     }
   };
+  
+  const bookingDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "N/A";
+    return format(parseISO(dateStr), 'PPP');
+  }
 
   return (
     <>
@@ -94,12 +112,12 @@ export default function BookingsPage() {
             ) : bookings.length > 0 ? (
               bookings.map((booking) => (
                 <TableRow key={booking.id}>
-                  <TableCell className="font-medium">{booking.users?.name || 'N/A'}</TableCell>
+                  <TableCell className="font-medium">{booking.user?.name || 'N/A'}</TableCell>
                   <TableCell>{booking.courts?.name || 'N/A'}</TableCell>
-                  <TableCell>{format(new Date(booking.booking_date), 'PPP p')}</TableCell>
+                  <TableCell>{bookingDate(booking.timeslots?.date)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getStatusVariant(booking.status)}>
-                      {booking.status}
+                    <Badge variant="outline" className={getStatusVariant(booking.booking_status?.label)}>
+                      {booking.booking_status?.label || 'N/A'}
                     </Badge>
                   </TableCell>
                 </TableRow>

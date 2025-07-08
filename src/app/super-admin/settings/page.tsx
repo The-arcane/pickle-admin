@@ -1,7 +1,7 @@
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { ThemeSelect } from '@/components/ui/theme-select';
-import { LogoutButton } from '@/components/ui/logout-button';
+import { ThemeSelect } from '@/components/theme-select';
+import { LogoutButton } from '@/components/logout-button';
 
 export default function SuperAdminSettingsPage() {
   return (
@@ -35,7 +35,7 @@ export default function SuperAdminSettingsPage() {
         
         <div className="space-y-2">
             <Label className="text-base font-medium">Log Out</Label>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground">
               Sign out from your current session.
             </p>
             <LogoutButton />

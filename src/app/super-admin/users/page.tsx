@@ -18,30 +18,39 @@ import { createClient } from '@/lib/supabase/client';
 import type { User } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
+type UserWithRole = {
+    role: { name: string } | null;
+    user: User | null;
+}
+
 export default function UsersPage() {
   const supabase = createClient();
   const { selectedOrgId } = useOrganization();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!selectedOrgId) {
       setUsers([]);
+      setLoading(false);
       return;
     };
 
     const fetchUsers = async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('organization_id', selectedOrgId);
+        .from('user_organisations')
+        .select(`
+            role:role_id ( name ),
+            user:user_id!inner ( id, name, email, profile_image_url, created_at )
+        `)
+        .eq('organisation_id', selectedOrgId);
       
       if (error) {
         console.error('Error fetching users:', error);
         setUsers([]);
       } else {
-        setUsers(data as User[]);
+        setUsers(data as UserWithRole[]);
       }
       setLoading(false);
     };
@@ -49,7 +58,8 @@ export default function UsersPage() {
     fetchUsers();
   }, [selectedOrgId, supabase]);
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | undefined) => {
+    if (!name) return '';
     const names = name.split(' ');
     const initials = names.map(n => n[0]).join('');
     return initials.toUpperCase();
@@ -88,28 +98,33 @@ export default function UsersPage() {
                 </TableRow>
               ))
             ) : users.length > 0 ? (
-              users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                         <AvatarImage src={user.avatar} alt="Avatar" data-ai-hint="avatar" />
-                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                      </Avatar>
-                      <div className="grid gap-0.5">
-                        <span className="font-medium">{user.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {user.email}
-                        </span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} className='capitalize'>{user.role}</Badge>
-                  </TableCell>
-                  <TableCell>{format(new Date(user.joined_at), 'PP')}</TableCell>
-                </TableRow>
-              ))
+              users.map((item) => {
+                const user = item.user;
+                if (!user) return null;
+
+                return (
+                    <TableRow key={user.id}>
+                    <TableCell>
+                        <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                            <AvatarImage src={user.profile_image_url || undefined} alt="Avatar" data-ai-hint="avatar" />
+                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                        </Avatar>
+                        <div className="grid gap-0.5">
+                            <span className="font-medium">{user.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                            {user.email}
+                            </span>
+                        </div>
+                        </div>
+                    </TableCell>
+                    <TableCell>
+                        <Badge variant={item.role?.name === 'Admin' ? 'default' : 'secondary'} className='capitalize'>{item.role?.name ?? 'User'}</Badge>
+                    </TableCell>
+                    <TableCell>{format(new Date(user.created_at), 'PP')}</TableCell>
+                    </TableRow>
+                )
+            })
             ) : (
               <TableRow>
                 <TableCell colSpan={3} className="h-24 text-center">

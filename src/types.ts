@@ -8,35 +8,39 @@ export type User = {
   id: number;
   name: string;
   email: string;
-  avatar: string;
-  role: 'admin' | 'user';
-  joined_at: string;
+  phone: string | null;
+  profile_image_url: string | null;
+  created_at: string;
 };
 
 export type Court = {
   id: number;
   name: string;
-  type: string;
-  status: 'available' | 'booked' | 'maintenance';
+  surface: string | null;
+  // Other court fields can be added here as needed
 };
 
 export type Booking = {
   id: number;
-  booking_date: string;
-  status: 'confirmed' | 'cancelled';
-  users: {
-    name: string;
-  } | null;
-  courts: {
-    name: string;
-  } | null;
+  status: number; // e.g., 0 for Cancelled, 1 for Confirmed
+  user_id: number;
+  court_id: number;
+  timeslot_id: number;
+  
+  // Example of how related data might look after a join
+  user?: { name: string } | null;
+  courts?: { name: string } | null;
+  booking_status?: { label: string } | null;
+  timeslots?: { date: string | null } | null;
 };
 
 export type Event = {
   id: number;
-  name: string;
-  date: string;
+  title: string;
   start_time: string;
   end_time: string;
-  status: 'upcoming' | 'completed' | 'cancelled';
+  location_name: string | null;
+  is_free: boolean;
+  amount: number | null;
+  // Other event fields can be added here
 };

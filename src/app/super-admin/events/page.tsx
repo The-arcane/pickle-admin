@@ -26,6 +26,7 @@ export default function EventsPage() {
   useEffect(() => {
     if (!selectedOrgId) {
       setEvents([]);
+      setLoading(false);
       return;
     };
 
@@ -34,7 +35,7 @@ export default function EventsPage() {
       const { data, error } = await supabase
         .from('events')
         .select('*')
-        .eq('organization_id', selectedOrgId);
+        .eq('organiser_org_id', selectedOrgId);
       
       if (error) {
         console.error('Error fetching events:', error);
@@ -48,14 +49,21 @@ export default function EventsPage() {
     fetchEvents();
   }, [selectedOrgId, supabase]);
 
-  const getStatusVariant = (status: 'upcoming' | 'completed' | 'cancelled') => {
+  const getStatus = (event: Event) => {
+    const now = new Date();
+    const endTime = new Date(event.end_time);
+    if (endTime < now) {
+        return 'Completed';
+    }
+    return 'Upcoming';
+  }
+
+  const getStatusVariant = (status: 'Upcoming' | 'Completed') => {
     switch (status) {
-      case 'upcoming':
+      case 'Upcoming':
         return 'bg-blue-500/20 text-blue-700 border-blue-500/20';
-      case 'completed':
+      case 'Completed':
         return 'bg-green-500/20 text-green-700 border-green-500/20';
-      case 'cancelled':
-        return 'bg-gray-500/20 text-gray-700 border-gray-500/20';
       default:
         return 'secondary';
     }
@@ -73,7 +81,6 @@ export default function EventsPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead>Time</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
@@ -83,26 +90,24 @@ export default function EventsPage() {
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-48" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-28" /></TableCell>
                   <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
                 </TableRow>
               ))
             ) : events.length > 0 ? (
               events.map((event) => (
                 <TableRow key={event.id}>
-                  <TableCell className="font-medium">{event.name}</TableCell>
-                  <TableCell>{format(new Date(event.date), 'PPP')}</TableCell>
-                  <TableCell>{`${event.start_time} - ${event.end_time}`}</TableCell>
+                  <TableCell className="font-medium">{event.title}</TableCell>
+                  <TableCell>{format(new Date(event.start_time), 'PPP')}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getStatusVariant(event.status)}>
-                      {event.status}
+                    <Badge variant="outline" className={getStatusVariant(getStatus(event))}>
+                      {getStatus(event)}
                     </Badge>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
+                <TableCell colSpan={3} className="h-24 text-center">
                   No events found for this organization.
                 </TableCell>
               </TableRow>
