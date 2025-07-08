@@ -1,7 +1,9 @@
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { updateSuperAdminProfile } from './actions';
 
 export default async function SuperAdminProfilePage() {
   const supabase = createServer();
@@ -29,10 +31,10 @@ export default async function SuperAdminProfilePage() {
         <p className="text-muted-foreground">Manage your profile information.</p>
       </div>
       
-      <form className="space-y-6 max-w-lg">
+      <form action={updateSuperAdminProfile} className="space-y-6 max-w-lg">
         <div className="space-y-2">
           <Label htmlFor="fullName">Full Name</Label>
-          <Input id="fullName" defaultValue={userProfile.name} disabled />
+          <Input id="fullName" name="fullName" defaultValue={userProfile.name} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
@@ -40,8 +42,9 @@ export default async function SuperAdminProfilePage() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" defaultValue={userProfile.phone ?? ''} disabled />
+          <Input id="phone" name="phone" defaultValue={userProfile.phone ?? ''} />
         </div>
+        <Button type="submit">Save Changes</Button>
       </form>
     </div>
   );
