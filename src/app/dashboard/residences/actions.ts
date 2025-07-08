@@ -92,22 +92,22 @@ export async function inviteResidents(formData: FormData) {
         status: 'invited',
         "Name": resident.Name,
         email: resident.email,
-        phone: resident.phone ? Number(resident.phone) : null
-        // user_id is intentionally omitted to be null
+        phone: resident.phone ? Number(resident.phone) : null,
+        user_id: null
     }));
     
   let successCount = 0;
   if (residencesToInsert.length > 0) {
-    const { error: insertError, count } = await supabase
+    const { error: insertError, data: insertedData } = await supabase
       .from('residences')
       .insert(residencesToInsert)
-      .select({ count: 'exact' });
+      .select();
 
     if (insertError) {
         console.error("Error inserting residences:", insertError);
         return { error: `An unexpected error occurred during invitations: ${insertError.message}` };
     }
-    successCount = count ?? 0;
+    successCount = insertedData?.length ?? 0;
   }
   
   // 6. Build a clear summary message for the user.
