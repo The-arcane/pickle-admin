@@ -1,137 +1,91 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/page-header';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { useOrganization } from '@/hooks/use-organization';
-import { Card } from '@/components/ui/card';
-import { format, parseISO } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
-import { Skeleton } from '@/components/ui/skeleton';
-
-// A more specific type for the data we fetch
-type BookingWithDetails = {
-  id: number;
-  booking_status: { label: string } | null;
-  timeslots: { date: string | null } | null;
-  user: { name: string } | null;
-  courts: { name: string } | null;
-};
-
+import { BookingsClientPage } from './client';
 
 export default function BookingsPage() {
   const supabase = createClient();
   const { selectedOrgId } = useOrganization();
-  const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [courts, setCourts] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [bookingStatuses, setBookingStatuses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!selectedOrgId) {
       setBookings([]);
+      setCourts([]);
+      setUsers([]);
       setLoading(false);
       return;
     };
 
-    const fetchBookings = async () => {
+    const fetchBookingData = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+
+      // Fetch bookings for the selected organization
+      const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
-          id,
-          booking_status ( label ),
-          timeslots ( date ),
-          user:user_id ( name ),
-          courts:court_id!inner ( name )
+          id, status, court_id, timeslot_id, 
+          user:user_id(name), 
+          courts:court_id!inner(name), 
+          timeslots:timeslot_id(date, start_time, end_time)
         `)
         .eq('courts.organisation_id', selectedOrgId)
         .order('id', { ascending: false });
+
+      // Fetch all courts for the selected organization
+      const { data: courtsData, error: courtsError } = await supabase
+        .from('courts')
+        .select('id, name')
+        .eq('organisation_id', selectedOrgId);
       
-      if (error) {
-        console.error('Error fetching bookings:', error);
-        setBookings([]);
-      } else {
-        setBookings(data as any[]);
-      }
+      // Fetch all users associated with the selected organization
+      const { data: orgUserData, error: usersError } = await supabase
+        .from('user_organisations')
+        .select('user!inner(id, name)')
+        .eq('organisation_id', selectedOrgId)
+        .not('role_id', 'is', null);
+
+      if (bookingsError) console.error('Error fetching bookings:', bookingsError);
+      if (courtsError) console.error('Error fetching courts:', courtsError);
+      if (usersError) console.error('Error fetching users:', usersError);
+
+      setBookings(bookingsData || []);
+      setCourts(courtsData || []);
+      setUsers(orgUserData?.map(u => u.user).filter(Boolean) || []);
+      
       setLoading(false);
     };
 
-    fetchBookings();
+    const fetchStatuses = async () => {
+        const { data: statusData, error: statusError } = await supabase
+            .from('booking_status').select('id, label');
+        if (statusError) console.error('Error fetching statuses:', statusError);
+        else setBookingStatuses(statusData || []);
+    }
+
+    fetchBookingData();
+    fetchStatuses();
   }, [selectedOrgId, supabase]);
 
-  const getStatusVariant = (status: string | undefined) => {
-    switch (status) {
-      case 'Confirmed':
-        return 'bg-green-500/20 text-green-700 border-green-500/20';
-      case 'Cancelled':
-        return 'bg-red-500/20 text-red-700 border-red-500/20';
-       case 'Pending':
-        return 'bg-yellow-500/20 text-yellow-700 border-yellow-500/20';
-      default:
-        return 'secondary';
-    }
-  };
-  
-  const bookingDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return "N/A";
-    return format(parseISO(dateStr), 'PPP');
-  }
-
   return (
-    <>
+    <div className="space-y-6">
       <PageHeader
         title="Bookings"
-        description="View all bookings for the selected organization."
+        description="View and manage bookings for the selected organization."
       />
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Court</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-             {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
-                </TableRow>
-              ))
-            ) : bookings.length > 0 ? (
-              bookings.map((booking) => (
-                <TableRow key={booking.id}>
-                  <TableCell className="font-medium">{booking.user?.name || 'N/A'}</TableCell>
-                  <TableCell>{booking.courts?.name || 'N/A'}</TableCell>
-                  <TableCell>{bookingDate(booking.timeslots?.date)}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getStatusVariant(booking.booking_status?.label)}>
-                      {booking.booking_status?.label || 'N/A'}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  No bookings found for this organization.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Card>
-    </>
+      <BookingsClientPage 
+        initialCourtBookings={bookings}
+        courts={courts}
+        users={users}
+        courtBookingStatuses={bookingStatuses}
+        loading={loading}
+      />
+    </div>
   );
 }

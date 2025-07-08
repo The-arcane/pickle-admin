@@ -1,21 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { PageHeader } from '@/components/page-header';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect, useCallback } from 'react';
 import { useOrganization } from '@/hooks/use-organization';
-import { Card } from '@/components/ui/card';
-import { format } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import type { Event } from '@/types';
-import { Skeleton } from '@/components/ui/skeleton';
+import { EventsClientPage } from './client';
 
 export default function EventsPage() {
   const supabase = createClient();
@@ -23,98 +11,31 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchEvents = useCallback(async () => {
     if (!selectedOrgId) {
       setEvents([]);
       setLoading(false);
       return;
     };
-
-    const fetchEvents = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .eq('organiser_org_id', selectedOrgId);
-      
-      if (error) {
-        console.error('Error fetching events:', error);
-        setEvents([]);
-      } else {
-        setEvents(data as Event[]);
-      }
-      setLoading(false);
-    };
-
-    fetchEvents();
+    
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('organiser_org_id', selectedOrgId);
+    
+    if (error) {
+      console.error('Error fetching events:', error);
+      setEvents([]);
+    } else {
+      setEvents(data as Event[]);
+    }
+    setLoading(false);
   }, [selectedOrgId, supabase]);
 
-  const getStatus = (event: Event) => {
-    const now = new Date();
-    const endTime = new Date(event.end_time);
-    if (endTime < now) {
-        return 'Completed';
-    }
-    return 'Upcoming';
-  }
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
-  const getStatusVariant = (status: 'Upcoming' | 'Completed') => {
-    switch (status) {
-      case 'Upcoming':
-        return 'bg-blue-500/20 text-blue-700 border-blue-500/20';
-      case 'Completed':
-        return 'bg-green-500/20 text-green-700 border-green-500/20';
-      default:
-        return 'secondary';
-    }
-  };
-
-  return (
-    <>
-      <PageHeader
-        title="Events"
-        description="View all events for the selected organization."
-      />
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-             {loading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
-                </TableRow>
-              ))
-            ) : events.length > 0 ? (
-              events.map((event) => (
-                <TableRow key={event.id}>
-                  <TableCell className="font-medium">{event.title}</TableCell>
-                  <TableCell>{format(new Date(event.start_time), 'PPP')}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getStatusVariant(getStatus(event))}>
-                      {getStatus(event)}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center">
-                  No events found for this organization.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Card>
-    </>
-  );
+  return <EventsClientPage events={events} loading={loading} onActionFinish={fetchEvents} />;
 }
