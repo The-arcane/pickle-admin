@@ -41,7 +41,7 @@ export async function verifyBookingByQrText(qrText: string) {
 
         const { error: updateError } = await supabase
             .from('bookings')
-            .update({ status: CONFIRMED_STATUS_ID_BOOKING })
+            .update({ status: CONFIRMED_STATUS_ID_BOOKING, statuss: 'visited' })
             .eq('id', booking.id);
 
         if (updateError) {
@@ -84,7 +84,7 @@ export async function verifyBookingByQrText(qrText: string) {
 
         const { error: updateError } = await supabase
             .from('event_bookings')
-            .update({ status: CONFIRMED_STATUS_ID_EVENT })
+            .update({ status: CONFIRMED_STATUS_ID_EVENT, statuss: 'visited' })
             .eq('id', eventBooking.id);
 
         if (updateError) {
