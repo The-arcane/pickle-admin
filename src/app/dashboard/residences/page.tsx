@@ -23,7 +23,10 @@ export default async function ResidencesPage() {
             status,
             invited_at,
             joined_at,
-            user:user_id(name, email, profile_image_url)
+            "Name",
+            email,
+            phone,
+            user:user_id(profile_image_url)
         `)
         .eq('organisation_id', organisationId)
         .order('invited_at', { ascending: false });

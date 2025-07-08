@@ -31,38 +31,44 @@ export async function inviteResidents(formData: FormData) {
   }
   
   // 3. Process CSV file
-  let emails: string[] = [];
+  let residentsData: { Name: string; email: string; phone: number | null; }[] = [];
   try {
     const fileContent = await csvFile.text();
     const parsed = Papa.parse(fileContent, { header: true, skipEmptyLines: true });
     
-    // Check for 'email' column, otherwise assume first column
-    const emailHeader = parsed.meta.fields?.find(field => field.toLowerCase() === 'email');
-    if (!emailHeader && parsed.meta.fields?.length === 0) {
-        return { error: "CSV file is empty or has no header." };
-    }
-    const headerToUse = emailHeader || (parsed.meta.fields ? parsed.meta.fields[0] : null);
-    if (!headerToUse) {
-        return { error: "Could not determine email column in CSV." };
-    }
+    const requiredHeaders = ['Name', 'email', 'phone'];
+    const hasRequiredHeaders = requiredHeaders.every(h => parsed.meta.fields?.map(f => f.toLowerCase()).includes(h.toLowerCase()));
 
-    emails = parsed.data
-        .map((row: any) => row[headerToUse]?.trim())
-        .filter(email => email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+    if (!hasRequiredHeaders) {
+        return { error: "CSV file must contain 'Name', 'email', and 'phone' columns." };
+    }
+    
+    // Find the actual headers to handle case-insensitivity
+    const nameHeader = parsed.meta.fields?.find(f => f.toLowerCase() === 'name') || 'Name';
+    const emailHeader = parsed.meta.fields?.find(f => f.toLowerCase() === 'email') || 'email';
+    const phoneHeader = parsed.meta.fields?.find(f => f.toLowerCase() === 'phone') || 'phone';
+
+    residentsData = parsed.data
+        .map((row: any) => ({
+            Name: row[nameHeader]?.trim(),
+            email: row[emailHeader]?.trim(),
+            phone: row[phoneHeader] ? Number(String(row[phoneHeader]).replace(/\s/g, '')) : null
+        }))
+        .filter(r => r.Name && r.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email));
 
   } catch(e) {
       console.error("Error parsing CSV:", e);
       return { error: "Failed to parse the CSV file." };
   }
 
-  if (emails.length === 0) {
-    return { error: 'No valid emails found in the uploaded file.' };
+  if (residentsData.length === 0) {
+    return { error: 'No valid resident data with Name and email found in the uploaded file.' };
   }
 
   let successCount = 0;
-  let duplicateCount = 0;
 
   // 4. Find or create users for each email
+  const emails = residentsData.map(r => r.email);
   const { data: existingUsers, error: fetchUsersError } = await supabase
     .from('user')
     .select('id, email')
@@ -74,11 +80,12 @@ export async function inviteResidents(formData: FormData) {
   }
   
   const existingUserMap = new Map(existingUsers.map(u => [u.email, u.id]));
-  const emailsToCreate = emails.filter(email => !existingUserMap.has(email));
+  const residentsToCreateUserFor = residentsData.filter(r => !existingUserMap.has(r.email));
   
-  const usersToInsert = emailsToCreate.map(email => ({
-    email: email,
-    name: email.split('@')[0], // Use a default name
+  const usersToInsert = residentsToCreateUserFor.map(r => ({
+    email: r.email,
+    name: r.Name,
+    phone: r.phone?.toString(), // The user table phone column is likely text
     user_type: 1 // Default to general user
   }));
   
@@ -90,18 +97,21 @@ export async function inviteResidents(formData: FormData) {
       
       if (createUsersError) {
           console.error("Error creating new users:", createUsersError);
-          return { error: 'Failed to create new user accounts for invites.' };
+          return { error: `Failed to create new user accounts for invites. ${createUsersError.message}` };
       }
 
       newUsers.forEach(u => existingUserMap.set(u.email, u.id));
   }
   
   // 5. Create residence invitations
-  const residencesToInsert = emails.map(email => ({
+  const residencesToInsert = residentsData.map(r => ({
       organisation_id,
-      user_id: existingUserMap.get(email)!,
+      user_id: existingUserMap.get(r.email)!,
       invited_by,
-      status: 'invited'
+      status: 'invited',
+      "Name": r.Name,
+      email: r.email,
+      phone: r.phone
   })).filter(r => r.user_id);
 
   if (residencesToInsert.length > 0) {
@@ -113,7 +123,6 @@ export async function inviteResidents(formData: FormData) {
       .select({ count: 'exact' });
 
     if (upsertError) {
-        // This would be an unexpected error, as conflicts should be ignored.
         console.error("Error upserting residences:", upsertError);
         return { error: `An unexpected error occurred during invitations: ${upsertError.message}` };
     }
@@ -121,7 +130,7 @@ export async function inviteResidents(formData: FormData) {
     successCount = count ?? 0;
   }
   
-  duplicateCount = emails.length - successCount;
+  const duplicateCount = residencesData.length - successCount;
 
   // 6. Revalidate paths and return summary
   revalidatePath('/dashboard/residences');

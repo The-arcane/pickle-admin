@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/status-badge';
-import { Trash2, Send, PlusCircle, FileUp } from 'lucide-react';
+import { Trash2, Send, PlusCircle, FileUp, Download } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Residence = {
@@ -22,9 +22,10 @@ type Residence = {
     status: string;
     invited_at: string | null;
     joined_at: string | null;
+    "Name": string | null;
+    email: string | null;
+    phone: number | null;
     user: {
-        name: string;
-        email: string;
         profile_image_url: string | null;
     } | null;
 };
@@ -102,6 +103,17 @@ export function ResidencesClientPage({
         setIsDeleteDialogOpen(false);
     }
     
+    const handleDownloadTemplate = () => {
+        const csvContent = "data:text/csv;charset=utf-8," + "Name,email,phone\n";
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "residence_template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <>
             <Card>
@@ -122,6 +134,7 @@ export function ResidencesClientPage({
                             <TableRow>
                                 <TableHead>User</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Phone</TableHead>
                                 <TableHead>Invited At</TableHead>
                                 <TableHead>Joined At</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
@@ -135,6 +148,7 @@ export function ResidencesClientPage({
                                         <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                                         <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                                         <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                                     </TableRow>
                                 ))
@@ -144,16 +158,17 @@ export function ResidencesClientPage({
                                         <TableCell>
                                             <div className="flex items-center gap-3">
                                                 <Avatar>
-                                                    <AvatarImage src={res.user?.profile_image_url ?? undefined} alt={res.user?.name} />
-                                                    <AvatarFallback>{getInitials(res.user?.name)}</AvatarFallback>
+                                                    <AvatarImage src={res.user?.profile_image_url ?? undefined} alt={res.Name ?? ''} />
+                                                    <AvatarFallback>{getInitials(res.Name)}</AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="font-medium">{res.user?.name}</p>
-                                                    <p className="text-sm text-muted-foreground">{res.user?.email}</p>
+                                                    <p className="font-medium">{res.Name}</p>
+                                                    <p className="text-sm text-muted-foreground">{res.email}</p>
                                                 </div>
                                             </div>
                                         </TableCell>
                                         <TableCell><StatusBadge status={res.status} /></TableCell>
+                                        <TableCell>{res.phone ?? 'N/A'}</TableCell>
                                         <TableCell>{res.invited_at ? format(new Date(res.invited_at), 'PPp') : 'N/A'}</TableCell>
                                         <TableCell>{res.joined_at ? format(new Date(res.joined_at), 'PPp') : 'N/A'}</TableCell>
                                         <TableCell className="text-right">
@@ -166,7 +181,7 @@ export function ResidencesClientPage({
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24">
+                                    <TableCell colSpan={6} className="text-center h-24">
                                         No residents found. Invite some to get started!
                                     </TableCell>
                                 </TableRow>
@@ -186,7 +201,7 @@ export function ResidencesClientPage({
                     <DialogHeader>
                         <DialogTitle>Invite New Residents via CSV</DialogTitle>
                         <DialogDescription>
-                            Upload a CSV file with an 'email' column. New users will be created if they don't exist.
+                            Upload a CSV file with 'Name', 'email', and 'phone' columns. New users will be created if they don't exist.
                         </DialogDescription>
                     </DialogHeader>
                     <form ref={formRef} action={handleInviteFormAction} className="space-y-4 py-4">
@@ -205,9 +220,16 @@ export function ResidencesClientPage({
                                 <FileUp className="mr-2 h-4 w-4" />
                                 {selectedFile ? selectedFile.name : "Select a CSV file"}
                             </Button>
-                             <p className="text-xs text-muted-foreground pt-1">
-                                Please ensure your file has a header row with a column named 'email'.
-                            </p>
+                             <Button
+                                type="button"
+                                variant="link"
+                                size="sm"
+                                className="h-auto p-0 justify-start"
+                                onClick={handleDownloadTemplate}
+                            >
+                                <Download className="mr-2 h-3 w-3" />
+                                Download CSV Template
+                            </Button>
                         </div>
                         <DialogFooter>
                             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
