@@ -31,7 +31,7 @@ export async function inviteResidents(formData: FormData) {
   }
   
   // 3. Process CSV file
-  let residentsData: { Name: string; email: string; phone: number | null; }[] = [];
+  let residentsDataFromCsv: { Name: string; email: string; phone: number | null; }[] = [];
   try {
     const fileContent = await csvFile.text();
     const parsed = Papa.parse(fileContent, { header: true, skipEmptyLines: true });
@@ -48,7 +48,7 @@ export async function inviteResidents(formData: FormData) {
     const emailHeader = parsed.meta.fields?.find(f => f.toLowerCase() === 'email') || 'email';
     const phoneHeader = parsed.meta.fields?.find(f => f.toLowerCase() === 'phone') || 'phone';
 
-    residentsData = parsed.data
+    residentsDataFromCsv = parsed.data
         .map((row: any) => ({
             Name: row[nameHeader]?.trim(),
             email: row[emailHeader]?.trim(),
@@ -61,18 +61,16 @@ export async function inviteResidents(formData: FormData) {
       return { error: "Failed to parse the CSV file." };
   }
 
-  if (residentsData.length === 0) {
+  if (residentsDataFromCsv.length === 0) {
     return { error: 'No valid resident data with Name and email found in the uploaded file.' };
   }
 
-  let successCount = 0;
-
-  // 4. Find or create users for each email
-  const emails = residentsData.map(r => r.email);
+  // 4. Find existing users for each email. Do NOT create new users.
+  const emailsToFind = residentsDataFromCsv.map(r => r.email);
   const { data: existingUsers, error: fetchUsersError } = await supabase
     .from('user')
     .select('id, email')
-    .in('email', emails);
+    .in('email', emailsToFind);
 
   if (fetchUsersError) {
     console.error("Error fetching existing users:", fetchUsersError);
@@ -80,44 +78,33 @@ export async function inviteResidents(formData: FormData) {
   }
   
   const existingUserMap = new Map(existingUsers.map(u => [u.email, u.id]));
-  const residentsToCreateUserFor = residentsData.filter(r => !existingUserMap.has(r.email));
   
-  const usersToInsert = residentsToCreateUserFor.map(r => ({
-    email: r.email,
-    username: r.Name, // Set username to satisfy not-null constraint
-    name: r.Name,
-    phone: r.phone?.toString(),
-    user_type: 1, // Default to general user
-    hashed_password: 'NEEDS_TO_BE_SET_BY_USER' // Placeholder to satisfy NOT NULL constraint
-  }));
-  
-  if (usersToInsert.length > 0) {
-      const { data: newUsers, error: createUsersError } = await supabase
-        .from('user')
-        .insert(usersToInsert)
-        .select('id, email');
-      
-      if (createUsersError) {
-          console.error("Error creating new users:", createUsersError);
-          return { error: `Failed to create new user accounts for invites. ${createUsersError.message}` };
-      }
+  // 5. Prepare residence invitations ONLY for users that already exist
+  const residencesToInsert = residentsDataFromCsv
+    .map(r => {
+        const userId = existingUserMap.get(r.email);
+        if (!userId) return null; // Skip if user does not exist
 
-      newUsers.forEach(u => existingUserMap.set(u.email, u.id));
-  }
-  
-  // 5. Create residence invitations
-  const residencesToInsert = residentsData.map(r => ({
-      organisation_id,
-      user_id: existingUserMap.get(r.email)!,
-      invited_by,
-      status: 'invited',
-      "Name": r.Name,
-      email: r.email,
-      phone: r.phone
-  })).filter(r => r.user_id);
+        return {
+            organisation_id,
+            user_id: userId,
+            invited_by,
+            status: 'invited',
+            "Name": r.Name,
+            email: r.email,
+            phone: r.phone
+        };
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null);
+    
+  const emailsNotFound = residentsDataFromCsv
+    .filter(r => !existingUserMap.has(r.email))
+    .map(r => r.email);
 
+
+  let successCount = 0;
   if (residencesToInsert.length > 0) {
-    // Use upsert with ignoreDuplicates to prevent errors on existing residents
+    // 6. Use upsert with ignoreDuplicates to prevent errors on existing residents
     // and only insert new ones.
     const { error: upsertError, count } = await supabase
       .from('residences')
@@ -132,15 +119,23 @@ export async function inviteResidents(formData: FormData) {
     successCount = count ?? 0;
   }
   
-  const duplicateCount = residencesData.length - successCount;
+  const duplicateCount = residencesToInsert.length - successCount;
+  
+  let message = `Invited ${successCount} new residents.`;
+  if (duplicateCount > 0) {
+      message += ` ${duplicateCount} were already members.`;
+  }
+  if (emailsNotFound.length > 0) {
+      message += ` Skipped ${emailsNotFound.length} emails as no user account exists: ${emailsNotFound.join(', ')}.`;
+  }
 
-  // 6. Revalidate paths and return summary
+  // 7. Revalidate paths and return summary
   revalidatePath('/dashboard/residences');
   revalidatePath('/super-admin/residences');
   
   return { 
     success: true,
-    message: `Invited ${successCount} new residents from CSV. ${duplicateCount} were already members.` 
+    message
   };
 }
 
