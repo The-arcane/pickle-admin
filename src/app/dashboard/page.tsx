@@ -103,7 +103,7 @@ async function getDashboardData() {
     supabase
         .from('events')
         .select('id, title, start_time, location_name')
-        .gte('start_time', new Date().toISOString())
+        .gte('end_time', new Date().toISOString())
         .order('start_time', { ascending: true })
         .limit(3),
     
@@ -111,7 +111,7 @@ async function getDashboardData() {
     supabase
         .from('events')
         .select('id', { count: 'exact', head: true })
-        .gte('start_time', new Date().toISOString()),
+        .gte('end_time', new Date().toISOString()),
 
     // Total Event Enrolments (using dynamically fetched confirmed status ID)
     supabase
