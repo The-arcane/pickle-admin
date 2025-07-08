@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/status-badge';
 import { Trash2, Send, PlusCircle, FileUp, Download } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
 
 type Residence = {
     id: number;
@@ -52,11 +53,13 @@ function getInitials(name: string | undefined | null) {
 export function ResidencesClientPage({ 
     initialResidences, 
     organisationId,
-    loading 
+    loading,
+    onActionFinish
 }: { 
     initialResidences: Residence[], 
     organisationId: number | null,
     loading: boolean,
+    onActionFinish?: () => void;
 }) {
     const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -64,6 +67,7 @@ export function ResidencesClientPage({
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
+    const router = useRouter();
 
     const handleInviteFormAction = async (formData: FormData) => {
         if (!organisationId) {
@@ -80,6 +84,11 @@ export function ResidencesClientPage({
             setIsInviteDialogOpen(false);
             formRef.current?.reset();
             setSelectedFile(null);
+            if (onActionFinish) {
+                onActionFinish();
+            } else {
+                router.refresh();
+            }
         }
     }
     
@@ -99,6 +108,11 @@ export function ResidencesClientPage({
             toast({ variant: "destructive", title: "Error", description: result.error });
         } else {
             toast({ title: "Success", description: result.message });
+            if (onActionFinish) {
+                onActionFinish();
+            } else {
+                router.refresh();
+            }
         }
         setIsDeleteDialogOpen(false);
     }

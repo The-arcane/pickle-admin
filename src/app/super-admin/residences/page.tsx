@@ -58,6 +58,7 @@ export default function SuperAdminResidencesPage() {
                 initialResidences={residences}
                 organisationId={selectedOrgId}
                 loading={loading}
+                onActionFinish={fetchResidences}
             />
         </div>
     );
