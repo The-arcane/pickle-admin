@@ -68,24 +68,35 @@ export async function inviteResidents(formData: FormData) {
     return { error: 'No valid resident data with Name and email found in the uploaded file.' };
   }
 
-  // 4. Find which emails from the CSV are already invited to this organization.
+  // 4. Find which emails and phones from the CSV already exist.
   const emailsFromCsv = residentsDataFromCsv.map(r => r.email);
+  const phoneNumbersFromCsv = residentsDataFromCsv.map(r => r.phone).filter((p): p is string => p !== null && p.length > 0).map(Number);
+
   const { data: existingInvites, error: fetchError } = await supabase
     .from('residences')
     .select('email')
     .eq('organisation_id', organisation_id)
     .in('email', emailsFromCsv);
   
-  if (fetchError) {
-    console.error("Error fetching existing residences:", fetchError);
+  // This check is needed because of the global unique constraint on the phone column.
+  // To fix this permanently and allow a user to be in multiple orgs, the constraint should be removed.
+  // Run this in your SQL Editor: ALTER TABLE public.residences DROP CONSTRAINT residences_phone_key;
+  const { data: existingPhones, error: phoneFetchError } = await supabase
+    .from('residences')
+    .select('phone')
+    .in('phone', phoneNumbersFromCsv);
+
+  if (fetchError || phoneFetchError) {
+    console.error("Error fetching existing data:", {fetchError, phoneFetchError});
     return { error: 'Could not check for existing invitations.' };
   }
 
-  const existingEmails = new Set(existingInvites.map(i => i.email));
-  
+  const existingEmailsForOrg = new Set(existingInvites.map(i => i.email));
+  const existingPhonesGlobally = new Set(existingPhones.map(p => p.phone));
+
   // 5. Prepare residence records for NEW invites only.
   const residencesToInsert = residentsDataFromCsv
-    .filter(resident => !existingEmails.has(resident.email!))
+    .filter(resident => !existingEmailsForOrg.has(resident.email!) && (resident.phone === null || !existingPhonesGlobally.has(Number(resident.phone))))
     .map(resident => ({
         organisation_id,
         invited_by,
@@ -93,7 +104,7 @@ export async function inviteResidents(formData: FormData) {
         "Name": resident.Name,
         email: resident.email,
         phone: resident.phone ? Number(resident.phone) : null,
-        user_id: null
+        user_id: null // This can be updated later when the user joins
     }));
     
   let successCount = 0;
@@ -111,17 +122,30 @@ export async function inviteResidents(formData: FormData) {
   }
   
   // 6. Build a clear summary message for the user.
-  const skippedCount = residentsDataFromCsv.length - successCount;
+  const skippedForEmailCount = residentsDataFromCsv.filter(r => existingEmailsForOrg.has(r.email!)).length;
+  const skippedForPhoneCount = residentsDataFromCsv.filter(r => r.phone && existingPhonesGlobally.has(Number(r.phone)) && !existingEmailsForOrg.has(r.email!)).length;
+
   let message = `Processed ${residentsDataFromCsv.length} records.`;
   if (successCount > 0) {
     message += ` ${successCount} new resident(s) were successfully invited.`;
   }
-  if (skippedCount > 0) {
-    message += ` ${skippedCount} record(s) were skipped because they have already been invited.`;
+
+  let skippedMessages = [];
+  if (skippedForEmailCount > 0) {
+    skippedMessages.push(`${skippedForEmailCount} already invited to this organization`);
   }
-  if (successCount === 0 && residencesToInsert.length === 0) {
-    message = "No new residents were invited. All users from the CSV have already been invited to this organization.";
+  if (skippedForPhoneCount > 0) {
+    skippedMessages.push(`${skippedForPhoneCount} had a phone number already registered on the platform`);
   }
+  
+  if(skippedMessages.length > 0) {
+      message += ` Skipped ${skippedForEmailCount + skippedForPhoneCount}: ${skippedMessages.join('; ')}.`;
+  }
+  
+  if (successCount === 0 && residencesToInsert.length === 0 && residentsDataFromCsv.length > 0) {
+    message = "No new residents were invited. All users from the CSV were skipped. Check details above.";
+  }
+
 
   // 7. Revalidate paths and return summary
   revalidatePath('/dashboard/residences');
