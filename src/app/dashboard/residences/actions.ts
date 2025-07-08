@@ -84,6 +84,7 @@ export async function inviteResidents(formData: FormData) {
   
   const usersToInsert = residentsToCreateUserFor.map(r => ({
     email: r.email,
+    username: r.Name, // Set username to satisfy not-null constraint
     name: r.Name,
     phone: r.phone?.toString(), // The user table phone column is likely text
     user_type: 1 // Default to general user
