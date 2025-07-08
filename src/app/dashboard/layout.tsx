@@ -19,7 +19,9 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return redirect('/login');
+    // If no user, the middleware handles redirection for protected routes.
+    // The login page will be rendered here without the layout shell.
+    return <>{children}</>;
   }
 
   const { data: userProfile, error } = await supabase
