@@ -9,6 +9,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import QrScanner from 'qr-scanner';
 import { verifyBookingByQrText } from './actions';
 import { CheckCircle, XCircle, ScanLine } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 type ScanResultData = {
     type: string;
@@ -25,6 +26,18 @@ export function QrScannerClient() {
   const [scanResult, setScanResult] = useState<{ success: boolean; data?: ScanResultData; message: string} | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (scanResult?.success) {
+      const timer = setTimeout(() => {
+        router.push('/employee/dashboard');
+      }, 3000);
+
+      // Cleanup the timer if the component unmounts or scanResult changes
+      return () => clearTimeout(timer);
+    }
+  }, [scanResult, router]);
 
   const handleDecode = useCallback(async (result: QrScanner.ScanResult) => {
     if (isProcessing) return;
@@ -134,14 +147,17 @@ export function QrScannerClient() {
                         <p><strong>Item:</strong> {scanResult.data.item}</p>
                         <p><strong>Details:</strong> {scanResult.data.date}</p>
                         <p><strong>More Details:</strong> {scanResult.data.time}</p>
+                        <p className="pt-2 text-center text-xs text-muted-foreground">Redirecting to the dashboard...</p>
                     </div>
                   ) : (
-                    <p className="text-center">{scanResult.message}</p>
+                    <>
+                      <p className="text-center">{scanResult.message}</p>
+                       <Button onClick={resetScanner} className="w-full mt-4" variant="outline">
+                        <ScanLine className="mr-2 h-4 w-4" />
+                        Scan Another QR Code
+                      </Button>
+                    </>
                   )}
-                  <Button onClick={resetScanner} className="w-full mt-4" variant="outline">
-                    <ScanLine className="mr-2 h-4 w-4" />
-                    Scan Another QR Code
-                  </Button>
               </CardContent>
           </Card>
       )}
