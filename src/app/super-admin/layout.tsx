@@ -1,3 +1,4 @@
+
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Shield, PanelLeft } from 'lucide-react';
@@ -19,8 +20,10 @@ export default async function SuperAdminLayout({
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  // If there's no user, the middleware handles redirection for protected routes.
+  // This check prevents a redirect loop by allowing the login page to render without the layout shell.
   if (!user) {
-    return redirect('/super-admin/login');
+    return <>{children}</>;
   }
 
   const { data: userProfile, error } = await supabase
@@ -29,7 +32,10 @@ export default async function SuperAdminLayout({
     .eq('user_uuid', user.id)
     .single();
 
+  // If a user is logged in but is not a super admin, redirect them.
   if (error || !userProfile || userProfile.user_type !== 3) {
+    // It's safer to sign them out and redirect to prevent invalid sessions.
+    await supabase.auth.signOut();
     return redirect('/super-admin/login?error=Access%20Denied');
   }
 
