@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
-import { AlertCircle, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,8 +29,15 @@ export function SuperAdminLoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-            <div className="mx-auto bg-primary text-primary-foreground rounded-full h-16 w-16 flex items-center justify-center mb-4">
-                <ShieldCheck className="h-8 w-8" />
+            <div className="mx-auto mb-4">
+                <Image
+                    src="https://placehold.co/128x128.png"
+                    alt="Logo"
+                    width={80}
+                    height={80}
+                    className="rounded-full"
+                    data-ai-hint="logo"
+                />
             </div>
             <CardTitle className="text-2xl">Super Admin Access</CardTitle>
             <CardDescription>Enter your credentials for elevated access.</CardDescription>
