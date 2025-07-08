@@ -23,7 +23,7 @@ export async function verifyBookingByQrText(qrText: string) {
         const { data: booking, error: fetchError } = await supabase
             .from('bookings')
             .select(`
-                id, status,
+                id, status, statuss,
                 user:user_id(name), 
                 courts:court_id(name), 
                 timeslots:timeslot_id(date, start_time, end_time)
@@ -35,7 +35,7 @@ export async function verifyBookingByQrText(qrText: string) {
             return { error: `Court booking with ID ${qrContentId} not found.` };
         }
         
-        if (booking.status === CONFIRMED_STATUS_ID_BOOKING) {
+        if (booking.statuss === 'visited') {
             return { error: "This court booking has already been checked in." };
         }
 
@@ -67,7 +67,7 @@ export async function verifyBookingByQrText(qrText: string) {
         const { data: eventBooking, error: fetchError } = await supabase
             .from('event_bookings')
             .select(`
-                id, status, quantity,
+                id, status, statuss, quantity,
                 user:user_id(name),
                 events:event_id(title, start_time)
             `)
@@ -78,7 +78,7 @@ export async function verifyBookingByQrText(qrText: string) {
             return { error: `Event booking with ID ${qrContentId} not found.` };
         }
         
-        if (eventBooking.status === CONFIRMED_STATUS_ID_EVENT) {
+        if (eventBooking.statuss === 'visited') {
             return { error: "This event booking has already been checked in." };
         }
 
