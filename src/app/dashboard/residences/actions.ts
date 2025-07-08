@@ -4,7 +4,6 @@
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import Papa from 'papaparse';
-import crypto from 'crypto';
 
 // This action handles inviting new residents in bulk from a CSV file.
 export async function inviteResidents(formData: FormData) {
@@ -83,26 +82,57 @@ export async function inviteResidents(formData: FormData) {
   let newlyCreatedUserMap = new Map<string, number>();
 
   if (usersToCreate.length > 0) {
-      const newUserRecords = usersToCreate.map(user => ({
-          name: user.Name,
-          email: user.email,
-          phone: user.phone?.toString(),
-          username: user.email,
-          hashed_password: crypto.randomBytes(32).toString('hex'), 
-          user_type: 1, // Default to a standard user type
-          profile_image_url: 'https://placehold.co/128x128.png', // Placeholder to satisfy not-null constraint
-      }));
+      const creationPromises = usersToCreate.map(async (resident) => {
+          // A. Create user in auth.users using the admin client
+          const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+              email: resident.email,
+              password: Math.random().toString(36).slice(-16), // Temporary secure password
+              email_confirm: true, // User is pre-approved
+          });
 
-      const { data: insertedUsers, error: insertError } = await supabase
-        .from('user')
-        .insert(newUserRecords)
-        .select('id, email');
-    
-      if (insertError) {
-          console.error("Error inserting new users:", insertError);
-          return { error: `Failed to create new user accounts. DB Error: ${insertError.message}` };
+          if (authError || !authUser?.user) {
+              console.error(`Failed to create auth user for ${resident.email}:`, authError);
+              return { email: resident.email, success: false, error: authError?.message };
+          }
+          
+          // B. Create the corresponding record in public.user, linking to the auth user
+          const { data: publicUser, error: publicUserError } = await supabase
+              .from('user')
+              .insert({
+                  user_uuid: authUser.user.id, // The crucial link to auth.users
+                  name: resident.Name,
+                  email: resident.email,
+                  phone: resident.phone?.toString(),
+                  username: resident.email,
+                  user_type: 1, // Standard user
+                  profile_image_url: `https://placehold.co/128x128.png?text=${encodeURIComponent(resident.Name.charAt(0))}`,
+              })
+              .select('id')
+              .single();
+
+          if (publicUserError || !publicUser) {
+              console.error(`Failed to create public user for ${resident.email}:`, publicUserError);
+              // Important: Clean up the auth user if the public user creation fails
+              await supabase.auth.admin.deleteUser(authUser.user.id);
+              return { email: resident.email, success: false, error: publicUserError?.message };
+          }
+
+          return { email: resident.email, success: true, userId: publicUser.id };
+      });
+
+      const creationResults = await Promise.all(creationPromises);
+      
+      const failedCreations = creationResults.filter(r => !r.success);
+      if (failedCreations.length > 0) {
+          const firstError = failedCreations[0].error || "Unknown error";
+          return { error: `Failed to create new user accounts. DB Error: ${firstError}` };
       }
-      newlyCreatedUserMap = new Map(insertedUsers.map(u => [u.email, u.id]));
+
+      creationResults.forEach(result => {
+          if (result.success && result.userId) {
+              newlyCreatedUserMap.set(result.email, result.userId);
+          }
+      });
   }
 
   const allUserIdsMap = new Map([...existingUserMap, ...newlyCreatedUserMap]);
