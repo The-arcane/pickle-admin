@@ -96,7 +96,7 @@ export async function inviteResidents(formData: FormData) {
         "Name": resident.Name,
         email: resident.email,
         phone: resident.phone ? Number(resident.phone) : null,
-        user_id: null // This can be updated later when the user joins
+        user_id: null
     }));
     
   let successCount = 0;
@@ -108,7 +108,11 @@ export async function inviteResidents(formData: FormData) {
 
     if (insertError) {
         console.error("Error inserting residences:", insertError);
-        return { error: `An unexpected error occurred during invitations: ${insertError.message}. Please ensure the phone number unique constraint has been removed if you are inviting a user to a second organization.` };
+        // Provide a more helpful error message for the unique phone constraint
+        if (insertError.message.includes('residences_phone_key')) {
+            return { error: 'A phone number in the CSV already exists in another organization. To allow this, the unique constraint on the `phone` column in the `residences` table must be removed from your database.' };
+        }
+        return { error: `An unexpected error occurred during invitations: ${insertError.message}.` };
     }
     successCount = insertedData?.length ?? 0;
   }

@@ -22,6 +22,7 @@ type ScanResultData = {
 export function QrScannerClient() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<QrScanner | null>(null);
+  const redirectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [scanResult, setScanResult] = useState<{ success: boolean; data?: ScanResultData; message: string} | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -30,13 +31,16 @@ export function QrScannerClient() {
 
   useEffect(() => {
     if (scanResult?.success) {
-      const timer = setTimeout(() => {
+      redirectTimerRef.current = setTimeout(() => {
         router.push('/employee/dashboard');
-      }, 3000);
-
-      // Cleanup the timer if the component unmounts or scanResult changes
-      return () => clearTimeout(timer);
+      }, 5000); // Increased redirect time slightly
     }
+    // Cleanup the timer if the component unmounts
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
   }, [scanResult, router]);
 
   const handleDecode = useCallback(async (result: QrScanner.ScanResult) => {
@@ -98,6 +102,10 @@ export function QrScannerClient() {
   }, [handleDecode, toast]);
 
   const resetScanner = () => {
+    if (redirectTimerRef.current) {
+      clearTimeout(redirectTimerRef.current);
+      redirectTimerRef.current = null;
+    }
     setScanResult(null);
     setIsProcessing(false);
     scannerRef.current?.start();
@@ -147,7 +155,11 @@ export function QrScannerClient() {
                         <p><strong>Item:</strong> {scanResult.data.item}</p>
                         <p><strong>Details:</strong> {scanResult.data.date}</p>
                         <p><strong>More Details:</strong> {scanResult.data.time}</p>
-                        <p className="pt-2 text-center text-xs text-muted-foreground">Redirecting to the dashboard...</p>
+                        <p className="pt-2 text-center text-xs text-muted-foreground">You will be redirected to the dashboard shortly.</p>
+                        <Button onClick={resetScanner} className="w-full mt-4" variant="outline">
+                           <ScanLine className="mr-2 h-4 w-4" />
+                           Scan Another QR Code
+                        </Button>
                     </div>
                   ) : (
                     <>

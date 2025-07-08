@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, BarChartHorizontal, Clock, PartyPopper, AlertCircle, MapPin, Users } from 'lucide-react';
 import { createServer } from '@/lib/supabase/server';
 import { format, parseISO } from 'date-fns';
@@ -254,23 +253,8 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2 space-y-6">
             <Card>
                 <CardHeader>
-                    <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle>Recent Booking Activity</CardTitle>
-                        <CardDescription>An overview of the latest bookings.</CardDescription>
-                    </div>
-                    <Select defaultValue="all">
-                        <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="Filter" />
-                        </SelectTrigger>
-                        <SelectContent>
-                        <SelectItem value="all">All</SelectItem>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    </div>
+                    <CardTitle>Recent Booking Activity</CardTitle>
+                    <CardDescription>An overview of the latest bookings.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {error ? (

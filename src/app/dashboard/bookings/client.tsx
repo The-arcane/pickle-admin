@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from 'next/link';
 
 // Types for Court Bookings
 type CourtBookingFromDb = {
@@ -121,6 +122,7 @@ export function BookingsClientPage({
     const [processedCourtBookings, setProcessedCourtBookings] = useState<ProcessedCourtBooking[]>([]);
     const [processedEventBookings, setProcessedEventBookings] = useState<ProcessedEventBooking[]>([]);
     const [isClient, setIsClient] = useState(false);
+    const [activeTab, setActiveTab] = useState('courts');
 
     // Court Booking Status Map
     const courtStatusMap = useMemo(() => {
@@ -356,13 +358,22 @@ export function BookingsClientPage({
                 </div>
             </div>
 
-            <Tabs defaultValue="courts" className="space-y-4">
+            <Tabs defaultValue="courts" onValueChange={setActiveTab} className="space-y-4">
                 <div className="flex justify-between items-center">
                     <TabsList>
                         <TabsTrigger value="courts">Court Bookings</TabsTrigger>
                         <TabsTrigger value="events">Event Bookings</TabsTrigger>
                     </TabsList>
-                    <Button onClick={() => setIsAddDialogOpen(true)}>+ Add Court Booking</Button>
+                    <div>
+                        {activeTab === 'courts' && (
+                            <Button onClick={() => setIsAddDialogOpen(true)}>+ Add Court Booking</Button>
+                        )}
+                        {activeTab === 'events' && (
+                             <Button asChild>
+                                <Link href="/dashboard/events/add">+ Add Event Booking</Link>
+                            </Button>
+                        )}
+                    </div>
                 </div>
                 <TabsContent value="courts">
                     <Card>
