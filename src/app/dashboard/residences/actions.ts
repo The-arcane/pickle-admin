@@ -2,8 +2,9 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import Papa from 'papaparse';
 
-// This action handles inviting new residents in bulk.
+// This action handles inviting new residents in bulk from a CSV file.
 export async function inviteResidents(formData: FormData) {
   const supabase = createServer();
 
@@ -19,17 +20,43 @@ export async function inviteResidents(formData: FormData) {
   const invited_by = inviterProfile.id;
 
   // 2. Get data from form
-  const rawEmails = formData.get('emails') as string;
+  const csvFile = formData.get('csv_file') as File | null;
   const organisation_id = Number(formData.get('organisation_id'));
 
-  if (!rawEmails || !organisation_id) {
-    return { error: 'Emails and organization ID are required.' };
+  if (!csvFile || csvFile.size === 0) {
+    return { error: 'A CSV file is required.' };
+  }
+  if (!organisation_id) {
+    return { error: 'Organization ID is required.' };
+  }
+  
+  // 3. Process CSV file
+  let emails: string[] = [];
+  try {
+    const fileContent = await csvFile.text();
+    const parsed = Papa.parse(fileContent, { header: true, skipEmptyLines: true });
+    
+    // Check for 'email' column, otherwise assume first column
+    const emailHeader = parsed.meta.fields?.find(field => field.toLowerCase() === 'email');
+    if (!emailHeader && parsed.meta.fields?.length === 0) {
+        return { error: "CSV file is empty or has no header." };
+    }
+    const headerToUse = emailHeader || (parsed.meta.fields ? parsed.meta.fields[0] : null);
+    if (!headerToUse) {
+        return { error: "Could not determine email column in CSV." };
+    }
+
+    emails = parsed.data
+        .map((row: any) => row[headerToUse]?.trim())
+        .filter(email => email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+
+  } catch(e) {
+      console.error("Error parsing CSV:", e);
+      return { error: "Failed to parse the CSV file." };
   }
 
-  // 3. Process emails
-  const emails = rawEmails.split(/[\n,;]+/).map(email => email.trim()).filter(email => email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
   if (emails.length === 0) {
-    return { error: 'No valid emails provided.' };
+    return { error: 'No valid emails found in the uploaded file.' };
   }
 
   let successCount = 0;
@@ -101,7 +128,7 @@ export async function inviteResidents(formData: FormData) {
   
   return { 
     success: true,
-    message: `Invited ${successCount} new residents. ${duplicateCount} were already members. ${errorCount} failed.` 
+    message: `Invited ${successCount} new residents from CSV. ${duplicateCount} were already members. ${errorCount} failed.` 
   };
 }
 

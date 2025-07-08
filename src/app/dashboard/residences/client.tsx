@@ -10,11 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/status-badge';
-import { Trash2, Send, PlusCircle } from 'lucide-react';
+import { Trash2, Send, PlusCircle, FileUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Residence = {
@@ -60,6 +60,7 @@ export function ResidencesClientPage({
     const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [deletingResidenceId, setDeletingResidenceId] = useState<number | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -77,6 +78,7 @@ export function ResidencesClientPage({
             toast({ title: "Success", description: result.message });
             setIsInviteDialogOpen(false);
             formRef.current?.reset();
+            setSelectedFile(null);
         }
     }
     
@@ -174,24 +176,38 @@ export function ResidencesClientPage({
                 </CardContent>
             </Card>
 
-            <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+            <Dialog open={isInviteDialogOpen} onOpenChange={(isOpen) => {
+                setIsInviteDialogOpen(isOpen);
+                if (!isOpen) {
+                    setSelectedFile(null);
+                }
+            }}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Invite New Residents</DialogTitle>
+                        <DialogTitle>Invite New Residents via CSV</DialogTitle>
                         <DialogDescription>
-                            Enter email addresses separated by commas, semicolons, or new lines. New users will be created if they don't exist.
+                            Upload a CSV file with an 'email' column. New users will be created if they don't exist.
                         </DialogDescription>
                     </DialogHeader>
                     <form ref={formRef} action={handleInviteFormAction} className="space-y-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="emails">Email Addresses</Label>
-                            <Textarea
-                                id="emails"
-                                name="emails"
-                                rows={8}
-                                placeholder="example1@email.com, example2@email.com"
+                             <Label htmlFor="csv_file" className="sr-only">CSV File</Label>
+                             <Input
+                                id="csv_file"
+                                name="csv_file"
+                                type="file"
+                                accept=".csv"
+                                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                                 required
+                                className="hidden"
                             />
+                            <Button type="button" variant="outline" className="w-full" onClick={() => document.getElementById('csv_file')?.click()}>
+                                <FileUp className="mr-2 h-4 w-4" />
+                                {selectedFile ? selectedFile.name : "Select a CSV file"}
+                            </Button>
+                             <p className="text-xs text-muted-foreground pt-1">
+                                Please ensure your file has a header row with a column named 'email'.
+                            </p>
                         </div>
                         <DialogFooter>
                             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
