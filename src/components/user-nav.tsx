@@ -28,7 +28,15 @@ export function UserNav({ user, basePath = '/dashboard' }: { user: UserProfile, 
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push('/login');
+    // Redirect to the appropriate login page based on the base path
+    if (basePath.startsWith('/super-admin')) {
+      router.push('/super-admin/login');
+    } else if (basePath.startsWith('/employee')) {
+       router.push('/login?type=employee');
+    }
+    else {
+      router.push('/login');
+    }
     router.refresh();
   };
 

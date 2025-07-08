@@ -69,19 +69,33 @@ export async function middleware(request: NextRequest) {
 
       const userType = userProfile?.user_type;
 
+      // If user is trying to access super admin dashboard, but is not one (type 3)
+      if (pathname.startsWith('/super-admin') && userType !== 3) {
+          await supabase.auth.signOut();
+          return NextResponse.redirect(new URL('/super-admin/login?error=Access%20Denied', request.url));
+      }
+
       // If user is trying to access admin dashboard, but is not an admin (type 2)
       if (pathname.startsWith('/dashboard') && userType !== 2) {
+          await supabase.auth.signOut();
           return NextResponse.redirect(new URL('/login?error=Access%20Denied', request.url));
       }
 
       // If user is trying to access employee dashboard, but is not an employee (type 4)
       if (pathname.startsWith('/employee') && userType !== 4) {
+          await supabase.auth.signOut();
           return NextResponse.redirect(new URL('/login?error=Access%20Denied&type=employee', request.url));
       }
   } else {
-      // If no user, redirect to login page, but allow access to login/signup pages
-      if (pathname.startsWith('/dashboard') || pathname.startsWith('/employee')) {
+      // If no user, redirect to the correct login page, but allow access to the login page itself
+      if (pathname.startsWith('/super-admin/') && !pathname.startsWith('/super-admin/login')) {
+          return NextResponse.redirect(new URL('/super-admin/login', request.url));
+      }
+      if (pathname.startsWith('/dashboard/') && !pathname.startsWith('/dashboard/login')) {
           return NextResponse.redirect(new URL('/login', request.url));
+      }
+      if (pathname.startsWith('/employee/') && !pathname.startsWith('/employee/login')) {
+          return NextResponse.redirect(new URL('/login?type=employee', request.url));
       }
   }
 
