@@ -4,27 +4,15 @@
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { format, parseISO } from 'date-fns';
-import { readQrCode } from '@/ai/flows/read-qr-code-flow';
 
 const CONFIRMED_STATUS_ID_BOOKING = 1; // Assuming 1 is 'Confirmed' for bookings
 const CONFIRMED_STATUS_ID_EVENT = 1; // Assuming 1 is 'Confirmed' for event bookings
 
-export async function verifyBookingByImageDataUri(imageDataUri: string) {
+export async function verifyBookingByQrText(qrText: string) {
     const supabase = createServer();
 
-    if (!imageDataUri) {
-        return { error: 'No image data provided.' };
-    }
-
-    let qrText: string;
-    try {
-        qrText = await readQrCode({ photoDataUri: imageDataUri });
-        if (!qrText) {
-            return { error: 'Could not read QR code from the image. Please try again.' };
-        }
-    } catch (e: any) {
-        console.error("AI QR code reading failed:", e);
-        return { error: "Failed to analyze the QR code image." };
+    if (!qrText) {
+        return { error: 'No QR code data provided.' };
     }
 
     const bookingType = qrText.charAt(0).toUpperCase();
