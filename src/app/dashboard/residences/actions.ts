@@ -86,8 +86,9 @@ export async function inviteResidents(formData: FormData) {
     email: r.email,
     username: r.Name, // Set username to satisfy not-null constraint
     name: r.Name,
-    phone: r.phone?.toString(), // The user table phone column is likely text
-    user_type: 1 // Default to general user
+    phone: r.phone?.toString(),
+    user_type: 1, // Default to general user
+    hashed_password: 'NEEDS_TO_BE_SET_BY_USER' // Placeholder to satisfy NOT NULL constraint
   }));
   
   if (usersToInsert.length > 0) {
