@@ -32,17 +32,17 @@ export async function inviteResidents(formData: FormData) {
   }
   
   // 3. Process CSV file
-  let residentsDataFromCsv: { Name: string; email: string; phone: number | null; }[] = [];
+  let residentsDataFromCsv: { Name: string; email: string; phone: string | null; }[] = [];
   try {
     const fileContent = await csvFile.text();
     const parsed = Papa.parse(fileContent, { header: true, skipEmptyLines: true });
     
     // Check for required headers
-    const requiredHeaders = ['Name', 'email', 'phone'];
+    const requiredHeaders = ['Name', 'email'];
     const hasRequiredHeaders = requiredHeaders.every(h => parsed.meta.fields?.map(f => f.toLowerCase()).includes(h.toLowerCase()));
 
     if (!hasRequiredHeaders) {
-        return { error: "CSV file must contain 'Name', 'email', and 'phone' columns." };
+        return { error: "CSV file must contain 'Name' and 'email' columns. 'phone' is optional." };
     }
     
     // Find the actual header names, case-insensitively
@@ -50,12 +50,12 @@ export async function inviteResidents(formData: FormData) {
     const emailHeader = parsed.meta.fields?.find(f => f.toLowerCase() === 'email') || 'email';
     const phoneHeader = parsed.meta.fields?.find(f => f.toLowerCase() === 'phone') || 'phone';
 
-    // Parse data and filter for valid rows
+    // Parse data and filter for valid rows (must have name and a valid email)
     residentsDataFromCsv = parsed.data
         .map((row: any) => ({
             Name: row[nameHeader]?.trim(),
             email: row[emailHeader]?.trim(),
-            phone: row[phoneHeader] ? Number(String(row[phoneHeader]).replace(/\s/g, '')) : null
+            phone: row[phoneHeader] ? String(row[phoneHeader]).replace(/\s/g, '') : null
         }))
         .filter(r => r.Name && r.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email));
 
@@ -68,70 +68,59 @@ export async function inviteResidents(formData: FormData) {
     return { error: 'No valid resident data with Name and email found in the uploaded file.' };
   }
 
-  // 4. Find which users from the CSV already exist in the system.
+  // 4. Find which emails from the CSV are already invited to this organization.
   const emailsFromCsv = residentsDataFromCsv.map(r => r.email);
-  const { data: existingUsers, error: fetchUsersError } = await supabase
-    .from('user')
-    .select('id, email')
+  const { data: existingInvites, error: fetchError } = await supabase
+    .from('residences')
+    .select('email')
+    .eq('organisation_id', organisation_id)
     .in('email', emailsFromCsv);
-
-  if (fetchUsersError) {
-    console.error("Error fetching existing users:", fetchUsersError);
-    return { error: 'Could not check for existing users.' };
-  }
   
-  const existingUserMap = new Map(existingUsers.map(u => [u.email, u.id]));
-  const skippedEmails: string[] = [];
+  if (fetchError) {
+    console.error("Error fetching existing residences:", fetchError);
+    return { error: 'Could not check for existing invitations.' };
+  }
 
-  // 5. Prepare residence records ONLY for existing users.
+  const existingEmails = new Set(existingInvites.map(i => i.email));
+  
+  // 5. Prepare residence records for NEW invites only.
   const residencesToInsert = residentsDataFromCsv
-    .map(residentFromCsv => {
-        const userId = existingUserMap.get(residentFromCsv.email);
-
-        // If the user does not exist in the 'user' table, we cannot create a residence.
-        // Skip this record and add the email to a list to report back to the admin.
-        if (!userId) {
-            skippedEmails.push(residentFromCsv.email);
-            return null;
-        }
-
-        return {
-            organisation_id,
-            user_id: userId, // This ID comes from an existing user.
-            invited_by,
-            status: 'invited',
-            "Name": residentFromCsv.Name,
-            email: residentFromCsv.email,
-            phone: residentFromCsv.phone
-        };
-    })
-    .filter((r): r is NonNullable<typeof r> => r !== null);
+    .filter(resident => !existingEmails.has(resident.email!))
+    .map(resident => ({
+        organisation_id,
+        invited_by,
+        status: 'invited',
+        "Name": resident.Name,
+        email: resident.email,
+        phone: resident.phone ? Number(resident.phone) : null
+        // user_id is intentionally omitted to be null
+    }));
     
   let successCount = 0;
   if (residencesToInsert.length > 0) {
-    const { error: upsertError, count } = await supabase
+    const { error: insertError, count } = await supabase
       .from('residences')
-      // Use upsert to gracefully handle cases where a user is already a resident of the org.
-      .upsert(residencesToInsert, { onConflict: 'organisation_id,user_id', ignoreDuplicates: true })
+      .insert(residencesToInsert)
       .select({ count: 'exact' });
 
-    if (upsertError) {
-        console.error("Error upserting residences:", upsertError);
-        return { error: `An unexpected error occurred during invitations: ${upsertError.message}` };
+    if (insertError) {
+        console.error("Error inserting residences:", insertError);
+        return { error: `An unexpected error occurred during invitations: ${insertError.message}` };
     }
     successCount = count ?? 0;
   }
   
   // 6. Build a clear summary message for the user.
-  let message = `Processed ${residentsDataFromCsv.length} records from the CSV.`;
+  const skippedCount = residentsDataFromCsv.length - successCount;
+  let message = `Processed ${residentsDataFromCsv.length} records.`;
   if (successCount > 0) {
-    message += ` ${successCount} resident(s) were successfully invited or already existed.`;
+    message += ` ${successCount} new resident(s) were successfully invited.`;
   }
-  if (skippedEmails.length > 0) {
-    message += ` ${skippedEmails.length} user(s) were skipped because they do not have an account.`;
+  if (skippedCount > 0) {
+    message += ` ${skippedCount} record(s) were skipped because they have already been invited.`;
   }
   if (successCount === 0 && residencesToInsert.length === 0) {
-    message = "No new residents were invited. All users from the CSV either do not have an account or are already members.";
+    message = "No new residents were invited. All users from the CSV have already been invited to this organization.";
   }
 
   // 7. Revalidate paths and return summary
