@@ -61,7 +61,6 @@ export async function inviteResidents(formData: FormData) {
 
   let successCount = 0;
   let duplicateCount = 0;
-  let errorCount = 0;
 
   // 4. Find or create users for each email
   const { data: existingUsers, error: fetchUsersError } = await supabase
@@ -106,21 +105,23 @@ export async function inviteResidents(formData: FormData) {
   })).filter(r => r.user_id);
 
   if (residencesToInsert.length > 0) {
-    // Use ON CONFLICT to ignore duplicates
-    const { error: insertError, count } = await supabase
+    // Use upsert with ignoreDuplicates to prevent errors on existing residents
+    // and only insert new ones.
+    const { error: upsertError, count } = await supabase
       .from('residences')
-      .insert(residencesToInsert)
+      .upsert(residencesToInsert, { onConflict: 'organisation_id,user_id', ignoreDuplicates: true })
       .select({ count: 'exact' });
-    
-    if(insertError) {
-      console.error("Error inserting residences:", insertError);
-      errorCount = emails.length - (count ?? 0);
+
+    if (upsertError) {
+        // This would be an unexpected error, as conflicts should be ignored.
+        console.error("Error upserting residences:", upsertError);
+        return { error: `An unexpected error occurred during invitations: ${upsertError.message}` };
     }
 
     successCount = count ?? 0;
   }
   
-  duplicateCount = emails.length - successCount - errorCount;
+  duplicateCount = emails.length - successCount;
 
   // 6. Revalidate paths and return summary
   revalidatePath('/dashboard/residences');
@@ -128,7 +129,7 @@ export async function inviteResidents(formData: FormData) {
   
   return { 
     success: true,
-    message: `Invited ${successCount} new residents from CSV. ${duplicateCount} were already members. ${errorCount} failed.` 
+    message: `Invited ${successCount} new residents from CSV. ${duplicateCount} were already members.` 
   };
 }
 
