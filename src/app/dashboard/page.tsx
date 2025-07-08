@@ -55,7 +55,7 @@ async function getDashboardData() {
     latestReviewRes,
     avgRatingRes,
     upcomingEventsRes,
-    upcomingEventsCountRes,
+    totalEventsCountRes,
     totalEnrolmentsRes,
     organisationRes,
   ] = await Promise.all([
@@ -99,7 +99,7 @@ async function getDashboardData() {
         .from('court_reviews')
         .select('rating'),
 
-    // Upcoming Events
+    // Upcoming Events (list for display)
     supabase
         .from('events')
         .select('id, title, start_time, location_name')
@@ -107,11 +107,10 @@ async function getDashboardData() {
         .order('start_time', { ascending: true })
         .limit(3),
     
-    // Upcoming Events Count
+    // Total Events Count
     supabase
         .from('events')
-        .select('id', { count: 'exact', head: true })
-        .gte('end_time', new Date().toISOString()),
+        .select('id', { count: 'exact', head: true }),
 
     // Total Event Enrolments (using dynamically fetched confirmed status ID)
     supabase
@@ -130,7 +129,7 @@ async function getDashboardData() {
   if (latestReviewRes.error) console.error("Error fetching latest review:", latestReviewRes.error.message);
   if (avgRatingRes.error) console.error("Error fetching ratings:", avgRatingRes.error.message);
   if (upcomingEventsRes.error) console.error("Error fetching upcoming events:", upcomingEventsRes.error.message);
-  if (upcomingEventsCountRes.error) console.error("Error fetching upcoming events count:", upcomingEventsCountRes.error.message);
+  if (totalEventsCountRes.error) console.error("Error fetching total events count:", totalEventsCountRes.error.message);
   if (totalEnrolmentsRes.error) console.error("Error fetching total enrolments:", totalEnrolmentsRes.error.message);
   if (organisationRes.error) console.error("Error fetching organisation logo:", organisationRes.error.message);
 
@@ -181,7 +180,7 @@ async function getDashboardData() {
     location: event.location_name ?? 'N/A',
   })) || [];
 
-  const upcomingEventsCount = upcomingEventsCountRes.count ?? 0;
+  const totalEventsCount = totalEventsCountRes.count ?? 0;
   const totalEnrolments = totalEnrolmentsRes.data?.reduce((sum, booking) => sum + (booking.quantity ?? 1), 0) ?? 0;
   const organisationLogo = organisationRes.data?.logo;
 
@@ -191,7 +190,7 @@ async function getDashboardData() {
         todaysBookings: todaysBookingsCount,
         totalRevenue: totalRevenue,
         upcomingSlots: upcomingBookingsCount,
-        upcomingEventsCount: upcomingEventsCount,
+        totalEventsCount: totalEventsCount,
         totalEnrolments: totalEnrolments,
     },
     feedback: {
@@ -211,7 +210,7 @@ export default async function DashboardPage() {
     { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar },
     { label: 'Total Revenue', value: `₹${stats.totalRevenue.toLocaleString('en-IN')}`, icon: BarChartHorizontal },
     { label: 'Upcoming Slots', value: stats.upcomingSlots, icon: Clock },
-    { label: 'Upcoming Events', value: stats.upcomingEventsCount, icon: PartyPopper },
+    { label: 'Total Events', value: stats.totalEventsCount, icon: PartyPopper },
   ];
 
   return (
