@@ -38,14 +38,14 @@ export default function EmployeeDashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {features.map((feature) => (
-          <Card key={feature.title}>
+          <Card key={feature.title} className="flex flex-col">
             <CardHeader>
               <div className="flex items-center gap-4">
                 <feature.icon className="h-8 w-8 text-primary" />
                 <CardTitle>{feature.title}</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="flex flex-col h-full">
+            <CardContent className="flex flex-col flex-grow">
               <CardDescription className="flex-grow">{feature.description}</CardDescription>
               <Button asChild className="mt-4">
                 <Link href={feature.href}>{feature.cta}</Link>
