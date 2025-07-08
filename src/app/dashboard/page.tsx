@@ -7,6 +7,7 @@ import { format, parseISO } from 'date-fns';
 import { RecentBookingsTable } from '@/components/recent-bookings-table';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Image from 'next/image';
 
 const statusMap: { [key: number]: string } = {
   0: 'Cancelled',
@@ -56,6 +57,7 @@ async function getDashboardData() {
     upcomingEventsRes,
     upcomingEventsCountRes,
     totalEnrolmentsRes,
+    organisationRes,
   ] = await Promise.all([
     // Recent Bookings
     supabase
@@ -115,7 +117,10 @@ async function getDashboardData() {
     supabase
         .from('event_bookings')
         .select('quantity')
-        .eq('status', confirmedEventStatusId ?? -1) // Use fetched ID, or -1 if not found
+        .eq('status', confirmedEventStatusId ?? -1), // Use fetched ID, or -1 if not found
+    
+    // Fetch organisation logo
+    supabase.from('organisations').select('logo').eq('id', 1).maybeSingle(),
   ]);
 
   if (recentBookingsRes.error) console.error("Error fetching recent bookings:", recentBookingsRes.error.message);
@@ -127,6 +132,7 @@ async function getDashboardData() {
   if (upcomingEventsRes.error) console.error("Error fetching upcoming events:", upcomingEventsRes.error.message);
   if (upcomingEventsCountRes.error) console.error("Error fetching upcoming events count:", upcomingEventsCountRes.error.message);
   if (totalEnrolmentsRes.error) console.error("Error fetching total enrolments:", totalEnrolmentsRes.error.message);
+  if (organisationRes.error) console.error("Error fetching organisation logo:", organisationRes.error.message);
 
 
   const recentBookings = recentBookingsRes.data?.map((booking) => {
@@ -177,6 +183,7 @@ async function getDashboardData() {
 
   const upcomingEventsCount = upcomingEventsCountRes.count ?? 0;
   const totalEnrolments = totalEnrolmentsRes.data?.reduce((sum, booking) => sum + (booking.quantity ?? 1), 0) ?? 0;
+  const organisationLogo = organisationRes.data?.logo;
 
   return {
     recentBookings,
@@ -193,11 +200,12 @@ async function getDashboardData() {
     },
     upcomingEvents,
     error: recentBookingsRes.error,
+    organisationLogo,
   };
 }
 
 export default async function DashboardPage() {
-  const { recentBookings, stats, feedback, upcomingEvents, error } = await getDashboardData();
+  const { recentBookings, stats, feedback, upcomingEvents, error, organisationLogo } = await getDashboardData();
   
   const statCards = [
     { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar },
@@ -209,9 +217,20 @@ export default async function DashboardPage() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Here&apos;s a snapshot of your facility&apos;s activity.</p>
+        <div className="flex items-center gap-4">
+          {organisationLogo && (
+            <Image
+              src={organisationLogo}
+              alt="Organisation Logo"
+              width={40}
+              height={40}
+              className="rounded-md object-cover"
+            />
+          )}
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">Here&apos;s a snapshot of your facility&apos;s activity.</p>
+          </div>
         </div>
         <Link href="/dashboard/bookings">
             <Button>+ New Booking</Button>
