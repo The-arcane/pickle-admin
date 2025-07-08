@@ -46,6 +46,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { addOrganization, updateOrganization, deleteOrganization } from './actions';
 import type { Organization, User } from '@/types';
+import { useOrganization } from '@/hooks/use-organization';
 
 
 export default function OrganizationsPage() {
@@ -56,6 +57,7 @@ export default function OrganizationsPage() {
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
   const [deletingOrgId, setDeletingOrgId] = useState<number | null>(null);
   const supabase = createClient();
+  const { refreshOrganizations } = useOrganization();
 
   const fetchData = async () => {
     const { data: orgsData, error: orgsError } = await supabase.from('organisations').select('*').order('name');
@@ -74,6 +76,7 @@ export default function OrganizationsPage() {
 
   const onActionFinish = () => {
     fetchData();
+    refreshOrganizations();
     setIsFormDialogOpen(false);
     setIsDeleteDialogOpen(false);
   };

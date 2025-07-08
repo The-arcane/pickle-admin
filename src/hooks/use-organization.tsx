@@ -34,26 +34,38 @@ export function OrganizationProvider({
 
   const fetchOrganizations = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('organisations').select('*');
+    const { data, error } = await supabase.from('organisations').select('*').order('name');
     if (error) {
       console.error('Error fetching organizations:', error);
       setOrganizations([]);
     } else {
-      setOrganizations(data as Organization[]);
-      // Set initial selected org
-      if (data && data.length > 0 && selectedOrgId === null) {
-        const storedOrgId = localStorage.getItem('selectedOrgId');
-        if (storedOrgId && data.some(org => org.id === parseInt(storedOrgId))) {
-            setSelectedOrgIdState(parseInt(storedOrgId));
-        } else {
-            const firstOrgId = data[0].id;
-            setSelectedOrgIdState(firstOrgId);
+      const orgs = data as Organization[];
+      setOrganizations(orgs);
+      
+      if (orgs.length > 0) {
+        setSelectedOrgIdState(currentId => {
+            if (currentId && orgs.some(org => org.id === currentId)) {
+                return currentId;
+            }
+            const storedOrgId = localStorage.getItem('selectedOrgId');
+            if (storedOrgId) {
+                const storedIdNum = parseInt(storedOrgId);
+                if (orgs.some(org => org.id === storedIdNum)) {
+                    return storedIdNum;
+                }
+            }
+            // Fallback to the first organization
+            const firstOrgId = orgs[0].id;
             localStorage.setItem('selectedOrgId', firstOrgId.toString());
-        }
+            return firstOrgId;
+        });
+      } else {
+          setSelectedOrgIdState(null);
+          localStorage.removeItem('selectedOrgId');
       }
     }
     setLoading(false);
-  }, [supabase, selectedOrgId]);
+  }, [supabase]);
 
   useEffect(() => {
     fetchOrganizations();
