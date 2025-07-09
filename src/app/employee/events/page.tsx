@@ -13,13 +13,19 @@ export default async function EmployeeEventsPage() {
     return redirect('/login?type=employee');
   }
 
-  const { data: userProfileWithOrg } = await supabase
+  const { data: userRecord } = await supabase
     .from('user')
-    .select('user_organisations(organisation_id)')
+    .select('id')
     .eq('user_uuid', user.id)
     .single();
 
-  const organisationId = (userProfileWithOrg?.user_organisations as any)?.[0]?.organisation_id;
+  const { data: orgLink } = await supabase
+    .from('user_organisations')
+    .select('organisation_id')
+    .eq('user_id', userRecord?.id ?? -1)
+    .maybeSingle();
+
+  const organisationId = orgLink?.organisation_id;
 
   let eventsData: any[] | null = [];
   let eventsError: any = null;
@@ -33,7 +39,11 @@ export default async function EmployeeEventsPage() {
 
       eventsData = data;
       eventsError = error;
+  } else {
+      // If no org ID, we can't fetch events. The user will see an empty state.
+      console.log("Employee is not linked to an organization, cannot fetch events.");
   }
+
 
   if (eventsError) {
     console.error("Error fetching events:", eventsError);

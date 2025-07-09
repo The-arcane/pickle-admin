@@ -16,13 +16,24 @@ export async function verifyBookingByQrText(qrText: string) {
     if (!user) {
         return { error: 'Authentication error. Please log in again.' };
     }
-    const { data: userProfile } = await supabase
+    
+    const { data: userRecord } = await supabase
         .from('user')
-        .select('user_organisations(organisation_id)')
+        .select('id')
         .eq('user_uuid', user.id)
         .single();
     
-    const organisationId = (userProfile?.user_organisations as any)?.[0]?.organisation_id;
+    if (!userRecord) {
+        return { error: 'Could not find your user profile.' };
+    }
+    
+    const { data: orgLink } = await supabase
+        .from('user_organisations')
+        .select('organisation_id')
+        .eq('user_id', userRecord.id)
+        .maybeSingle();
+
+    const organisationId = orgLink?.organisation_id;
 
     if (!organisationId) {
         return { error: 'You are not assigned to an organization.' };

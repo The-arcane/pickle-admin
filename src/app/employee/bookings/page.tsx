@@ -11,18 +11,32 @@ export default async function EmployeeBookingsPage() {
     return redirect('/login?type=employee');
   }
 
-  // Get user's profile and organization link
-  const { data: userProfileWithOrg } = await supabase
+  // Get user's internal ID from their auth UUID
+  const { data: userRecord, error: userRecordError } = await supabase
     .from('user')
-    .select('user_organisations(organisation_id)')
+    .select('id')
     .eq('user_uuid', user.id)
     .single();
+
+  if (userRecordError || !userRecord) {
+     return <EmployeeBookingsClientPage 
+        initialCourtBookings={[]} 
+        courtBookingStatuses={[]} 
+        courts={[]} 
+        error="Could not find your user profile. Please contact an administrator." 
+    />;
+  }
   
-  const organisationId = (userProfileWithOrg?.user_organisations as any)?.[0]?.organisation_id;
+  // Get the organization ID from the join table
+  const { data: orgLink } = await supabase
+    .from('user_organisations')
+    .select('organisation_id')
+    .eq('user_id', userRecord.id)
+    .maybeSingle();
+
+  const organisationId = orgLink?.organisation_id;
 
   if (!organisationId) {
-    console.error("Employee not linked to any organization.");
-    // Render the page with an error message
     return <EmployeeBookingsClientPage 
         initialCourtBookings={[]} 
         courtBookingStatuses={[]} 
@@ -73,5 +87,6 @@ export default async function EmployeeBookingsPage() {
     courts={courts}
   />;
 }
+
 
 

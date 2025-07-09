@@ -25,28 +25,33 @@ export default async function EmployeeLayout({
     return <>{children}</>;
   }
 
-  // Fetch user profile and their organization's name
-  const { data: userProfile, error } = await supabase
+  // Fetch user profile
+  const { data: userProfile, error: profileError } = await supabase
     .from('user')
-    .select(`
-      name,
-      email,
-      profile_image_url,
-      user_type,
-      user_organisations(
-        organisations(name)
-      )
-    `)
+    .select('id, name, email, profile_image_url, user_type')
     .eq('user_uuid', user.id)
     .single();
 
-  if (error || !userProfile || userProfile.user_type !== 4) {
+  if (profileError || !userProfile || userProfile.user_type !== 4) {
     return redirect('/login?type=employee&error=Access%20Denied');
   }
 
-  // Determine organization name, with a fallback
-  const orgData = (userProfile.user_organisations as any)?.[0]?.organisations;
-  const organisationName = orgData?.name || 'Employee Panel';
+  // Fetch organization link to get the ID
+  const { data: orgLink } = await supabase
+    .from('user_organisations')
+    .select('organisation_id')
+    .eq('user_id', userProfile.id)
+    .maybeSingle();
+
+  let organisationName = 'Employee Panel';
+  if (orgLink?.organisation_id) {
+    const { data: orgData } = await supabase
+        .from('organisations')
+        .select('name')
+        .eq('id', orgLink.organisation_id)
+        .single();
+    organisationName = orgData?.name || 'Employee Panel';
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
