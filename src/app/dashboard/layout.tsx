@@ -24,9 +24,10 @@ export default async function DashboardLayout({
     return <>{children}</>;
   }
 
+  // Fetch the user's profile, including their internal ID
   const { data: userProfile, error } = await supabase
     .from('user')
-    .select('name, email, profile_image_url, user_type')
+    .select('id, name, email, profile_image_url, user_type')
     .eq('user_uuid', user.id)
     .single();
 
@@ -38,14 +39,24 @@ export default async function DashboardLayout({
     return redirect('/login');
   }
 
-  // Fetch the organization name. Assuming the admin dashboard is for organization with id 1.
-  const { data: organisation } = await supabase
-    .from('organisations')
-    .select('name')
-    .eq('id', 1)
-    .single();
+  // Now, find which organization this admin user belongs to.
+  const { data: orgLink } = await supabase
+    .from('user_organisations')
+    .select('organisation_id')
+    .eq('user_id', userProfile.id)
+    .maybeSingle(); // An admin should only belong to one org.
 
-  const organisationName = organisation?.name || 'LUMEN';
+  let organisationName = 'Lumen'; // Default fallback name
+  if (orgLink?.organisation_id) {
+    // If we found the link, fetch the organization's name
+    const { data: organisation } = await supabase
+      .from('organisations')
+      .select('name')
+      .eq('id', orgLink.organisation_id)
+      .single();
+    
+    organisationName = organisation?.name || 'Lumen';
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
