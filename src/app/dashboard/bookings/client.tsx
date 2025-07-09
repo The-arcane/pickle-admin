@@ -8,16 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
-import { Calendar as CalendarIcon, Pencil } from 'lucide-react';
+import { Calendar as CalendarIcon, Pencil, Search, X } from 'lucide-react';
 import { addBooking, updateBooking, getTimeslots } from './actions';
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, formatISO } from 'date-fns';
+import { format, parseISO, formatISO, isEqual, startOfDay } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
+import { Input } from '@/components/ui/input';
 
 // Types for Court Bookings
 type CourtBookingFromDb = {
@@ -124,6 +125,15 @@ export function BookingsClientPage({
     const [isClient, setIsClient] = useState(false);
     const [activeTab, setActiveTab] = useState('courts');
 
+    // Filter states
+    const [courtUserSearch, setCourtUserSearch] = useState('');
+    const [courtIdFilter, setCourtIdFilter] = useState('all');
+    const [courtStatusFilter, setCourtStatusFilter] = useState('all');
+    const [courtDateFilter, setCourtDateFilter] = useState<Date | undefined>(undefined);
+
+    const [eventSearch, setEventSearch] = useState('');
+    const [eventStatusFilter, setEventStatusFilter] = useState('all');
+
     // Court Booking Status Map
     const courtStatusMap = useMemo(() => {
         return courtBookingStatuses.reduce((acc, status) => {
@@ -177,6 +187,26 @@ export function BookingsClientPage({
         }));
         setProcessedEventBookings(bookings);
     }, [initialEventBookings, eventStatusMap]);
+
+    const filteredCourtBookings = useMemo(() => {
+        return processedCourtBookings.filter(booking => {
+            const userMatch = !courtUserSearch || booking.user.toLowerCase().includes(courtUserSearch.toLowerCase());
+            const courtMatch = courtIdFilter === 'all' || booking.court_id.toString() === courtIdFilter;
+            const statusMatch = courtStatusFilter === 'all' || booking.status === courtStatusFilter;
+            const dateMatch = !courtDateFilter || (booking.raw_date && isEqual(startOfDay(booking.raw_date), startOfDay(courtDateFilter)));
+            return userMatch && courtMatch && statusMatch && dateMatch;
+        });
+    }, [processedCourtBookings, courtUserSearch, courtIdFilter, courtStatusFilter, courtDateFilter]);
+
+    const filteredEventBookings = useMemo(() => {
+        return processedEventBookings.filter(booking => {
+            const searchMatch = !eventSearch || 
+                                booking.user.toLowerCase().includes(eventSearch.toLowerCase()) || 
+                                booking.event.toLowerCase().includes(eventSearch.toLowerCase());
+            const statusMatch = eventStatusFilter === 'all' || booking.status === eventStatusFilter;
+            return searchMatch && statusMatch;
+        });
+    }, [processedEventBookings, eventSearch, eventStatusFilter]);
 
 
     // State for Edit Dialog
@@ -281,17 +311,17 @@ export function BookingsClientPage({
             ));
         }
 
-        if (processedCourtBookings.length === 0) {
+        if (filteredCourtBookings.length === 0) {
             return (
                 <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
-                        No court bookings found.
+                    <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
+                        No court bookings found matching your criteria.
                     </TableCell>
                 </TableRow>
             );
         }
 
-        return processedCourtBookings.map((booking) => (
+        return filteredCourtBookings.map((booking) => (
             <TableRow key={booking.id}>
                 <TableCell className="font-medium">{booking.user}</TableCell>
                 <TableCell>{booking.court}</TableCell>
@@ -308,7 +338,7 @@ export function BookingsClientPage({
                 </TableCell>
             </TableRow>
         ));
-    }, [isClient, processedCourtBookings]);
+    }, [isClient, filteredCourtBookings]);
 
     const memoizedEventBookings = useMemo(() => {
         if (!isClient) {
@@ -324,17 +354,17 @@ export function BookingsClientPage({
             ));
         }
 
-        if (processedEventBookings.length === 0) {
+        if (filteredEventBookings.length === 0) {
             return (
                 <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
-                        No event bookings found.
+                    <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
+                        No event bookings found matching your criteria.
                     </TableCell>
                 </TableRow>
             );
         }
 
-        return processedEventBookings.map((booking) => (
+        return filteredEventBookings.map((booking) => (
             <TableRow key={booking.id}>
                 <TableCell className="font-medium">{booking.event}</TableCell>
                 <TableCell>{booking.user}</TableCell>
@@ -346,7 +376,7 @@ export function BookingsClientPage({
                 </TableCell>
             </TableRow>
         ));
-    }, [isClient, processedEventBookings]);
+    }, [isClient, filteredEventBookings]);
 
   return (
     <>
@@ -376,6 +406,42 @@ export function BookingsClientPage({
                     </div>
                 </div>
                 <TabsContent value="courts">
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                        <div className="relative flex-grow sm:flex-grow-0">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Search by user..." className="pl-10 w-full sm:w-48" value={courtUserSearch} onChange={e => setCourtUserSearch(e.target.value)} />
+                        </div>
+                        <Select value={courtIdFilter} onValueChange={setCourtIdFilter}>
+                            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Filter by court" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Courts</SelectItem>
+                                {allCourts.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Select value={courtStatusFilter} onValueChange={setCourtStatusFilter}>
+                            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                {courtBookingStatuses.map(s => <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <div className="flex items-center">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", !courtDateFilter && "text-muted-foreground", courtDateFilter && "rounded-r-none")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {courtDateFilter ? format(courtDateFilter, "PPP") : <span>Filter by date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={courtDateFilter} onSelect={setCourtDateFilter} initialFocus /></PopoverContent>
+                            </Popover>
+                            {courtDateFilter && (
+                                <Button variant="outline" size="icon" onClick={() => setCourtDateFilter(undefined)} className="h-10 w-10 p-0 border-l-0 rounded-l-none">
+                                    <X className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                            )}
+                        </div>
+                    </div>
                     <Card>
                         <CardContent className="pt-6">
                         <Table>
@@ -397,6 +463,19 @@ export function BookingsClientPage({
                     </Card>
                 </TabsContent>
                 <TabsContent value="events">
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                        <div className="relative flex-grow sm:flex-grow-0">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Search by event or user..." className="pl-10 w-full sm:w-64" value={eventSearch} onChange={e => setEventSearch(e.target.value)} />
+                        </div>
+                        <Select value={eventStatusFilter} onValueChange={setEventStatusFilter}>
+                            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                {eventBookingStatuses.map(s => <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <Card>
                         <CardContent className="pt-6">
                             <Table>
