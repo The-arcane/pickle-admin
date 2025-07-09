@@ -38,15 +38,6 @@ export default async function EmployeeBookingsPage() {
     return <EmployeeBookingsClientPage initialCourtBookings={[]} courtBookingStatuses={[]} courts={[]} />;
   }
   
-  // Fetch court bookings for that organization
-  const { data: courtBookingsData, error: courtBookingsError } = await supabase
-    .from('bookings')
-    .select(
-      'id, status, user:user_id(name), courts:court_id!inner(name, organisation_id), timeslots:timeslot_id(date, start_time, end_time)'
-    )
-    .eq('courts.organisation_id', organisationId)
-    .order('id', { ascending: false });
-
   // Fetch courts for the filter dropdown
   const { data: courtsData, error: courtsError } = await supabase
     .from('courts')
@@ -54,6 +45,25 @@ export default async function EmployeeBookingsPage() {
     .eq('organisation_id', organisationId)
     .order('name');
     
+  const courts = courtsData || [];
+  let courtBookingsData: any[] | null = [];
+  let courtBookingsError: any = null;
+
+  if (courts.length > 0) {
+    const courtIds = courts.map(c => c.id);
+    // Fetch bookings for the courts found in this organization.
+    const { data, error } = await supabase
+      .from('bookings')
+      .select(
+        'id, status, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time, end_time)'
+      )
+      .in('court_id', courtIds)
+      .order('id', { ascending: false });
+    
+    courtBookingsData = data;
+    courtBookingsError = error;
+  }
+
   // Fetch only court booking statuses for the badge
   const { data: courtBookingStatusesData, error: courtStatusesError } = await supabase.from('booking_status').select('id, label');
 
@@ -63,7 +73,6 @@ export default async function EmployeeBookingsPage() {
 
   const courtBookings = courtBookingsData || [];
   const courtBookingStatuses = courtBookingStatusesData || [];
-  const courts = courtsData || [];
 
   return <EmployeeBookingsClientPage
     initialCourtBookings={courtBookings}
