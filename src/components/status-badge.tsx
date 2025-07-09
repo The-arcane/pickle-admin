@@ -8,11 +8,13 @@ export function StatusBadge({ status }: { status: string }) {
     case 'open':
     case 'active':
     case 'joined':
+    case 'upcoming':
       variant = 'default';
       break;
     case 'pending':
     case 'maintenance':
     case 'invited':
+    case 'completed':
       variant = 'secondary';
       break;
     case 'cancelled':

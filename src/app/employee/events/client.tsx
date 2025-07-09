@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Event = {
   id: number;
@@ -19,12 +20,15 @@ type Event = {
 
 export function EmployeeEventsClientPage({ events }: { events: Event[] }) {
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
 
     const filteredEvents = useMemo(() => {
         return events.filter(event => {
-            return !searchQuery || event.title.toLowerCase().includes(searchQuery.toLowerCase());
+            const searchMatch = !searchQuery || event.title.toLowerCase().includes(searchQuery.toLowerCase());
+            const statusMatch = statusFilter === 'all' || event.status.toLowerCase() === statusFilter;
+            return searchMatch && statusMatch;
         });
-    }, [events, searchQuery]);
+    }, [events, searchQuery, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -33,16 +37,26 @@ export function EmployeeEventsClientPage({ events }: { events: Event[] }) {
             <p className="text-muted-foreground">View all scheduled events.</p>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
-            <div className="relative flex-grow md:flex-grow-0">
+        <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-grow sm:flex-grow-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                     placeholder="Search for events..." 
-                    className="pl-10 w-full md:w-80"
+                    className="pl-10 w-full sm:w-64"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                 />
             </div>
+             <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="upcoming">Upcoming</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+            </Select>
         </div>
         
         <Card>
