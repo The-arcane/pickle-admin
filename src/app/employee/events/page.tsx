@@ -2,15 +2,38 @@
 import { EmployeeEventsClientPage } from './client';
 import { createServer } from '@/lib/supabase/server';
 import { format } from 'date-fns';
+import { redirect } from 'next/navigation';
 
 // Re-using the admin events page component for employees.
 export default async function EmployeeEventsPage() {
   const supabase = createServer();
   
-  const { data: eventsData, error: eventsError } = await supabase
-    .from('events')
-    .select('*, event_categories:event_category_map(name:category_id(name))')
-    .order('start_time', { ascending: false });
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return redirect('/login?type=employee');
+  }
+
+  const { data: userProfileWithOrg } = await supabase
+    .from('user')
+    .select('user_organisations(organisation_id)')
+    .eq('user_uuid', user.id)
+    .single();
+
+  const organisationId = (userProfileWithOrg?.user_organisations as any)?.[0]?.organisation_id;
+
+  let eventsData: any[] | null = [];
+  let eventsError: any = null;
+
+  if (organisationId) {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*, event_categories:event_category_map(name:category_id(name))')
+      .eq('organiser_org_id', organisationId)
+      .order('start_time', { ascending: false });
+
+      eventsData = data;
+      eventsError = error;
+  }
 
   if (eventsError) {
     console.error("Error fetching events:", eventsError);

@@ -11,6 +11,23 @@ const CONFIRMED_STATUS_ID_EVENT = 1; // Assuming 1 is 'Confirmed' for event book
 export async function verifyBookingByQrText(qrText: string) {
     const supabase = createServer();
 
+    // Get Employee's Org ID
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { error: 'Authentication error. Please log in again.' };
+    }
+    const { data: userProfile } = await supabase
+        .from('user')
+        .select('user_organisations(organisation_id)')
+        .eq('user_uuid', user.id)
+        .single();
+    
+    const organisationId = (userProfile?.user_organisations as any)?.[0]?.organisation_id;
+
+    if (!organisationId) {
+        return { error: 'You are not assigned to an organization.' };
+    }
+
     if (!qrText) {
         return { error: 'No QR code data provided.' };
     }
@@ -25,14 +42,15 @@ export async function verifyBookingByQrText(qrText: string) {
             .select(`
                 id, status, statuss,
                 user:user_id(name), 
-                courts:court_id(name), 
+                courts:court_id!inner(name, organisation_id), 
                 timeslots:timeslot_id(date, start_time, end_time)
             `)
             .eq('qr_content_id', qrContentId)
+            .eq('courts.organisation_id', organisationId)
             .single();
 
         if (fetchError || !booking) {
-            return { error: `Court booking with ID ${qrContentId} not found.` };
+            return { error: `Court booking with ID ${qrContentId} not found in your organization.` };
         }
         
         if (booking.statuss === 'visited') {
@@ -69,13 +87,14 @@ export async function verifyBookingByQrText(qrText: string) {
             .select(`
                 id, status, statuss, quantity,
                 user:user_id(name),
-                events:event_id(title, start_time)
+                events:event_id!inner(title, start_time, organiser_org_id)
             `)
             .eq('qr_content_id', qrContentId)
+            .eq('events.organiser_org_id', organisationId)
             .single();
         
         if (fetchError || !eventBooking) {
-            return { error: `Event booking with ID ${qrContentId} not found.` };
+            return { error: `Event booking with ID ${qrContentId} not found in your organization.` };
         }
         
         if (eventBooking.statuss === 'visited') {

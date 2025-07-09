@@ -11,26 +11,14 @@ export default async function EmployeeBookingsPage() {
     return redirect('/login?type=employee');
   }
 
-  // Get user's profile to find their internal ID
-  const { data: userProfile } = await supabase
+  // Get user's profile and organization link
+  const { data: userProfileWithOrg } = await supabase
     .from('user')
-    .select('id')
+    .select('user_organisations(organisation_id)')
     .eq('user_uuid', user.id)
     .single();
   
-  if (!userProfile) {
-    // This case should be handled by middleware, but as a fallback
-    return redirect('/login?type=employee');
-  }
-  
-  // Find the user's organization
-  const { data: orgLink } = await supabase
-    .from('user_organisations')
-    .select('organisation_id')
-    .eq('user_id', userProfile.id)
-    .maybeSingle();
-
-  const organisationId = orgLink?.organisation_id;
+  const organisationId = (userProfileWithOrg?.user_organisations as any)?.[0]?.organisation_id;
 
   if (!organisationId) {
     console.error("Employee not linked to any organization.");
@@ -85,4 +73,5 @@ export default async function EmployeeBookingsPage() {
     courts={courts}
   />;
 }
+
 
