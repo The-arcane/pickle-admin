@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -10,9 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon, Search, X } from 'lucide-react';
+import { CalendarIcon, Search, X, AlertCircle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type CourtBooking = {
   id: number;
@@ -47,11 +49,13 @@ const formatTime = (timeString: string | null) => {
 export function EmployeeBookingsClientPage({ 
     initialCourtBookings, 
     courtBookingStatuses,
-    courts
+    courts,
+    error
 }: { 
     initialCourtBookings: any[], 
     courtBookingStatuses: any[],
-    courts: Court[]
+    courts: Court[],
+    error?: string;
 }) {
     const [processedCourtBookings, setProcessedCourtBookings] = useState<CourtBooking[]>([]);
     const [isClient, setIsClient] = useState(false);
@@ -135,6 +139,22 @@ export function EmployeeBookingsClientPage({
             </TableRow>
         ));
     }, [isClient, filteredBookings]);
+
+    if (error) {
+        return (
+            <div className="space-y-6">
+                <div>
+                    <h1 className="text-3xl font-bold">Court Bookings</h1>
+                    <p className="text-muted-foreground">View and filter all scheduled court bookings.</p>
+                </div>
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Access Error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6">

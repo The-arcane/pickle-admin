@@ -34,8 +34,13 @@ export default async function EmployeeBookingsPage() {
 
   if (!organisationId) {
     console.error("Employee not linked to any organization.");
-    // Render the page with empty data if employee has no organization
-    return <EmployeeBookingsClientPage initialCourtBookings={[]} courtBookingStatuses={[]} courts={[]} />;
+    // Render the page with an error message
+    return <EmployeeBookingsClientPage 
+        initialCourtBookings={[]} 
+        courtBookingStatuses={[]} 
+        courts={[]} 
+        error="You are not currently linked to any organization. Please contact your administrator." 
+    />;
   }
   
   // Fetch courts for the filter dropdown
@@ -80,3 +85,4 @@ export default async function EmployeeBookingsPage() {
     courts={courts}
   />;
 }
+
