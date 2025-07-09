@@ -38,13 +38,22 @@ export default async function DashboardLayout({
     return redirect('/login');
   }
 
+  // Fetch the organization name. Assuming the admin dashboard is for organization with id 1.
+  const { data: organisation } = await supabase
+    .from('organisations')
+    .select('name')
+    .eq('id', 1)
+    .single();
+
+  const organisationName = organisation?.name || 'LUMEN';
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-background sm:flex">
         <div className="flex h-16 shrink-0 items-center border-b px-6">
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-primary">
-            <Cuboid className="h-6 w-6" />
-            <span>LUMEN</span>
+          <Link href="/dashboard" className="flex min-w-0 items-center gap-2 font-semibold text-primary">
+            <Cuboid className="h-6 w-6 shrink-0" />
+            <span className="truncate" title={organisationName}>{organisationName}</span>
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto py-4">
@@ -65,9 +74,9 @@ export default async function DashboardLayout({
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0 sm:max-w-xs">
                 <div className="flex h-16 shrink-0 items-center border-b px-6">
-                    <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-primary">
-                        <Cuboid className="h-6 w-6" />
-                        <span>LUMEN</span>
+                    <Link href="/dashboard" className="flex min-w-0 items-center gap-2 font-semibold text-primary">
+                        <Cuboid className="h-6 w-6 shrink-0" />
+                        <span className="truncate" title={organisationName}>{organisationName}</span>
                     </Link>
                 </div>
                 <div className="flex-1 overflow-y-auto py-4">
