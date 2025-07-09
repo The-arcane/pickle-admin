@@ -1,3 +1,4 @@
+
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Cuboid, PanelLeft } from 'lucide-react';
@@ -24,9 +25,18 @@ export default async function EmployeeLayout({
     return <>{children}</>;
   }
 
+  // Fetch user profile and their organization's name
   const { data: userProfile, error } = await supabase
     .from('user')
-    .select('name, email, profile_image_url, user_type')
+    .select(`
+      name,
+      email,
+      profile_image_url,
+      user_type,
+      user_organisations(
+        organisations(name)
+      )
+    `)
     .eq('user_uuid', user.id)
     .single();
 
@@ -34,13 +44,17 @@ export default async function EmployeeLayout({
     return redirect('/login?type=employee&error=Access%20Denied');
   }
 
+  // Determine organization name, with a fallback
+  const orgData = (userProfile.user_organisations as any)?.[0]?.organisations;
+  const organisationName = orgData?.name || 'Employee Panel';
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-background sm:flex">
         <div className="flex h-16 shrink-0 items-center border-b px-6">
-          <Link href="/employee/dashboard" className="flex items-center gap-2 font-semibold text-primary">
-            <Cuboid className="h-6 w-6" />
-            <span>LUMEN (Employee)</span>
+          <Link href="/employee/dashboard" className="flex min-w-0 items-center gap-2 font-semibold text-primary">
+            <Cuboid className="h-6 w-6 shrink-0" />
+            <span className="truncate" title={organisationName}>{organisationName}</span>
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto py-4">
@@ -58,9 +72,9 @@ export default async function EmployeeLayout({
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0 sm:max-w-xs">
                 <div className="flex h-16 shrink-0 items-center border-b px-6">
-                    <Link href="/employee/dashboard" className="flex items-center gap-2 font-semibold text-primary">
-                        <Cuboid className="h-6 w-6" />
-                        <span>LUMEN</span>
+                    <Link href="/employee/dashboard" className="flex min-w-0 items-center gap-2 font-semibold text-primary">
+                        <Cuboid className="h-6 w-6 shrink-0" />
+                        <span className="truncate" title={organisationName}>{organisationName}</span>
                     </Link>
                 </div>
                 <div className="flex-1 overflow-y-auto py-4">
