@@ -1,30 +1,73 @@
 
 import { EmployeeBookingsClientPage } from './client';
 import { createServer } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
 export default async function EmployeeBookingsPage() {
   const supabase = createServer();
 
-  // Fetch court bookings
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return redirect('/login?type=employee');
+  }
+
+  // Get user's profile to find their internal ID
+  const { data: userProfile } = await supabase
+    .from('user')
+    .select('id')
+    .eq('user_uuid', user.id)
+    .single();
+  
+  if (!userProfile) {
+    // This case should be handled by middleware, but as a fallback
+    return redirect('/login?type=employee');
+  }
+  
+  // Find the user's organization
+  const { data: orgLink } = await supabase
+    .from('user_organisations')
+    .select('organisation_id')
+    .eq('user_id', userProfile.id)
+    .maybeSingle();
+
+  const organisationId = orgLink?.organisation_id;
+
+  if (!organisationId) {
+    console.error("Employee not linked to any organization.");
+    // Render the page with empty data if employee has no organization
+    return <EmployeeBookingsClientPage initialCourtBookings={[]} courtBookingStatuses={[]} courts={[]} />;
+  }
+  
+  // Fetch court bookings for that organization
   const { data: courtBookingsData, error: courtBookingsError } = await supabase
     .from('bookings')
     .select(
-      'id, status, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time, end_time)'
+      'id, status, user:user_id(name), courts:court_id!inner(name, organisation_id), timeslots:timeslot_id(date, start_time, end_time)'
     )
+    .eq('courts.organisation_id', organisationId)
     .order('id', { ascending: false });
 
+  // Fetch courts for the filter dropdown
+  const { data: courtsData, error: courtsError } = await supabase
+    .from('courts')
+    .select('id, name')
+    .eq('organisation_id', organisationId)
+    .order('name');
+    
   // Fetch only court booking statuses for the badge
   const { data: courtBookingStatusesData, error: courtStatusesError } = await supabase.from('booking_status').select('id, label');
 
-  if (courtBookingsError || courtStatusesError) {
-    console.error('Error fetching bookings data:', { courtBookingsError, courtStatusesError });
+  if (courtBookingsError || courtStatusesError || courtsError) {
+    console.error('Error fetching bookings data:', { courtBookingsError, courtStatusesError, courtsError });
   }
 
   const courtBookings = courtBookingsData || [];
   const courtBookingStatuses = courtBookingStatusesData || [];
+  const courts = courtsData || [];
 
   return <EmployeeBookingsClientPage
     initialCourtBookings={courtBookings}
     courtBookingStatuses={courtBookingStatuses}
+    courts={courts}
   />;
 }
