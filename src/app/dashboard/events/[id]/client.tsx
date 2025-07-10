@@ -49,22 +49,39 @@ export function EditEventClientPage({ event, organisations, users, categories, t
     const isAdding = !event;
     const [isClient, setIsClient] = useState(false);
 
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-
     // Form State
-    const [isFree, setIsFree] = useState(event?.is_free ?? true);
-    const [organiserType, setOrganiserType] = useState<'user' | 'organisation'>(event?.organiser_user_id ? 'user' : 'organisation');
-    const [startDate, setStartDate] = useState<Date | undefined>(event?.start_time ? parseISO(event.start_time) : undefined);
-    const [endDate, setEndDate] = useState<Date | undefined>(event?.end_time ? parseISO(event.end_time) : undefined);
+    const [isFree, setIsFree] = useState(true);
+    const [organiserType, setOrganiserType] = useState<'user' | 'organisation'>('organisation');
+    const [startDate, setStartDate] = useState<Date | undefined>();
+    const [endDate, setEndDate] = useState<Date | undefined>();
     
-    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(event?.cover_image || null);
+    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
     const coverImageRef = useRef<HTMLInputElement>(null);
     const [imageInPreview, setImageInPreview] = useState<string | null>(null);
 
     const galleryFormRef = useRef<HTMLFormElement>(null);
     const [galleryFiles, setGalleryFiles] = useState<FileList | null>(null);
+
+    // Dynamic lists
+    const [subEvents, setSubEvents] = useState<Partial<SubEvent>[]>([{ title: '', start_time: '', end_time: '' }]);
+    const [whatToBring, setWhatToBring] = useState<Partial<WhatToBringItem>[]>([{ item: '' }]);
+    
+    useEffect(() => {
+        setIsClient(true);
+        if (event) {
+            setIsFree(event.is_free ?? true);
+            setOrganiserType(event.organiser_user_id ? 'user' : 'organisation');
+            setStartDate(event.start_time ? parseISO(event.start_time) : undefined);
+            setEndDate(event.end_time ? parseISO(event.end_time) : undefined);
+            setCoverImagePreview(event.cover_image || null);
+            setSubEvents(event.event_sub_events.length > 0 ? event.event_sub_events.map(sub => ({
+                ...sub,
+                start_time: formatTimeToInputValue(sub.start_time),
+                end_time: formatTimeToInputValue(sub.end_time),
+            })) : [{ title: '', start_time: '', end_time: '' }]);
+            setWhatToBring(event.event_what_to_bring.length > 0 ? event.event_what_to_bring : [{ item: '' }]);
+        }
+    }, [event]);
 
     const formatTimeToInputValue = (isoString: string | null | undefined): string => {
         if (!isoString) return '';
@@ -75,16 +92,6 @@ export function EditEventClientPage({ event, organisations, users, categories, t
             return '';
         }
     };
-    
-    // Dynamic lists
-    const [subEvents, setSubEvents] = useState<Partial<SubEvent>[]>(
-        event?.event_sub_events.map(sub => ({
-            ...sub,
-            start_time: formatTimeToInputValue(sub.start_time),
-            end_time: formatTimeToInputValue(sub.end_time),
-        })) ?? [{ title: '', start_time: '', end_time: '' }]
-    );
-    const [whatToBring, setWhatToBring] = useState<Partial<WhatToBringItem>[]>(event?.event_what_to_bring ?? [{ item: '' }]);
 
     const handleFormAction = async (formData: FormData) => {
         if(startDate) formData.append('start_time', startDate.toISOString());

@@ -4,7 +4,7 @@ import { EditEventClientPage } from './client';
 import type { Event } from './types';
 
 export default async function EditEventPage({ params }: { params: { id: string } }) {
-  const supabase = createServer();
+  const supabase = await createServer();
   const { id } = params;
   const isAdding = id === 'add';
 
