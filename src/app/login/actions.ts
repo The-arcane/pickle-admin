@@ -38,17 +38,18 @@ export async function login(formData: FormData) {
     return redirect(`/login?error=${encodeURIComponent('Access Denied. You are not an authorized Admin.')}`);
   }
   
-  // Check 2: Is the user associated with an organization in the user_organisations table?
+  // Check 2 & 3: Is the user associated with an organization as an admin?
   const { data: orgLink, error: orgLinkError } = await supabase
     .from('user_organisations')
     .select('organisation_id')
     .eq('user_id', userProfile.id)
+    .eq('role_id', 1) // Assuming role_id 1 is for 'Admin'
     .limit(1)
     .maybeSingle();
 
   if (orgLinkError || !orgLink?.organisation_id) {
       await supabase.auth.signOut();
-      return redirect(`/login?error=${encodeURIComponent('Access Denied. Admin profile is not associated with any organization.')}`);
+      return redirect(`/login?error=${encodeURIComponent('Access Denied. Admin profile is not correctly associated with any organization.')}`);
   }
   
   // If all checks pass, redirect to the dashboard
@@ -80,10 +81,11 @@ export async function employeeLogin(formData: FormData) {
         return redirect(`/login?type=employee&error=${encodeURIComponent('Could not retrieve user profile.')}`);
     }
         
-    if (userProfile.user_type !== 4) {
+    if (userProfile.user_type !== 4) { // 4 is Employee
         await supabase.auth.signOut(); 
         return redirect(`/login?type=employee&error=${encodeURIComponent('Access Denied. You are not an authorized Employee.')}`);
     }
     
     return redirect('/employee/dashboard');
 }
+
