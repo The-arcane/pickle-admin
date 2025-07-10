@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { login, employeeLogin } from './actions';
+import { employeeLogin } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function SubmitButton({ isEmployee = false, isPending }: { isEmployee?: boolean, isPending: boolean }) {
@@ -77,13 +77,27 @@ export function LoginForm() {
     setError(null);
 
     const formData = new FormData(event.currentTarget);
-    const result = await login(formData);
-    
-    if (result.success) {
-        router.push('/dashboard');
-        router.refresh();
-    } else {
-        setError(result.error || 'An unknown error occurred.');
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'An unexpected error occurred.');
+      }
+
+      // On success, the API route has set the cookie, now we just need to navigate.
+      router.push('/dashboard');
+      router.refresh(); // Refresh to ensure layout gets new session data
+    } catch (e: any) {
+      setError(e.message);
     }
 
     setIsPending(false);
@@ -134,7 +148,7 @@ export function LoginForm() {
                         <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
                         </Alert>
                     )}
-                    <form onSubmit={handleAdminSubmit}>
+                    <form onSubmit={handleAdminSubmit} className="space-y-6">
                         <LoginFormFields />
                         <SubmitButton isPending={isPending} />
                     </form>
@@ -155,9 +169,9 @@ export function LoginForm() {
                         <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
                         </Alert>
                     )}
-                    <form action={employeeLogin}>
+                    <form action={employeeLogin} className="space-y-6">
                         <LoginFormFields isEmployee={true}/>
-                        <SubmitButton isEmployee={true} isPending={isPending} />
+                        <SubmitButton isEmployee={true} isPending={false} />
                     </form>
                 </CardContent>
             </Card>
