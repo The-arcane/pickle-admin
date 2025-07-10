@@ -88,7 +88,13 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(new URL('/login?error=Access%20Denied&type=employee', request.url));
       }
       
-      // If user is logged in, redirect them away from login pages
+      // If user is logged in, redirect them away from login pages they shouldn't see
+      if (pathname === '/login' && request.nextUrl.searchParams.get('type') !== 'employee' && userType === 4) {
+          return NextResponse.redirect(new URL('/employee/dashboard', request.url));
+      }
+      if (pathname === '/login' && request.nextUrl.searchParams.get('type') === 'employee' && userType === 2) {
+           return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
       if (pathname.startsWith('/login') || pathname.startsWith('/super-admin/login')) {
          if (userType === 2) return NextResponse.redirect(new URL('/dashboard', request.url));
          if (userType === 3) return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
