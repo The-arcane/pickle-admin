@@ -20,41 +20,45 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    // This case should be handled by middleware, but as a safeguard:
     return redirect('/login');
   }
 
-  // Fetch the user's profile, including their internal ID
-  const { data: userProfile, error } = await supabase
+  // Check 1: Fetch the user's profile and verify they are an admin type
+  const { data: userProfile, error: profileError } = await supabase
     .from('user')
     .select('id, name, email, profile_image_url, user_type')
     .eq('user_uuid', user.id)
     .single();
 
-  // If profile doesn't exist or user is not an admin, redirect.
-  if (error || !userProfile || userProfile.user_type !== 2) {
-    // The middleware should handle this, but as a fallback, clear session and redirect.
+  if (profileError || !userProfile || userProfile.user_type !== 2) {
     await supabase.auth.signOut();
     return redirect('/login?error=Access%20Denied');
   }
 
-  // Now, find which organization this admin user belongs to.
-  const { data: orgLink } = await supabase
+  // Check 2: Verify the admin user is associated with an organization
+  const { data: orgLink, error: orgLinkError } = await supabase
     .from('user_organisations')
     .select('organisation_id')
     .eq('user_id', userProfile.id)
-    .maybeSingle(); // An admin should only belong to one org.
+    .maybeSingle();
 
-  let organisationName = 'Admin Panel'; // Default fallback name
-  if (orgLink?.organisation_id) {
-    // If we found the link, fetch the organization's name
-    const { data: organisation } = await supabase
-      .from('organisations')
-      .select('name')
-      .eq('id', orgLink.organisation_id)
-      .single();
+  if (orgLinkError || !orgLink?.organisation_id) {
+    await supabase.auth.signOut();
+    return redirect('/login?error=Admin%20not%20linked%20to%20any%20organization');
+  }
+  
+  const organisationId = orgLink.organisation_id;
+
+  // Fetch the organization's name for display
+  let organisationName = 'Admin Panel';
+  const { data: organisation } = await supabase
+    .from('organisations')
+    .select('name')
+    .eq('id', organisationId)
+    .single();
     
-    organisationName = organisation?.name || 'Admin Panel';
+  if (organisation) {
+    organisationName = organisation.name;
   }
 
   return (
