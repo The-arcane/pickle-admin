@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { login, employeeLogin } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
 
-function SubmitButton({ isEmployee = false }: { isEmployee?: boolean }) {
-  const { pending } = useFormStatus();
+function SubmitButton({ isEmployee = false, isPending }: { isEmployee?: boolean, isPending: boolean }) {
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? 'Signing In...' : (isEmployee ? 'Sign In as Employee' : 'Sign In as Admin')}
+    <Button type="submit" className="w-full" disabled={isPending}>
+      {isPending ? 'Signing In...' : (isEmployee ? 'Sign In as Employee' : 'Sign In as Admin')}
     </Button>
   );
 }
@@ -56,21 +55,44 @@ function LoginFormFields({ isEmployee = false }: { isEmployee?: boolean }) {
                     </button>
                 </div>
             </div>
-            <SubmitButton isEmployee={isEmployee} />
         </div>
     );
 }
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const error = searchParams.get('error');
+  const router = useRouter();
+  const [error, setError] = useState(searchParams.get('error'));
   const [isClient, setIsClient] = useState(false);
   const defaultTab = searchParams.get('type') === 'employee' ? 'employee' : 'admin';
   const [activeTab, setActiveTab] = useState(defaultTab);
-  
+  const [isPending, setIsPending] = useState(false);
+
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const handleAdminSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsPending(true);
+    setError(null);
+
+    const formData = new FormData(event.currentTarget);
+    const result = await login(formData);
+
+    console.log('--- DEBUG: ADMIN LOGIN RESPONSE ---');
+    console.log(result);
+    console.log('-----------------------------------');
+    
+    if (result.success) {
+        router.push('/dashboard');
+        router.refresh();
+    } else {
+        setError(result.error || 'An unknown error occurred.');
+    }
+
+    setIsPending(false);
+  };
 
   if (!isClient) {
     return (
@@ -117,8 +139,9 @@ export function LoginForm() {
                         <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
                         </Alert>
                     )}
-                    <form action={login}>
+                    <form onSubmit={handleAdminSubmit}>
                         <LoginFormFields />
+                        <SubmitButton isPending={isPending} />
                     </form>
                 </CardContent>
             </Card>
@@ -139,6 +162,7 @@ export function LoginForm() {
                     )}
                     <form action={employeeLogin}>
                         <LoginFormFields isEmployee={true}/>
+                        <SubmitButton isEmployee={true} isPending={isPending} />
                     </form>
                 </CardContent>
             </Card>

@@ -4,7 +4,7 @@
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
-export async function login(formData: FormData) {
+export async function login(formData: FormData): Promise<any> {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const supabase = createServer();
@@ -17,10 +17,10 @@ export async function login(formData: FormData) {
 
   if (authError || !user) {
     const errorMessage = authError?.message || 'Authentication failed. Please check your credentials.';
-    return redirect(`/login?error=${encodeURIComponent(errorMessage)}`);
+    return { success: false, step: '1 - Authentication', error: errorMessage };
   }
 
-  // 2. Authorize user - Check 1: Is the user profile of type 'Admin' (user_type = 2)?
+  // 2. Fetch user profile
   const { data: userProfile, error: profileError } = await supabase
     .from('user')
     .select('id, user_type')
@@ -29,29 +29,34 @@ export async function login(formData: FormData) {
 
   if (profileError || !userProfile) {
     await supabase.auth.signOut();
-    return redirect(`/login?error=${encodeURIComponent('Could not retrieve user profile.')}`);
-  }
-
-  if (userProfile.user_type !== 2) {
-    await supabase.auth.signOut();
-    return redirect(`/login?error=${encodeURIComponent('Access Denied. You are not an authorized Admin.')}`);
+    return { success: false, step: '2 - Profile Fetch', error: profileError?.message || 'Could not retrieve user profile.' };
   }
   
-  // 3. Check 2: Is the admin user associated with an organization?
+  // 3. Check user type
+  if (userProfile.user_type !== 2) {
+    await supabase.auth.signOut();
+    return { success: false, step: '3 - User Type Check', error: 'Access Denied. You are not an authorized Admin.', profile: userProfile };
+  }
+
+  // 4. Check for organization link
   const { data: orgLink, error: orgLinkError } = await supabase
     .from('user_organisations')
     .select('organisation_id')
     .eq('user_id', userProfile.id)
-    .limit(1)
     .maybeSingle();
 
-  if (orgLinkError || !orgLink?.organisation_id) {
+  if (orgLinkError) {
       await supabase.auth.signOut();
-      return redirect(`/login?error=${encodeURIComponent('Access Denied. Admin profile is not correctly associated with any organization.')}`);
+      return { success: false, step: '4 - Org Link Fetch', error: orgLinkError.message };
   }
   
-  // If all checks pass, redirect to the dashboard
-  return redirect('/dashboard');
+  if (!orgLink?.organisation_id) {
+    await supabase.auth.signOut();
+    return { success: false, step: '4 - Org Link Check', error: 'Admin profile is not correctly associated with any organization.', orgLink: orgLink };
+  }
+  
+  // If all checks pass, return success
+  return { success: true, step: '5 - Success', message: 'All checks passed. Ready for redirect.' };
 }
 
 export async function employeeLogin(formData: FormData) {
@@ -86,4 +91,5 @@ export async function employeeLogin(formData: FormData) {
     
     return redirect('/employee/dashboard');
 }
+
 
