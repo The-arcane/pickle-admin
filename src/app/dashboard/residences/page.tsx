@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 
 export default async function ResidencesPage() {
-    const supabase = createServer();
+    const supabase = await createServer();
     
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
