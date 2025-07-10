@@ -95,7 +95,6 @@ export function LoginForm() {
 
       // On success, the API route has set the cookie, now we just need to navigate.
       router.push('/dashboard');
-      router.refresh(); // Refresh to ensure layout gets new session data
     } catch (e: any) {
       setError(e.message);
     }

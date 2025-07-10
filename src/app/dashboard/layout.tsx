@@ -31,6 +31,7 @@ export default async function DashboardLayout({
     .single();
 
   if (profileError || !userProfile || userProfile.user_type !== 2) {
+    // This case should be primarily handled by middleware, but serves as a final safeguard.
     await supabase.auth.signOut();
     return redirect('/login?error=Access%20Denied');
   }
@@ -42,6 +43,7 @@ export default async function DashboardLayout({
     .eq('user_id', userProfile.id)
     .maybeSingle();
 
+  // If this fails, the user is an admin but has no org. Redirect them.
   if (orgLinkError || !orgLink?.organisation_id) {
     await supabase.auth.signOut();
     return redirect('/login?error=Admin%20profile%20is%20not%20correctly%20associated%20with%20any%20organization');
