@@ -1,8 +1,7 @@
 
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useFormStatus } from 'react-dom';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,10 +78,6 @@ export function LoginForm() {
 
     const formData = new FormData(event.currentTarget);
     const result = await login(formData);
-
-    console.log('--- DEBUG: ADMIN LOGIN RESPONSE ---');
-    console.log(result);
-    console.log('-----------------------------------');
     
     if (result.success) {
         router.push('/dashboard');

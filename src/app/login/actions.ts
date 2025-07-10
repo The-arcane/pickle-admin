@@ -4,59 +4,59 @@
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
-export async function login(formData: FormData): Promise<any> {
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-  const supabase = createServer();
+export async function login(formData: FormData): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = createServer();
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
-  // 1. Authenticate user
-  const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+    // 1. Authenticate user
+    const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  if (authError || !user) {
-    const errorMessage = authError?.message || 'Authentication failed. Please check your credentials.';
-    return { success: false, step: '1 - Authentication', error: errorMessage };
-  }
+    if (authError || !user) {
+      return { success: false, error: authError?.message || 'Invalid credentials.' };
+    }
 
-  // 2. Fetch user profile
-  const { data: userProfile, error: profileError } = await supabase
-    .from('user')
-    .select('id, user_type')
-    .eq('user_uuid', user.id)
-    .single();
+    // 2. Fetch user profile
+    const { data: userProfile, error: profileError } = await supabase
+      .from('user')
+      .select('id, user_type')
+      .eq('user_uuid', user.id)
+      .single();
 
-  if (profileError || !userProfile) {
-    await supabase.auth.signOut();
-    return { success: false, step: '2 - Profile Fetch', error: profileError?.message || 'Could not retrieve user profile.' };
-  }
-  
-  // 3. Check user type
-  if (userProfile.user_type !== 2) {
-    await supabase.auth.signOut();
-    return { success: false, step: '3 - User Type Check', error: 'Access Denied. You are not an authorized Admin.', profile: userProfile };
-  }
-
-  // 4. Check for organization link
-  const { data: orgLink, error: orgLinkError } = await supabase
-    .from('user_organisations')
-    .select('organisation_id')
-    .eq('user_id', userProfile.id)
-    .maybeSingle();
-
-  if (orgLinkError) {
+    if (profileError || !userProfile) {
       await supabase.auth.signOut();
-      return { success: false, step: '4 - Org Link Fetch', error: orgLinkError.message };
+      return { success: false, error: 'Could not retrieve user profile.' };
+    }
+    
+    // 3. Check user type
+    if (userProfile.user_type !== 2) {
+      await supabase.auth.signOut();
+      return { success: false, error: 'Access Denied. You are not an authorized Admin.' };
+    }
+
+    // 4. Check for organization link
+    const { data: orgLink, error: orgLinkError } = await supabase
+      .from('user_organisations')
+      .select('organisation_id')
+      .eq('user_id', userProfile.id)
+      .maybeSingle();
+
+    if (orgLinkError || !orgLink) {
+        await supabase.auth.signOut();
+        return { success: false, error: 'Admin profile is not correctly associated with any organization.' };
+    }
+    
+    // If all checks pass, return success
+    return { success: true };
+
+  } catch (e: any) {
+    // Catch any unexpected errors during the process
+    return { success: false, error: `An unexpected server error occurred: ${e.message}` };
   }
-  
-  if (!orgLink?.organisation_id) {
-    await supabase.auth.signOut();
-    return { success: false, step: '4 - Org Link Check', error: 'Admin profile is not correctly associated with any organization.', orgLink: orgLink };
-  }
-  
-  // If all checks pass, return success
-  return { success: true, step: '5 - Success', message: 'All checks passed. Ready for redirect.' };
 }
 
 export async function employeeLogin(formData: FormData) {
@@ -91,5 +91,3 @@ export async function employeeLogin(formData: FormData) {
     
     return redirect('/employee/dashboard');
 }
-
-
