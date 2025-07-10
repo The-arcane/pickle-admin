@@ -34,7 +34,7 @@ export async function login(formData: FormData) {
     return redirect('/dashboard');
   }
 
-  // Fallback for any other unexpected case
+  // Fallback for any other unexpected case, like user being null without an error.
   return redirect(`/login?error=${encodeURIComponent('An unexpected error occurred. Please try again.')}&type=admin`);
 }
 
@@ -67,5 +67,6 @@ export async function employeeLogin(formData: FormData) {
         return redirect('/employee/dashboard');
     }
     
+    // Fallback for any other unexpected case.
     return redirect(`/login?error=${encodeURIComponent('An unexpected error occurred. Please try again.')}&type=employee`);
 }
