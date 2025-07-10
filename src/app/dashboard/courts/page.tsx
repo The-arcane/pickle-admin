@@ -43,9 +43,7 @@ export default async function CourtListPage() {
     .select('*, organisations(name), sports(name, max_players)')
     .eq('organisation_id', organisationId);
 
-  // Fetch all orgs and sports for the "add/edit" form dropdowns.
-  // Note: For a stricter multi-tenant app, you might only fetch the current org.
-  // But for a dropdown, showing all possible sports might be intended.
+  // For the dropdown filter, we only need the names of the organizations.
   const { data: organisationsData, error: orgsError } = await supabase.from('organisations').select('id, name');
   const { data: sportsData, error: sportsError } = await supabase.from('sports').select('id, name');
   

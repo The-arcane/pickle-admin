@@ -264,6 +264,7 @@ export default async function DashboardPage() {
               width={40}
               height={40}
               className="rounded-md object-cover"
+              data-ai-hint="logo"
             />
           )}
           <div>
