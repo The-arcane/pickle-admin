@@ -1,3 +1,4 @@
+
 import { createServer } from '@/lib/supabase/server';
 import { BookingsClientPage } from './client';
 import { redirect } from 'next/navigation';

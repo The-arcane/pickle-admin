@@ -1,3 +1,4 @@
+
 import { createServer } from '@/lib/supabase/server';
 import { EventsClientPage } from './client';
 import { format } from 'date-fns';

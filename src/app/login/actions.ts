@@ -15,7 +15,7 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    return redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
   
   if (user) {
@@ -27,15 +27,14 @@ export async function login(formData: FormData) {
     
     if (profileError || !userProfile || userProfile.user_type !== 2) {
         await supabase.auth.signOut();
-        return { success: false, error: 'Access Denied. You are not an authorized Admin.' };
+        return redirect(`/login?error=${encodeURIComponent('Access Denied. You are not an authorized Admin.')}`);
     }
 
-    // On successful login and profile check, return success.
-    return { success: true };
+    return redirect('/dashboard');
   }
 
   // Fallback for any other unexpected case.
-  return { success: false, error: 'An unexpected error occurred. Please try again.' };
+  return redirect(`/login?error=${encodeURIComponent('An unexpected error occurred. Please try again.')}`);
 }
 
 export async function employeeLogin(formData: FormData) {
@@ -49,7 +48,7 @@ export async function employeeLogin(formData: FormData) {
     });
 
     if (error) {
-        return { success: false, error: error.message };
+        return redirect(`/login?type=employee&error=${encodeURIComponent(error.message)}`);
     }
 
     if (user) {
@@ -61,12 +60,11 @@ export async function employeeLogin(formData: FormData) {
 
         if (profileError || !userProfile || userProfile.user_type !== 4) {
             await supabase.auth.signOut(); 
-            return { success: false, error: 'Access Denied. You are not an authorized Employee.' };
+            return redirect(`/login?type=employee&error=${encodeURIComponent('Access Denied. You are not an authorized Employee.')}`);
         }
         
-        return { success: true };
+        return redirect('/employee/dashboard');
     }
     
-    // Fallback for any other unexpected case.
-    return { success: false, error: 'An unexpected error occurred. Please try again.'};
+    return redirect(`/login?type=employee&error=${encodeURIComponent('An unexpected error occurred. Please try again.')}`);
 }

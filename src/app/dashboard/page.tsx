@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, BarChartHorizontal, Clock, PartyPopper, AlertCircle, MapPin, Users } from 'lucide-react';

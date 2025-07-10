@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -63,32 +63,14 @@ function LoginFormFields({ isEmployee = false }: { isEmployee?: boolean }) {
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const formRef = useRef<HTMLFormElement>(null);
-  
-  const [error, setError] = useState(searchParams.get('error'));
+  const error = searchParams.get('error');
   const [isClient, setIsClient] = useState(false);
-
   const defaultTab = searchParams.get('type') === 'employee' ? 'employee' : 'admin';
   const [activeTab, setActiveTab] = useState(defaultTab);
   
   useEffect(() => {
     setIsClient(true);
-    // Clear error when tab changes
-    setError(null);
-  }, [activeTab]);
-
-  const handleFormAction = async (formData: FormData) => {
-      const action = activeTab === 'admin' ? login : employeeLogin;
-      const result = await action(formData);
-
-      if (result?.success) {
-          const destination = activeTab === 'admin' ? '/dashboard' : '/employee/dashboard';
-          router.push(destination);
-      } else {
-          setError(result.error || 'An unknown error occurred.');
-      }
-  };
+  }, []);
 
   if (!isClient) {
     return (
@@ -132,10 +114,10 @@ export function LoginForm() {
                         <Alert variant="destructive" className="mb-4">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Login Failed</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
+                        <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
                         </Alert>
                     )}
-                    <form action={handleFormAction} ref={formRef}>
+                    <form action={login}>
                         <LoginFormFields />
                     </form>
                 </CardContent>
@@ -152,10 +134,10 @@ export function LoginForm() {
                         <Alert variant="destructive" className="mb-4">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Login Failed</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
+                        <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
                         </Alert>
                     )}
-                    <form action={handleFormAction} ref={formRef}>
+                    <form action={employeeLogin}>
                         <LoginFormFields isEmployee={true}/>
                     </form>
                 </CardContent>
