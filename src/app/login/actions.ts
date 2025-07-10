@@ -19,7 +19,7 @@ export async function login(formData: FormData) {
   }
   
   if (!user) {
-     return redirect(`/login?error=${encodeURIComponent('An unexpected error occurred. Please try again.')}`);
+     return redirect(`/login?error=${encodeURIComponent('Authentication failed. Please try again.')}`);
   }
 
   // User is authenticated, now check their user_type
@@ -54,7 +54,7 @@ export async function employeeLogin(formData: FormData) {
     }
 
     if (!user) {
-        return redirect(`/login?type=employee&error=${encodeURIComponent('An unexpected error occurred. Please try again.')}`);
+        return redirect(`/login?type=employee&error=${encodeURIComponent('Authentication failed. Please try again.')}`);
     }
 
     const { data: userProfile, error: profileError } = await supabase
