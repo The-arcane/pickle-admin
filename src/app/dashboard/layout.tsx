@@ -44,7 +44,7 @@ export default async function DashboardLayout({
 
   if (orgLinkError || !orgLink?.organisation_id) {
     await supabase.auth.signOut();
-    return redirect('/login?error=Admin%20not%20linked%20to%20any%20organization');
+    return redirect('/login?error=Admin%20profile%20is%20not%20correctly%20associated%20with%20any%20organization');
   }
   
   const organisationId = orgLink.organisation_id;

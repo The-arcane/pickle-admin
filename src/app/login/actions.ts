@@ -38,12 +38,11 @@ export async function login(formData: FormData) {
     return redirect(`/login?error=${encodeURIComponent('Access Denied. You are not an authorized Admin.')}`);
   }
   
-  // Check 2 & 3: Is the user associated with an organization as an admin?
+  // Check 2: Is the admin user associated with an organization?
   const { data: orgLink, error: orgLinkError } = await supabase
     .from('user_organisations')
     .select('organisation_id')
     .eq('user_id', userProfile.id)
-    .eq('role_id', 1) // Assuming role_id 1 is for 'Admin'
     .limit(1)
     .maybeSingle();
 
@@ -88,4 +87,3 @@ export async function employeeLogin(formData: FormData) {
     
     return redirect('/employee/dashboard');
 }
-
