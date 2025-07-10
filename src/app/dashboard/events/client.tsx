@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Eye, Pencil, Search } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Event = {
   id: number;
@@ -21,6 +23,11 @@ type Event = {
 
 export function EventsClientPage({ events }: { events: Event[] }) {
     const [searchQuery, setSearchQuery] = useState('');
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const filteredEvents = useMemo(() => {
         return events.filter(event => {
@@ -65,7 +72,20 @@ export function EventsClientPage({ events }: { events: Event[] }) {
                 </TableRow>
                 </TableHeader>
                 <TableBody>
-                {filteredEvents.map((event) => (
+                {!isClient ? (
+                    Array.from({ length: 5 }).map((_, index) => (
+                        <TableRow key={`skel-${index}`}>
+                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                            <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                            <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                        </TableRow>
+                    ))
+                ) : filteredEvents.length > 0 ? (
+                    filteredEvents.map((event) => (
                     <TableRow key={event.id}>
                     <TableCell className="font-medium">{event.title}</TableCell>
                     <TableCell>{event.category}</TableCell>
@@ -86,8 +106,8 @@ export function EventsClientPage({ events }: { events: Event[] }) {
                         </div>
                     </TableCell>
                     </TableRow>
-                ))}
-                {filteredEvents.length === 0 && (
+                ))
+                ) : (
                     <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground h-24">
                         No events found matching your criteria.
