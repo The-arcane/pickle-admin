@@ -27,14 +27,10 @@ export async function login(formData: FormData) {
     
     if (profileError || !userProfile || userProfile.user_type !== 2) {
         await supabase.auth.signOut();
-        return redirect(`/login?error=${encodeURIComponent('Access denied. Not an admin.')}&type=admin`);
+        return redirect(`/login?error=${encodeURIComponent('Access Denied. You are not an authorized Admin.')}&type=admin`);
     }
-  } else {
-    // This case should ideally not be hit if there's no error, but as a safeguard:
-    return redirect(`/login?error=${encodeURIComponent('An unexpected error occurred. Please try again.')}&type=admin`);
   }
 
-  // On successful login for a valid admin, redirect to the dashboard.
   return redirect('/dashboard');
 }
 
@@ -60,14 +56,10 @@ export async function employeeLogin(formData: FormData) {
             .single();
 
         if (profileError || !userProfile || userProfile.user_type !== 4) {
-            await supabase.auth.signOut(); // Log out the user if they are not an employee
-            return redirect(`/login?error=${encodeURIComponent('Access denied. Not an employee.')}&type=employee`);
+            await supabase.auth.signOut(); 
+            return redirect(`/login?error=${encodeURIComponent('Access Denied. You are not an authorized Employee.')}&type=employee`);
         }
-    } else {
-        // This case should ideally not be hit if there's no error, but as a safeguard:
-        return redirect(`/login?error=${encodeURIComponent('An unexpected error occurred. Please try again.')}&type=employee`);
     }
     
-    // Redirect to the employee dashboard on success
     return redirect('/employee/dashboard');
 }

@@ -20,10 +20,9 @@ export default async function SuperAdminLayout({
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // If there's no user, the middleware handles redirection for protected routes.
-  // This check prevents a redirect loop by allowing the login page to render without the layout shell.
   if (!user) {
-    return <>{children}</>;
+    // This should be handled by middleware, but as a safeguard:
+    return redirect('/super-admin/login');
   }
 
   const { data: userProfile, error } = await supabase

@@ -59,7 +59,8 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  
+
+  // If a user is logged in, check their permissions for protected routes
   if (user) {
       const { data: userProfile } = await supabase
           .from('user')
@@ -69,32 +70,42 @@ export async function middleware(request: NextRequest) {
 
       const userType = userProfile?.user_type;
 
-      // If user is trying to access super admin dashboard, but is not one (type 3)
+      // If user is trying to access super admin area but is not a super admin (type 3)
       if (pathname.startsWith('/super-admin') && userType !== 3) {
           await supabase.auth.signOut();
           return NextResponse.redirect(new URL('/super-admin/login?error=Access%20Denied', request.url));
       }
 
-      // If user is trying to access admin dashboard, but is not an admin (type 2)
+      // If user is trying to access admin area but is not an admin (type 2)
       if (pathname.startsWith('/dashboard') && userType !== 2) {
           await supabase.auth.signOut();
           return NextResponse.redirect(new URL('/login?error=Access%20Denied', request.url));
       }
 
-      // If user is trying to access employee dashboard, but is not an employee (type 4)
+      // If user is trying to access employee area but is not an employee (type 4)
       if (pathname.startsWith('/employee') && userType !== 4) {
           await supabase.auth.signOut();
           return NextResponse.redirect(new URL('/login?error=Access%20Denied&type=employee', request.url));
       }
+      
+      // If user is logged in, redirect them away from login pages
+      if (pathname.startsWith('/login') || pathname.startsWith('/super-admin/login')) {
+         if (userType === 2) return NextResponse.redirect(new URL('/dashboard', request.url));
+         if (userType === 3) return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
+         if (userType === 4) return NextResponse.redirect(new URL('/employee/dashboard', request.url));
+      }
+
+
   } else {
-      // If no user, redirect to the correct login page, but allow access to the login page itself
+      // If no user, redirect to the correct login page for any protected route
+      // while allowing access to the login pages themselves.
       if (pathname.startsWith('/super-admin/') && !pathname.startsWith('/super-admin/login')) {
           return NextResponse.redirect(new URL('/super-admin/login', request.url));
       }
-      if (pathname.startsWith('/dashboard/') && !pathname.startsWith('/dashboard/login')) {
+      if (pathname.startsWith('/dashboard/')) {
           return NextResponse.redirect(new URL('/login', request.url));
       }
-      if (pathname.startsWith('/employee/') && !pathname.startsWith('/employee/login')) {
+      if (pathname.startsWith('/employee/')) {
           return NextResponse.redirect(new URL('/login?type=employee', request.url));
       }
   }

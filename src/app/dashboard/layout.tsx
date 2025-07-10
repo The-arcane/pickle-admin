@@ -1,3 +1,4 @@
+
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Cuboid, PanelLeft } from 'lucide-react';
@@ -19,9 +20,8 @@ export default async function DashboardLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    // If no user, the middleware handles redirection for protected routes.
-    // The login page will be rendered here without the layout shell.
-    return <>{children}</>;
+    // This case should be handled by middleware, but as a safeguard:
+    return redirect('/login');
   }
 
   // Fetch the user's profile, including their internal ID
@@ -31,12 +31,11 @@ export default async function DashboardLayout({
     .eq('user_uuid', user.id)
     .single();
 
+  // If profile doesn't exist or user is not an admin, redirect.
   if (error || !userProfile || userProfile.user_type !== 2) {
-    // This could happen if the profile isn't created yet, there's a DB error,
-    // or the user is not an admin.
-    // To be safe, we'll redirect to login. The middleware will handle clearing
-    // the invalid session cookie.
-    return redirect('/login');
+    // The middleware should handle this, but as a fallback, clear session and redirect.
+    await supabase.auth.signOut();
+    return redirect('/login?error=Access%20Denied');
   }
 
   // Now, find which organization this admin user belongs to.
@@ -46,7 +45,7 @@ export default async function DashboardLayout({
     .eq('user_id', userProfile.id)
     .maybeSingle(); // An admin should only belong to one org.
 
-  let organisationName = 'Lumen'; // Default fallback name
+  let organisationName = 'Admin Panel'; // Default fallback name
   if (orgLink?.organisation_id) {
     // If we found the link, fetch the organization's name
     const { data: organisation } = await supabase
@@ -55,7 +54,7 @@ export default async function DashboardLayout({
       .eq('id', orgLink.organisation_id)
       .single();
     
-    organisationName = organisation?.name || 'Lumen';
+    organisationName = organisation?.name || 'Admin Panel';
   }
 
   return (
