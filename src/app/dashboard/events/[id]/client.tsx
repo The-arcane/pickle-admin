@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { addEvent, updateEvent, addEventGalleryImages, deleteEventGalleryImage } from '../actions';
+import { addEvent, updateEvent, addEventGalleryImages, deleteEventGalleryImage } from './actions';
 import type { Event, SubEvent, WhatToBringItem, Organisation, EventCategory, EventTag, User, EventGalleryImage } from './types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -151,7 +151,25 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         newItems[index].item = value;
         setWhatToBring(newItems);
     };
-
+    
+    if (!isClient) {
+        return (
+             <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                    <Skeleton className="h-9 w-48" />
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-10 w-24" />
+                        <Skeleton className="h-10 w-32" />
+                    </div>
+                </div>
+                <Card><CardContent className="p-6 space-y-6">
+                    <Skeleton className="h-5 w-1/3" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                </CardContent></Card>
+             </div>
+        )
+    }
 
     return (
         <>
