@@ -2,7 +2,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import type { SubEvent, WhatToBringItem } from './[id]/types';
+import type { SubEvent, WhatToBringItem } from './types';
 
 // Helper to upload a file to Supabase Storage for events
 async function handleEventImageUpload(supabase: any, file: File | null, eventId: string): Promise<string | null> {
@@ -78,7 +78,7 @@ function getEventDataFromFormData(formData: FormData) {
 }
 
 export async function addEvent(formData: FormData) {
-  const supabase = createServer();
+  const supabase = await createServer();
   
   try {
     const eventData = getEventDataFromFormData(formData);
@@ -150,7 +150,7 @@ export async function addEvent(formData: FormData) {
 }
 
 export async function updateEvent(formData: FormData) {
-  const supabase = createServer();
+  const supabase = await createServer();
   const id = Number(formData.get('id'));
 
   try {
@@ -254,7 +254,7 @@ async function handleEventGalleryImageUpload(supabase: any, file: File, eventId:
 }
 
 export async function addEventGalleryImages(formData: FormData) {
-    const supabase = createServer();
+    const supabase = await createServer();
     const eventId = formData.get('event_id') as string;
     const images = formData.getAll('images') as File[];
 
@@ -295,7 +295,7 @@ export async function addEventGalleryImages(formData: FormData) {
 
 
 export async function deleteEventGalleryImage(formData: FormData) {
-    const supabase = createServer();
+    const supabase = await createServer();
     const eventId = formData.get('event_id') as string;
     const imageId = formData.get('image_id') as string;
     const imageUrl = formData.get('image_url') as string;
