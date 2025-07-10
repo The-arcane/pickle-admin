@@ -20,8 +20,7 @@ export async function login(formData: FormData) {
     return redirect(`/login?error=${encodeURIComponent(errorMessage)}`);
   }
 
-  // 2. Authorize user
-  // Check 1: Is the user profile of type 'Admin' (user_type = 2)?
+  // 2. Authorize user - Check 1: Is the user profile of type 'Admin' (user_type = 2)?
   const { data: userProfile, error: profileError } = await supabase
     .from('user')
     .select('id, user_type')
@@ -38,7 +37,7 @@ export async function login(formData: FormData) {
     return redirect(`/login?error=${encodeURIComponent('Access Denied. You are not an authorized Admin.')}`);
   }
   
-  // Check 2: Is the admin user associated with an organization?
+  // 3. Check 2: Is the admin user associated with an organization?
   const { data: orgLink, error: orgLinkError } = await supabase
     .from('user_organisations')
     .select('organisation_id')

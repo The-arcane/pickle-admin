@@ -5,11 +5,39 @@ import { QrCode, Calendar, PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { createServer } from '@/lib/supabase/server';
 import Image from 'next/image';
+import { redirect } from 'next/navigation';
 
 export default async function EmployeeDashboardPage() {
   const supabase = createServer();
-  const { data: organisationRes } = await supabase.from('organisations').select('logo').eq('id', 1).maybeSingle();
-  const organisationLogo = organisationRes?.logo;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+      return redirect('/login?type=employee');
+  }
+
+  const { data: userProfile } = await supabase
+    .from('user')
+    .select('id')
+    .eq('user_uuid', user.id)
+    .single();
+
+  let organisationLogo: string | null | undefined = null;
+  if (userProfile) {
+      const { data: orgLink } = await supabase
+        .from('user_organisations')
+        .select('organisation_id')
+        .eq('user_id', userProfile.id)
+        .maybeSingle();
+      
+      if (orgLink?.organisation_id) {
+        const { data: orgData } = await supabase
+            .from('organisations')
+            .select('logo')
+            .eq('id', orgLink.organisation_id)
+            .single();
+        organisationLogo = orgData?.logo;
+      }
+  }
+
 
   const features = [
     {
@@ -45,6 +73,7 @@ export default async function EmployeeDashboardPage() {
                 width={40}
                 height={40}
                 className="rounded-md object-cover"
+                data-ai-hint="logo"
             />
         )}
         <div>
