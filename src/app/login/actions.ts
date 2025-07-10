@@ -30,6 +30,9 @@ export async function login(formData: FormData) {
         await supabase.auth.signOut();
         return redirect(`/login?error=${encodeURIComponent('Access denied. Not an admin.')}&type=admin`);
     }
+  } else {
+    // This case should ideally not be hit if there's no error, but as a safeguard:
+    return redirect(`/login?error=${encodeURIComponent('An unexpected error occurred. Please try again.')}&type=admin`);
   }
 
 
@@ -63,6 +66,9 @@ export async function employeeLogin(formData: FormData) {
             await supabase.auth.signOut(); // Log out the user if they are not an employee
             return redirect(`/login?error=${encodeURIComponent('Access denied. Not an employee.')}&type=employee`);
         }
+    } else {
+        // This case should ideally not be hit if there's no error, but as a safeguard:
+        return redirect(`/login?error=${encodeURIComponent('An unexpected error occurred. Please try again.')}&type=employee`);
     }
     
     // Redirect to the employee dashboard on success
