@@ -58,7 +58,7 @@ function getCourtFields(formData: FormData) {
 
 
 export async function addCourt(formData: FormData) {
-  const supabase = createServer();
+  const supabase = await createServer();
   
   try {
     const courtFields = getCourtFields(formData);
@@ -144,7 +144,7 @@ export async function addCourt(formData: FormData) {
 }
 
 export async function updateCourt(formData: FormData) {
-  const supabase = createServer();
+  const supabase = await createServer();
   const id = formData.get('id') as string;
 
   try {
@@ -297,7 +297,7 @@ async function handleGalleryImageUpload(supabase: any, file: File, courtId: stri
 }
 
 export async function addCourtGalleryImages(formData: FormData) {
-    const supabase = createServer();
+    const supabase = await createServer();
     const courtId = formData.get('court_id') as string;
     const images = formData.getAll('images') as File[];
 
@@ -339,7 +339,7 @@ export async function addCourtGalleryImages(formData: FormData) {
 
 
 export async function deleteCourtGalleryImage(formData: FormData) {
-    const supabase = createServer();
+    const supabase = await createServer();
     const courtId = formData.get('court_id') as string;
     const imageId = formData.get('image_id') as string;
     const imageUrl = formData.get('image_url') as string;
