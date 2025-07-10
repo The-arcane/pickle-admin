@@ -18,15 +18,14 @@ export async function login(formData: FormData) {
     return redirect(`/login?error=${encodeURIComponent(error.message)}&type=admin`);
   }
   
-  // After successful login, check user_type
-  if(user) {
+  if (user) {
     const { data: userProfile, error: profileError } = await supabase
         .from('user')
         .select('user_type')
         .eq('user_uuid', user.id)
         .single();
     
-    if(profileError || !userProfile || userProfile.user_type !== 2) {
+    if (profileError || !userProfile || userProfile.user_type !== 2) {
         await supabase.auth.signOut();
         return redirect(`/login?error=${encodeURIComponent('Access denied. Not an admin.')}&type=admin`);
     }
@@ -35,9 +34,7 @@ export async function login(formData: FormData) {
     return redirect(`/login?error=${encodeURIComponent('An unexpected error occurred. Please try again.')}&type=admin`);
   }
 
-
-  // On successful login, redirect to the dashboard.
-  // The middleware will handle refreshing the session.
+  // On successful login for a valid admin, redirect to the dashboard.
   return redirect('/dashboard');
 }
 
