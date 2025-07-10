@@ -7,6 +7,7 @@ import { RecentBookingsTable } from '@/components/recent-bookings-table';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
+import { redirect } from 'next/navigation';
 
 const statusMap: { [key: number]: string } = {
   0: 'Cancelled',
@@ -33,7 +34,7 @@ const getInitials = (name: string) => {
     return names[0]?.substring(0, 2).toUpperCase() ?? '';
 };
 
-async function getDashboardData() {
+async function getDashboardData(organisationId: number) {
   const supabase = createServer();
   const today = new Date().toISOString().split('T')[0];
   
@@ -61,31 +62,35 @@ async function getDashboardData() {
     // Recent Bookings
     supabase
       .from('bookings')
-      .select('id, status, user:user_id(name, profile_image_url), courts:court_id(name), timeslots:timeslot_id(date, start_time)')
+      .select('id, status, user:user_id(name, profile_image_url), courts:court_id!inner(name), timeslots:timeslot_id(date, start_time)')
+      .eq('courts.organisation_id', organisationId)
       .limit(5)
       .order('id', { ascending: false }),
 
     // Today's Bookings Count
     supabase
         .from('bookings')
-        .select('id, timeslots!inner(date)', { count: 'exact', head: true })
+        .select('id, timeslots!inner(date), courts!inner(id)', { count: 'exact', head: true })
         .eq('timeslots.date', today)
-        .in('status', [1, 2]), // Confirmed or Pending
+        .in('status', [1, 2]) // Confirmed or Pending
+        .eq('courts.organisation_id', organisationId),
     
     // Total Revenue
     supabase
         .from('bookings')
-        .select('courts(price)')
-        .eq('status', 1), // Confirmed
+        .select('courts!inner(price)')
+        .eq('status', 1) // Confirmed
+        .eq('courts.organisation_id', organisationId),
 
     // Upcoming Bookings Count
     supabase
         .from('bookings')
-        .select('id, timeslots!inner(date)', { count: 'exact', head: true })
+        .select('id, timeslots!inner(date), courts!inner(id)', { count: 'exact', head: true })
         .eq('status', 1) // Confirmed
-        .gte('timeslots.date', today),
+        .gte('timeslots.date', today)
+        .eq('courts.organisation_id', organisationId),
 
-    // Latest review
+    // Latest review (Note: this is not org-specific currently)
     supabase
         .from('court_reviews')
         .select('review_text, reviewer_name, rating')
@@ -93,7 +98,7 @@ async function getDashboardData() {
         .limit(1)
         .maybeSingle(),
 
-    // All ratings for average calculation
+    // All ratings for average calculation (Note: not org-specific)
     supabase
         .from('court_reviews')
         .select('rating'),
@@ -102,6 +107,7 @@ async function getDashboardData() {
     supabase
         .from('events')
         .select('id, title, start_time, location_name')
+        .eq('organiser_org_id', organisationId)
         .gte('end_time', new Date().toISOString())
         .order('start_time', { ascending: true })
         .limit(3),
@@ -109,16 +115,18 @@ async function getDashboardData() {
     // Total Events Count
     supabase
         .from('events')
-        .select('id', { count: 'exact', head: true }),
+        .select('id', { count: 'exact', head: true })
+        .eq('organiser_org_id', organisationId),
 
     // Total Event Enrolments (using dynamically fetched confirmed status ID)
     supabase
         .from('event_bookings')
-        .select('quantity')
-        .eq('status', confirmedEventStatusId ?? -1), // Use fetched ID, or -1 if not found
+        .select('quantity, events!inner(id)')
+        .eq('status', confirmedEventStatusId ?? -1) // Use fetched ID, or -1 if not found
+        .eq('events.organiser_org_id', organisationId),
     
     // Fetch organisation logo
-    supabase.from('organisations').select('logo').eq('id', 1).maybeSingle(),
+    supabase.from('organisations').select('logo').eq('id', organisationId).maybeSingle(),
   ]);
 
   if (recentBookingsRes.error) console.error("Error fetching recent bookings:", recentBookingsRes.error.message);
@@ -203,7 +211,39 @@ async function getDashboardData() {
 }
 
 export default async function DashboardPage() {
-  const { recentBookings, stats, feedback, upcomingEvents, error, organisationLogo } = await getDashboardData();
+  const supabase = createServer();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return redirect('/login');
+  }
+
+  const { data: userProfile } = await supabase
+    .from('user')
+    .select('id')
+    .eq('user_uuid', user.id)
+    .single();
+
+  if (!userProfile) {
+    return redirect('/login');
+  }
+
+  const { data: orgLink } = await supabase
+    .from('user_organisations')
+    .select('organisation_id')
+    .eq('user_id', userProfile.id)
+    .maybeSingle();
+
+  if (!orgLink?.organisation_id) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full">
+            <p className="text-muted-foreground">You are not associated with an organization.</p>
+            <p className="text-sm text-muted-foreground">Please contact support.</p>
+        </div>
+    );
+  }
+
+  const { recentBookings, stats, feedback, upcomingEvents, error, organisationLogo } = await getDashboardData(orgLink.organisation_id);
   
   const statCards = [
     { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar },

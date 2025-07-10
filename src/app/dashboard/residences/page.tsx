@@ -7,13 +7,35 @@ export const dynamic = 'force-dynamic';
 export default async function ResidencesPage() {
     const supabase = createServer();
     
-    // For the standard admin dashboard, we assume they belong to organization 1.
-    const organisationId = 1; 
-
     const { data: { user } } = await supabase.auth.getUser();
-
     if (!user) {
         return redirect('/login');
+    }
+
+    const { data: userRecord } = await supabase
+        .from('user')
+        .select('id')
+        .eq('user_uuid', user.id)
+        .single();
+    
+    if (!userRecord) {
+        return redirect('/login');
+    }
+
+    const { data: orgLink } = await supabase
+        .from('user_organisations')
+        .select('organisation_id')
+        .eq('user_id', userRecord.id)
+        .maybeSingle();
+
+    const organisationId = orgLink?.organisation_id;
+
+    if (!organisationId) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full">
+                <p className="text-muted-foreground">You are not associated with an organization.</p>
+            </div>
+        );
     }
 
     const { data: residences, error } = await supabase
