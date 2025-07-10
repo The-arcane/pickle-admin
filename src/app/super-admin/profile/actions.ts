@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 export async function updateSuperAdminProfile(formData: FormData) {
-  const supabase = createServer();
+  const supabase = await createServer();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {

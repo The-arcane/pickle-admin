@@ -16,7 +16,7 @@ const bookingStatusMap: { [key: number]: string } = {
 };
 
 async function getSuperAdminDashboardData() {
-    const supabase = createServer();
+    const supabase = await createServer();
 
     const [
         orgsRes,
@@ -134,7 +134,7 @@ export default async function SuperAdminDashboardPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {recentBookings.length > 0 ? recentBookings.map((booking) => (
+                            {recentBookings.length > 0 ? recentBookings.map((booking: any) => (
                                 <TableRow key={booking.id}>
                                     <TableCell className="font-medium">{booking.user?.name ?? 'N/A'}</TableCell>
                                     <TableCell>{booking.courts?.name ?? 'N/A'}</TableCell>

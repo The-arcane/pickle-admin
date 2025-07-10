@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { updateSuperAdminProfile } from './actions';
 
 export default async function SuperAdminProfilePage() {
-  const supabase = createServer();
+  const supabase = await createServer();
 
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -34,11 +34,11 @@ export default async function SuperAdminProfilePage() {
       <form action={updateSuperAdminProfile} className="space-y-6 max-w-lg">
         <div className="space-y-2">
           <Label htmlFor="fullName">Full Name</Label>
-          <Input id="fullName" name="fullName" defaultValue={userProfile.name} />
+          <Input id="fullName" name="fullName" defaultValue={userProfile.name ?? ''} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" defaultValue={userProfile.email} disabled />
+          <Input id="email" type="email" defaultValue={userProfile.email ?? ''} disabled />
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>

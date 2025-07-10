@@ -59,26 +59,40 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     const { selectedOrgId } = useOrganization();
     
     // Form State
-    const [equipmentRental, setEquipmentRental] = useState(court?.is_equipment_available ?? false);
-    const [floodlights, setFloodlights] = useState(court?.has_floodlights ?? false);
+    const [equipmentRental, setEquipmentRental] = useState(false);
+    const [floodlights, setFloodlights] = useState(false);
     
     // State for related tables
-    const [rules, setRules] = useState<Partial<CourtRule>[]>(court?.court_rules ?? [{ rule: '' }]);
-    const [contact, setContact] = useState<Partial<CourtContact>>(court?.court_contacts?.[0] ?? {});
+    const [rules, setRules] = useState<Partial<CourtRule>[]>([{ rule: '' }]);
+    const [contact, setContact] = useState<Partial<CourtContact>>({});
     
-    const [mainImagePreview, setMainImagePreview] = useState<string | null>(court?.image || null);
-    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(court?.cover_image || null);
+    const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
+    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
     const mainImageRef = useRef<HTMLInputElement>(null);
     const coverImageRef = useRef<HTMLInputElement>(null);
     
-    const [availability, setAvailability] = useState<Partial<AvailabilityBlock>[]>(court?.availability_blocks ?? []);
-    const [unavailability, setUnavailability] = useState<Partial<RecurringUnavailability>[]>(court?.recurring_unavailability ?? []);  
+    const [availability, setAvailability] = useState<Partial<AvailabilityBlock>[]>([]);
+    const [unavailability, setUnavailability] = useState<Partial<RecurringUnavailability>[]>([]);  
     const [activeSection, setActiveSection] = useState('court-info');
     
     const [imageInPreview, setImageInPreview] = useState<string | null>(null);
 
     const galleryFormRef = useRef<HTMLFormElement>(null);
     const [galleryFiles, setGalleryFiles] = useState<FileList | null>(null);
+
+     // Set state from props after initial render to avoid hydration mismatch
+    useEffect(() => {
+        if (court) {
+            setEquipmentRental(court.is_equipment_available ?? false);
+            setFloodlights(court.has_floodlights ?? false);
+            setRules(court.court_rules.length > 0 ? court.court_rules : [{ rule: '' }]);
+            setContact(court.court_contacts?.[0] ?? {});
+            setAvailability(court.availability_blocks ?? []);
+            setUnavailability(court.recurring_unavailability ?? []);
+            setMainImagePreview(court.image || null);
+            setCoverImagePreview(court.cover_image || null);
+        }
+    }, [court]);
 
 
     const navSections = [

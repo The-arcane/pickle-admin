@@ -163,7 +163,7 @@ async function getDashboardData(organisationId: number) {
   const todaysBookingsCount = todaysBookingsRes.count ?? 0;
   
   const totalRevenue = totalRevenueRes.data?.reduce(
-      (acc, item) => acc + (item.courts?.price || 0), 
+      (acc, item) => acc + ((item.courts as any)?.price || 0), 
   0) ?? 0;
   
   const upcomingBookingsCount = upcomingBookingsRes.count ?? 0;

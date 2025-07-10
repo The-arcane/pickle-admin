@@ -45,11 +45,11 @@ export default async function ProfilePage() {
       <form className="space-y-6 max-w-lg">
         <div className="space-y-2">
           <Label htmlFor="fullName">Full Name</Label>
-          <Input id="fullName" defaultValue={userProfile.name} />
+          <Input id="fullName" defaultValue={userProfile.name ?? ''} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" defaultValue={userProfile.email} />
+          <Input id="email" type="email" defaultValue={userProfile.email ?? ''} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>

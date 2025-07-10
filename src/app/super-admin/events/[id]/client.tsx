@@ -51,22 +51,39 @@ export function EditEventClientPage({ event, organisations, users, categories, t
     const [isClient, setIsClient] = useState(false);
     const { selectedOrgId } = useOrganization();
 
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-
     // Form State
-    const [isFree, setIsFree] = useState(event?.is_free ?? true);
-    const [organiserType, setOrganiserType] = useState<'user' | 'organisation'>(event?.organiser_user_id ? 'user' : 'organisation');
-    const [startDate, setStartDate] = useState<Date | undefined>(event?.start_time ? parseISO(event.start_time) : undefined);
-    const [endDate, setEndDate] = useState<Date | undefined>(event?.end_time ? parseISO(event.end_time) : undefined);
+    const [isFree, setIsFree] = useState(true);
+    const [organiserType, setOrganiserType] = useState<'user' | 'organisation'>('organisation');
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     
-    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(event?.cover_image || null);
+    const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
     const coverImageRef = useRef<HTMLInputElement>(null);
     const [imageInPreview, setImageInPreview] = useState<string | null>(null);
 
     const galleryFormRef = useRef<HTMLFormElement>(null);
     const [galleryFiles, setGalleryFiles] = useState<FileList | null>(null);
+
+    // Dynamic lists
+    const [subEvents, setSubEvents] = useState<Partial<SubEvent>[]>([{ title: '', start_time: '', end_time: '' }]);
+    const [whatToBring, setWhatToBring] = useState<Partial<WhatToBringItem>[]>( [{ item: '' }]);
+    
+    useEffect(() => {
+        setIsClient(true);
+        if (event) {
+            setIsFree(event.is_free ?? true);
+            setOrganiserType(event.organiser_user_id ? 'user' : 'organisation');
+            setStartDate(event.start_time ? parseISO(event.start_time) : undefined);
+            setEndDate(event.end_time ? parseISO(event.end_time) : undefined);
+            setCoverImagePreview(event.cover_image || null);
+            setSubEvents(event.event_sub_events.map(sub => ({
+                ...sub,
+                start_time: formatTimeToInputValue(sub.start_time),
+                end_time: formatTimeToInputValue(sub.end_time),
+            })) ?? [{ title: '', start_time: '', end_time: '' }]);
+            setWhatToBring(event.event_what_to_bring ?? [{ item: '' }]);
+        }
+    }, [event]);
 
     const formatTimeToInputValue = (isoString: string | null | undefined): string => {
         if (!isoString) return '';
@@ -77,16 +94,6 @@ export function EditEventClientPage({ event, organisations, users, categories, t
             return '';
         }
     };
-    
-    // Dynamic lists
-    const [subEvents, setSubEvents] = useState<Partial<SubEvent>[]>(
-        event?.event_sub_events.map(sub => ({
-            ...sub,
-            start_time: formatTimeToInputValue(sub.start_time),
-            end_time: formatTimeToInputValue(sub.end_time),
-        })) ?? [{ title: '', start_time: '', end_time: '' }]
-    );
-    const [whatToBring, setWhatToBring] = useState<Partial<WhatToBringItem>[]>(event?.event_what_to_bring ?? [{ item: '' }]);
 
     const handleFormAction = async (formData: FormData) => {
         if(startDate) formData.append('start_time', startDate.toISOString());
@@ -99,6 +106,8 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         const action = isAdding ? addEvent : updateEvent;
         if (!isAdding && event) {
             formData.append('id', event.id.toString());
+        } else if (isAdding && selectedOrgId && organiserType === 'organisation') {
+            formData.append('organiser_org_id', selectedOrgId.toString());
         }
         
         const result = await action(formData);
@@ -241,7 +250,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                 <div className="space-y-2">
                                     <Label htmlFor="organiser_org_id">Organiser Organisation</Label>
                                     <Input value={selectedOrganisation?.name || ''} disabled />
-                                    <input type="hidden" name="organiser_org_id" value={selectedOrgId || ''} />
+                                    <input type="hidden" name="organiser_org_id" value={selectedOrgId || event?.organiser_org_id || ''} />
                                 </div>
                             ) : (
                                 <div className="space-y-2"><Label htmlFor="organiser_user_id">Organiser User</Label><Select name="organiser_user_id" defaultValue={event?.organiser_user_id?.toString() || ''}><SelectTrigger><SelectValue placeholder="Select a user" /></SelectTrigger><SelectContent>{users.map(user => <SelectItem key={user.id} value={user.id.toString()}>{user.name}</SelectItem>)}</SelectContent></Select></div>

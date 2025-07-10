@@ -6,7 +6,7 @@ import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
 export default async function EmployeeProfilePage() {
-  const supabase = createServer();
+  const supabase = await createServer();
 
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -45,11 +45,11 @@ export default async function EmployeeProfilePage() {
       <form className="space-y-6 max-w-lg">
         <div className="space-y-2">
           <Label htmlFor="fullName">Full Name</Label>
-          <Input id="fullName" defaultValue={userProfile.name} disabled />
+          <Input id="fullName" defaultValue={userProfile.name ?? ''} disabled />
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" defaultValue={userProfile.email} disabled />
+          <Input id="email" type="email" defaultValue={userProfile.email ?? ''} disabled />
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>
