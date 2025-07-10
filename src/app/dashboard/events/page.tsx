@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { redirect } from 'next/navigation';
 
 export default async function EventsPage() {
-  const supabase = createServer();
+  const supabase = await createServer();
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
