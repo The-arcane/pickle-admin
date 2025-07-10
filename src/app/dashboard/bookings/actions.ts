@@ -11,7 +11,7 @@ const statusMapToDb: { [key: string]: number } = {
 };
 
 export async function addBooking(formData: FormData) {
-  const supabase = createServer();
+  const supabase = await createServer();
   const user_id = formData.get('user_id') as string;
   const court_id = formData.get('court_id') as string;
   const timeslot_id = formData.get('timeslot_id') as string;
@@ -43,7 +43,7 @@ export async function addBooking(formData: FormData) {
 }
 
 export async function updateBooking(formData: FormData) {
-  const supabase = createServer();
+  const supabase = await createServer();
   const id = formData.get('id') as string;
   const status = formData.get('status') as string;
   const court_id = formData.get('court_id') as string;
@@ -89,7 +89,7 @@ function isOverlapping(slotStart: Date, slotEnd: Date, blockStart: Date, blockEn
 }
 
 export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number) {
-    const supabase = createServer();
+    const supabase = await createServer();
     
     if (!dateString) {
         console.error("[getTimeslots] Date string is missing.");

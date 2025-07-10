@@ -6,7 +6,7 @@ import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
 export default async function ProfilePage() {
-  const supabase = createServer();
+  const supabase = await createServer();
 
   const { data: { user } } = await supabase.auth.getUser();
 

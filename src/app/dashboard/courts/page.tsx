@@ -4,7 +4,7 @@ import { CourtsClientPage } from './client';
 import { redirect } from 'next/navigation';
 
 export default async function CourtListPage() {
-  const supabase = createServer();
+  const supabase = await createServer();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {

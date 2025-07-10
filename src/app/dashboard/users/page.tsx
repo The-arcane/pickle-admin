@@ -4,7 +4,7 @@ import { UsersClientPage } from './client';
 import { redirect } from 'next/navigation';
 
 export default async function UsersPage() {
-  const supabase = createServer();
+  const supabase = await createServer();
   
   const { data: { user: authUser } } = await supabase.auth.getUser();
   if (!authUser) {

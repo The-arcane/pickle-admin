@@ -36,7 +36,7 @@ const getInitials = (name: string) => {
 };
 
 async function getDashboardData(organisationId: number) {
-  const supabase = createServer();
+  const supabase = await createServer();
   const today = new Date().toISOString().split('T')[0];
   
   // Fetch the ID for 'Confirmed' event bookings to ensure query is robust
@@ -212,7 +212,7 @@ async function getDashboardData(organisationId: number) {
 }
 
 export default async function DashboardPage() {
-  const supabase = createServer();
+  const supabase = await createServer();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
