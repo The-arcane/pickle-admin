@@ -1,10 +1,11 @@
+
 import { createServer } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { EditCourtClientPage } from './client';
 import type { Court } from './types';
 
 export default async function EditCourtPage({ params }: { params: { id: string } }) {
-  const supabase = createServer();
+  const supabase = await createServer();
   const { id } = params;
   const isAdding = id === 'add';
 
