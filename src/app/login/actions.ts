@@ -29,9 +29,13 @@ export async function login(formData: FormData) {
         await supabase.auth.signOut();
         return redirect(`/login?error=${encodeURIComponent('Access Denied. You are not an authorized Admin.')}&type=admin`);
     }
+
+    // On successful login and profile check, redirect to the dashboard.
+    return redirect('/dashboard');
   }
 
-  return redirect('/dashboard');
+  // Fallback for any other unexpected case
+  return redirect(`/login?error=${encodeURIComponent('An unexpected error occurred. Please try again.')}&type=admin`);
 }
 
 export async function employeeLogin(formData: FormData) {
@@ -59,7 +63,9 @@ export async function employeeLogin(formData: FormData) {
             await supabase.auth.signOut(); 
             return redirect(`/login?error=${encodeURIComponent('Access Denied. You are not an authorized Employee.')}&type=employee`);
         }
+        
+        return redirect('/employee/dashboard');
     }
     
-    return redirect('/employee/dashboard');
+    return redirect(`/login?error=${encodeURIComponent('An unexpected error occurred. Please try again.')}&type=employee`);
 }
