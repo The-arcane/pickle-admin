@@ -1,5 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { createServer } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building, Users, List, PartyPopper } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -73,6 +75,12 @@ const getInitials = (name: string | null) => {
 
 
 export default async function SuperAdminDashboardPage() {
+  const supabase = await createServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return redirect('/super-admin/login');
+  }
+
   const { 
       totalOrganisations, 
       totalUsers, 

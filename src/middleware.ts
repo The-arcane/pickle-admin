@@ -38,53 +38,22 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  const userProfile = user ? (await supabase.from('user').select('user_type').eq('user_uuid', user.id).single()).data : null;
-  const userType = userProfile?.user_type;
-
-  // Define route mappings
-  const adminRoutes = ['/dashboard'];
-  const superAdminRoutes = ['/super-admin'];
-  const employeeRoutes = ['/employee'];
-  const loginRoutes = ['/login', '/super-admin/login'];
-
-  const isProtectedRoute = (routes: string[]) => routes.some(route => pathname.startsWith(route));
-
-  // If user is logged in
-  if (user && userType) {
-    // If they are on a login page, redirect to their dashboard
-    if (loginRoutes.includes(pathname)) {
-      if (userType === 2) return NextResponse.redirect(new URL('/dashboard', request.url));
-      if (userType === 3) return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
-      if (userType === 4) return NextResponse.redirect(new URL('/employee/dashboard', request.url));
-    }
-    
-    // Enforce role-based access
-    if (isProtectedRoute(adminRoutes) && userType !== 2) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/login?error=Access%20Denied', request.url));
-    }
-    if (isProtectedRoute(superAdminRoutes) && userType !== 3) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/super-admin/login?error=Access%20Denied', request.url));
-    }
-    if (isProtectedRoute(employeeRoutes) && userType !== 4) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/login?type=employee&error=Access%20Denied', request.url));
-    }
-
-  } else { // If user is not logged in
-    // Protect routes
-    if (isProtectedRoute(adminRoutes)) {
+  // If user is not logged in, protect the dashboard routes
+  if (!user) {
+    if (pathname.startsWith('/dashboard')) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
-    if (isProtectedRoute(superAdminRoutes)) {
+    if (pathname.startsWith('/super-admin') && pathname !== '/super-admin/login') {
       return NextResponse.redirect(new URL('/super-admin/login', request.url));
     }
-    if (isProtectedRoute(employeeRoutes)) {
+    if (pathname.startsWith('/employee')) {
       return NextResponse.redirect(new URL('/login?type=employee', request.url));
     }
   }
 
+  // If the user is logged in, the page-level logic will handle redirects
+  // from login pages. This avoids complex middleware redirects.
+  
   return response;
 }
 
