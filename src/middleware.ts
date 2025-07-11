@@ -57,25 +57,29 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
-
+  
+  const isSuperAdminRoute = pathname.startsWith('/super-admin');
+  const isAdminRoute = pathname.startsWith('/dashboard');
+  const isEmployeeRoute = pathname.startsWith('/employee');
+  
   const isSuperAdminLogin = pathname === '/super-admin/login';
-  const isDashboardLogin = pathname === '/login';
+  const isAdminLogin = pathname === '/login' && request.nextUrl.searchParams.get('type') !== 'employee';
+  const isEmployeeLogin = pathname === '/login' && request.nextUrl.searchParams.get('type') === 'employee';
 
-  // If no user is logged in
   if (!user) {
-    if (pathname.startsWith('/super-admin/') && !isSuperAdminLogin) {
+    if (isSuperAdminRoute && !isSuperAdminLogin) {
       return NextResponse.redirect(new URL('/super-admin/login', request.url));
     }
-    if (pathname.startsWith('/dashboard') && !isDashboardLogin) {
+    if (isAdminRoute && !isAdminLogin) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
-    if (pathname.startsWith('/employee') && !isDashboardLogin) {
+    if (isEmployeeRoute && !isEmployeeLogin) {
       return NextResponse.redirect(new URL('/login?type=employee', request.url));
     }
-    return response; // Allow access to public pages like login
+    return response;
   }
-
-  // If a user IS logged in, fetch their profile
+  
+  // If user is logged in, fetch their profile
   const { data: userProfile } = await supabase
     .from('user')
     .select('user_type')
@@ -84,35 +88,30 @@ export async function middleware(request: NextRequest) {
 
   const userType = userProfile?.user_type;
 
-  // Handle redirects if user is on a login page
-  if (isSuperAdminLogin || isDashboardLogin) {
-    switch (userType) {
-      case 2: // Admin
-        return NextResponse.redirect(new URL('/dashboard', request.url));
-      case 3: // Super Admin
-        return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
-      case 4: // Employee
-        return NextResponse.redirect(new URL('/employee/dashboard', request.url));
-      default:
-        // If user has no type, just let them see the login page
-        return response;
+  // Redirect if logged in user tries to access a login page
+  if (isSuperAdminLogin || isAdminLogin || isEmployeeLogin) {
+    switch(userType) {
+        case 2: return NextResponse.redirect(new URL('/dashboard', request.url));
+        case 3: return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
+        case 4: return NextResponse.redirect(new URL('/employee/dashboard', request.url));
+        default: return response; // Let them stay if type is unknown
     }
   }
 
-  // Handle access control for protected routes
-  if (pathname.startsWith('/super-admin/') && userType !== 3) {
-    await supabase.auth.signOut();
-    return NextResponse.redirect(new URL('/super-admin/login?error=Access%20Denied', request.url));
+  // Enforce access control for protected routes
+  if (isSuperAdminRoute && userType !== 3) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(new URL('/super-admin/login?error=Access%20Denied', request.url));
   }
-  if (pathname.startsWith('/dashboard') && userType !== 2) {
-    await supabase.auth.signOut();
-    return NextResponse.redirect(new URL('/login?error=Access%20Denied', request.url));
+  if (isAdminRoute && userType !== 2) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(new URL('/login?error=Access%20Denied', request.url));
   }
-  if (pathname.startsWith('/employee') && userType !== 4) {
-    await supabase.auth.signOut();
-    return NextResponse.redirect(new URL('/login?type=employee&error=Access%20Denied', request.url));
+  if (isEmployeeRoute && userType !== 4) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(new URL('/login?type=employee&error=Access%20Denied', request.url));
   }
-
+  
   return response;
 }
 

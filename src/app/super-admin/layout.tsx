@@ -16,12 +16,13 @@ export default async function SuperAdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createServer();
+  const supabase = createServer();
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  // The middleware should handle redirection for non-users.
+  // This is a final safeguard.
   if (!user) {
-    // This should be handled by middleware, but as a safeguard:
     return redirect('/super-admin/login');
   }
 
@@ -31,9 +32,9 @@ export default async function SuperAdminLayout({
     .eq('user_uuid', user.id)
     .single();
 
-  // If a user is logged in but is not a super admin, redirect them.
+  // If a user is logged in but is not a super admin, or profile fails to load,
+  // the middleware should have already caught this.
   if (error || !userProfile || userProfile.user_type !== 3) {
-    // It's safer to sign them out and redirect to prevent invalid sessions.
     await supabase.auth.signOut();
     return redirect('/super-admin/login?error=Access%20Denied');
   }
