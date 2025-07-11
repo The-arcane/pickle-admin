@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye, Pencil, MoreVertical, Search } from 'lucide-react';
+import { Eye, Pencil, MoreVertical, Search, Globe, ShieldOff } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusBadge } from '@/components/status-badge';
 
@@ -19,6 +19,7 @@ type Court = {
   organisation_id: number;
   sport_id: number;
   status: string;
+  is_public: boolean | null;
 };
 
 type Organisation = {
@@ -85,8 +86,9 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                 <TableRow>
                     <TableHead>Court</TableHead>
                     <TableHead>Venue</TableHead>
-                    <TableHead>Court Type</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Max Players</TableHead>
+                    <TableHead>Visibility</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -98,6 +100,12 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                     <TableCell>{court.venue || 'N/A'}</TableCell>
                     <TableCell>{court.type || 'N/A'}</TableCell>
                     <TableCell>{court.max_players || 'N/A'}</TableCell>
+                     <TableCell>
+                        <div className="flex items-center gap-2">
+                           {court.is_public ? <Globe className="h-4 w-4 text-green-500" /> : <ShieldOff className="h-4 w-4 text-red-500" />}
+                           <span className="capitalize">{court.is_public ? 'Public' : 'Private'}</span>
+                        </div>
+                    </TableCell>
                     <TableCell>
                         <StatusBadge status={court.status} />
                     </TableCell>
@@ -125,7 +133,7 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                 ))}
                 {filteredCourts.length === 0 && (
                     <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground h-24">
                         No courts found matching your criteria.
                     </TableCell>
                     </TableRow>

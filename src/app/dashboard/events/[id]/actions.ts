@@ -24,7 +24,7 @@ async function handleEventImageUpload(supabase: any, file: File | null, eventId:
         throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
     }
 
-    const { data: publicUrlData } = supabase.storage
+    const { data: publicUrlData } = await supabase.storage
         .from('events')
         .getPublicUrl(filePath);
     
@@ -32,7 +32,7 @@ async function handleEventImageUpload(supabase: any, file: File | null, eventId:
 }
 
 
-function getEventDataFromFormData(formData: FormData, organisationId: number | null) {
+function getEventDataFromFormData(formData: FormData) {
     const isFree = formData.get('is_free') === 'true';
     const organiserType = formData.get('organiser_type');
     const organiserUserId = formData.get('organiser_user_id');
@@ -49,7 +49,6 @@ function getEventDataFromFormData(formData: FormData, organisationId: number | n
         type: formData.get('type') as string,
         access_type: formData.get('access_type') as 'public' | 'private' | 'invite-only',
         organiser_user_id: organiserType === 'user' && organiserUserId ? Number(organiserUserId) : null,
-        organiser_org_id: organiserType === 'organisation' ? organisationId : null,
         start_time: formData.get('start_time') as string,
         end_time: formData.get('end_time') as string,
         timezone: formData.get('timezone') as string,
@@ -71,6 +70,7 @@ function getEventDataFromFormData(formData: FormData, organisationId: number | n
         requires_login: formData.get('requires_login') === 'on',
         requires_invitation_code: formData.get('requires_invitation_code') === 'on',
         is_discoverable: formData.get('is_discoverable') === 'on',
+        is_public: formData.get('is_public') === 'on',
         max_bookings_per_user: getNullOrNumber('max_bookings_per_user'),
         max_total_capacity: getNullOrNumber('max_total_capacity'),
     };
@@ -103,12 +103,16 @@ export async function addEvent(formData: FormData) {
   }
   
   try {
-    const eventData = getEventDataFromFormData(formData, organisationId);
+    const eventData = getEventDataFromFormData(formData);
+    const fullEventData = {
+        ...eventData,
+        organiser_org_id: eventData.organiser_user_id ? null : organisationId,
+    };
     
     // --- 1. Insert the main event record (without image first) ---
     const { data: newEvent, error: eventError } = await supabase
       .from('events')
-      .insert(eventData)
+      .insert(fullEventData)
       .select()
       .single();
 
@@ -143,7 +147,7 @@ export async function addEvent(formData: FormData) {
     const whatToBring = JSON.parse(formData.get('what_to_bring') as string) as Partial<WhatToBringItem>[];
 
     if (subEvents.length > 0) {
-      const mainEventDateString = eventData.start_time ? new Date(eventData.start_time).toISOString().split('T')[0] : null;
+      const mainEventDateString = fullEventData.start_time ? new Date(fullEventData.start_time).toISOString().split('T')[0] : null;
       const createTimestamp = (timeStr: string | null | undefined) => !timeStr || !mainEventDateString ? null : new Date(`${mainEventDateString}T${timeStr}:00.000Z`).toISOString();
       
       const toInsert = subEvents.map(item => ({ 
@@ -178,10 +182,7 @@ export async function updateEvent(formData: FormData) {
   try {
     if (!id) return { error: 'Event ID is missing.' };
 
-    const { data: existingEvent } = await supabase.from('events').select('organiser_org_id').eq('id', id).single();
-    if (!existingEvent) return { error: 'Event not found.' };
-
-    const eventUpdateData = getEventDataFromFormData(formData, existingEvent.organiser_org_id) as any;
+    const eventUpdateData = getEventDataFromFormData(formData) as any;
     
     // --- Handle Image Upload ---
     const coverImageFile = formData.get('cover_image_file') as File | null;

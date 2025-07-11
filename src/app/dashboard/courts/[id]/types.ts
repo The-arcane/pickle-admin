@@ -76,6 +76,7 @@ export type Court = {
   has_floodlights: boolean | null;
   c_start_time: string | null;
   c_end_time: string | null;
+  is_public: boolean | null;
   
   // Nested relations
   organisations: Organisation | null;

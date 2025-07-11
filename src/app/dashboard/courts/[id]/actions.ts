@@ -53,6 +53,7 @@ function getCourtFields(formData: FormData) {
         badge_type: formData.get('badge_type') as string,
         c_start_time: formData.get('c_start_time') || null,
         c_end_time: formData.get('c_end_time') || null,
+        is_public: formData.get('is_public') === 'true',
     };
 }
 

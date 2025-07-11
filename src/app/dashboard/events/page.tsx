@@ -56,6 +56,7 @@ export default async function EventsPage() {
     location: event.location_name ?? 'N/A',
     price: event.is_free ? 'Free' : `₹${event.amount}`,
     status: new Date(event.end_time) < new Date() ? 'Completed' : 'Upcoming',
+    is_public: event.is_public,
   })) || [];
 
   return <EventsClientPage events={events} />;

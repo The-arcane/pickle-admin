@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Lightbulb, Plus, Trash2, ImagePlus, Calendar as CalendarIcon, Upload } from 'lucide-react';
+import { Lightbulb, Plus, Trash2, ImagePlus, Calendar as CalendarIcon, Upload, Globe } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -59,6 +59,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     // Form State
     const [equipmentRental, setEquipmentRental] = useState(false);
     const [floodlights, setFloodlights] = useState(false);
+    const [isPublic, setIsPublic] = useState(true);
     
     // State for related tables
     const [rules, setRules] = useState<Partial<CourtRule>[]>([{ rule: '' }]);
@@ -83,6 +84,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         if (court) {
             setEquipmentRental(court.is_equipment_available ?? false);
             setFloodlights(court.has_floodlights ?? false);
+            setIsPublic(court.is_public ?? true);
             setRules(court.court_rules.length > 0 ? court.court_rules : [{ rule: '' }]);
             setContact(court.court_contacts?.[0] ?? {});
             setAvailability(court.availability_blocks ?? []);
@@ -129,6 +131,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
     const handleFormAction = async (formData: FormData) => {
         formData.append('is_equipment_available', String(equipmentRental));
         formData.append('has_floodlights', String(floodlights));
+        formData.append('is_public', String(isPublic));
         formData.append('rules', JSON.stringify(rules.filter(r => r.rule && r.rule.trim() !== '')));
         formData.append('contact', JSON.stringify(contact));
         formData.append('availability', JSON.stringify(availability.filter(a => a.date)));
@@ -257,9 +260,10 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                 <div className="space-y-2"><Label htmlFor="max_players">Max Players</Label><Input id="max_players" name="max_players" type="number" defaultValue={court?.max_players ?? undefined} /></div>
                                 <div className="space-y-2"><Label htmlFor="audience_capacity">Audience Capacity</Label><Input id="audience_capacity" name="audience_capacity" type="number" defaultValue={court?.audience_capacity ?? undefined} /></div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="flex items-center justify-between rounded-lg border p-4"><Label htmlFor="has_floodlights" className="text-base font-medium flex items-center gap-2"><Lightbulb className="h-4 w-4"/> Floodlights Available</Label><Switch id="has_floodlights" name="has_floodlights" checked={floodlights} onCheckedChange={setFloodlights}/></div>
-                                <div className="flex items-center justify-between rounded-lg border p-4"><Label htmlFor="is_equipment_available" className="text-base font-medium">Equipment Rental Available</Label><Switch id="is_equipment_available" name="is_equipment_available" checked={equipmentRental} onCheckedChange={setEquipmentRental}/></div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="flex items-center justify-between rounded-lg border p-4"><Label htmlFor="has_floodlights" className="text-base font-medium flex items-center gap-2"><Lightbulb className="h-4 w-4"/> Floodlights</Label><Switch id="has_floodlights" name="has_floodlights" checked={floodlights} onCheckedChange={setFloodlights}/></div>
+                                <div className="flex items-center justify-between rounded-lg border p-4"><Label htmlFor="is_equipment_available" className="text-base font-medium">Equipment</Label><Switch id="is_equipment_available" name="is_equipment_available" checked={equipmentRental} onCheckedChange={setEquipmentRental}/></div>
+                                <div className="flex items-center justify-between rounded-lg border p-4"><Label htmlFor="is_public" className="text-base font-medium flex items-center gap-2"><Globe className="h-4 w-4"/> Public</Label><Switch id="is_public" name="is_public" checked={isPublic} onCheckedChange={setIsPublic}/></div>
                             </div>
                         </CardContent>
                     </Card>

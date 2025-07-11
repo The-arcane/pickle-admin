@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { MoreHorizontal, Pencil, Search, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Search, Trash2, Globe, ShieldOff } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { deleteEvent } from './actions';
@@ -39,6 +39,7 @@ type Event = {
   location: string;
   price: string;
   status: 'Upcoming' | 'Completed' | 'Cancelled';
+  is_public: boolean | null;
 };
 
 export function EventsClientPage({ events }: { events: Event[] }) {
@@ -110,7 +111,7 @@ export function EventsClientPage({ events }: { events: Event[] }) {
                         <TableHead>Category</TableHead>
                         <TableHead>Dates</TableHead>
                         <TableHead>Location</TableHead>
-                        <TableHead>Price</TableHead>
+                        <TableHead>Visibility</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -135,7 +136,12 @@ export function EventsClientPage({ events }: { events: Event[] }) {
                         <TableCell>{event.category}</TableCell>
                         <TableCell>{event.dates}</TableCell>
                         <TableCell>{event.location}</TableCell>
-                        <TableCell>{event.price}</TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-2">
+                               {event.is_public ? <Globe className="h-4 w-4 text-green-500" /> : <ShieldOff className="h-4 w-4 text-red-500" />}
+                               <span>{event.is_public ? 'Public' : 'Private'}</span>
+                            </div>
+                        </TableCell>
                         <TableCell>
                             <StatusBadge status={event.status} />
                         </TableCell>

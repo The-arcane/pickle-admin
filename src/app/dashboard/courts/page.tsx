@@ -63,6 +63,7 @@ export default async function CourtListPage() {
       organisation_id: c.organisation_id,
       sport_id: c.sport_id,
       status: statuses[index % statuses.length], // Assign a status cyclically for demo
+      is_public: c.is_public,
   })) || [];
 
   const organisations = organisationsData || [];
