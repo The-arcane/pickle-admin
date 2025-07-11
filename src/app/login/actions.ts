@@ -26,11 +26,6 @@ export async function employeeLogin(formData: FormData) {
         .select('user_type')
         .eq('user_uuid', user.id)
         .single();
-
-    if (profileError || !userProfile) {
-        await supabase.auth.signOut();
-        return redirect(`/login?type=employee&error=${encodeURIComponent('Could not retrieve user profile.')}`);
-    }
         
     if (userProfile.user_type !== 4) { // 4 is Employee
         await supabase.auth.signOut(); 
