@@ -16,7 +16,7 @@ export default async function SuperAdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createServer();
+  const supabase = await createServer();
 
   const { data: { user } } = await supabase.auth.getUser();
 
