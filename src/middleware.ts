@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const supabase = createServerClient(
+  const supabase = await createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -55,30 +55,27 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // refreshing the session cookie
   const { data: { user } } = await supabase.auth.getUser();
-
   const { pathname } = request.nextUrl;
 
-  const onSuperAdminLogin = pathname === '/super-admin/login';
-  const onDashboardLogin = pathname === '/login';
+  const isSuperAdminLogin = pathname === '/super-admin/login';
+  const isDashboardLogin = pathname === '/login';
 
-  // If no user, and they are trying to access a protected route, redirect to the appropriate login page.
+  // If no user is logged in
   if (!user) {
-    if (pathname.startsWith('/super-admin/') && !onSuperAdminLogin) {
+    if (pathname.startsWith('/super-admin/') && !isSuperAdminLogin) {
       return NextResponse.redirect(new URL('/super-admin/login', request.url));
     }
-    if (pathname.startsWith('/dashboard') && !onDashboardLogin) {
+    if (pathname.startsWith('/dashboard') && !isDashboardLogin) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
-    if (pathname.startsWith('/employee') && !onDashboardLogin) {
+    if (pathname.startsWith('/employee') && !isDashboardLogin) {
       return NextResponse.redirect(new URL('/login?type=employee', request.url));
     }
-    // Allow access to public pages (like login pages themselves) if no user
-    return response;
+    return response; // Allow access to public pages like login
   }
-  
-  // If there IS a user, check their profile and handle redirects.
+
+  // If a user IS logged in, fetch their profile
   const { data: userProfile } = await supabase
     .from('user')
     .select('user_type')
@@ -87,29 +84,33 @@ export async function middleware(request: NextRequest) {
 
   const userType = userProfile?.user_type;
 
-  // 1. If user is on a login page, redirect them to their dashboard
-  if (onSuperAdminLogin || onDashboardLogin) {
-    if (userType === 3) return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
-    if (userType === 2) return NextResponse.redirect(new URL('/dashboard', request.url));
-    if (userType === 4) return NextResponse.redirect(new URL('/employee/dashboard', request.url));
-    // If they have no valid type, just let them see the login page.
-    return response;
+  // Handle redirects if user is on a login page
+  if (isSuperAdminLogin || isDashboardLogin) {
+    switch (userType) {
+      case 2: // Admin
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      case 3: // Super Admin
+        return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
+      case 4: // Employee
+        return NextResponse.redirect(new URL('/employee/dashboard', request.url));
+      default:
+        // If user has no type, just let them see the login page
+        return response;
+    }
   }
-  
-  // 2. If user is on a protected route, ensure they have the correct role
+
+  // Handle access control for protected routes
   if (pathname.startsWith('/super-admin/') && userType !== 3) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/super-admin/login?error=Access%20Denied', request.url));
+    await supabase.auth.signOut();
+    return NextResponse.redirect(new URL('/super-admin/login?error=Access%20Denied', request.url));
   }
-
   if (pathname.startsWith('/dashboard') && userType !== 2) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/login?error=Access%20Denied', request.url));
+    await supabase.auth.signOut();
+    return NextResponse.redirect(new URL('/login?error=Access%20Denied', request.url));
   }
-
   if (pathname.startsWith('/employee') && userType !== 4) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/login?error=Access%20Denied&type=employee', request.url));
+    await supabase.auth.signOut();
+    return NextResponse.redirect(new URL('/login?type=employee&error=Access%20Denied', request.url));
   }
 
   return response;
