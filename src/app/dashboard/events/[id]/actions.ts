@@ -32,11 +32,10 @@ async function handleEventImageUpload(supabase: any, file: File | null, eventId:
 }
 
 
-function getEventDataFromFormData(formData: FormData) {
+function getEventDataFromFormData(formData: FormData, organisationId: number | null) {
     const isFree = formData.get('is_free') === 'true';
     const organiserType = formData.get('organiser_type');
     const organiserUserId = formData.get('organiser_user_id');
-    const organiserOrgId = formData.get('organiser_org_id');
     
     const getNullOrNumber = (key: string) => {
         const val = formData.get(key);
@@ -50,7 +49,7 @@ function getEventDataFromFormData(formData: FormData) {
         type: formData.get('type') as string,
         access_type: formData.get('access_type') as 'public' | 'private' | 'invite-only',
         organiser_user_id: organiserType === 'user' && organiserUserId ? Number(organiserUserId) : null,
-        organiser_org_id: organiserType === 'organisation' && organiserOrgId ? Number(organiserOrgId) : null,
+        organiser_org_id: organiserType === 'organisation' ? organisationId : null,
         start_time: formData.get('start_time') as string,
         end_time: formData.get('end_time') as string,
         timezone: formData.get('timezone') as string,
@@ -79,9 +78,32 @@ function getEventDataFromFormData(formData: FormData) {
 
 export async function addEvent(formData: FormData) {
   const supabase = await createServer();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: 'You must be logged in to add an event.' };
+  }
+
+  // Get the organization ID from the join table for the current user
+  const { data: userProfile } = await supabase.from('user').select('id').eq('user_uuid', user.id).single();
+  if (!userProfile) {
+    return { error: 'Could not retrieve your user profile.' };
+  }
+
+  const { data: orgLink } = await supabase
+    .from('user_organisations')
+    .select('organisation_id')
+    .eq('user_id', userProfile.id)
+    .maybeSingle();
+
+  const organisationId = orgLink?.organisation_id;
+
+  if (!organisationId) {
+      return { error: 'You are not associated with any organization.' };
+  }
   
   try {
-    const eventData = getEventDataFromFormData(formData);
+    const eventData = getEventDataFromFormData(formData, organisationId);
     
     // --- 1. Insert the main event record (without image first) ---
     const { data: newEvent, error: eventError } = await supabase
@@ -155,8 +177,11 @@ export async function updateEvent(formData: FormData) {
 
   try {
     if (!id) return { error: 'Event ID is missing.' };
-    
-    const eventUpdateData = getEventDataFromFormData(formData) as any;
+
+    const { data: existingEvent } = await supabase.from('events').select('organiser_org_id').eq('id', id).single();
+    if (!existingEvent) return { error: 'Event not found.' };
+
+    const eventUpdateData = getEventDataFromFormData(formData, existingEvent.organiser_org_id) as any;
     
     // --- Handle Image Upload ---
     const coverImageFile = formData.get('cover_image_file') as File | null;
@@ -246,7 +271,7 @@ async function handleEventGalleryImageUpload(supabase: any, file: File, eventId:
         throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
     }
 
-    const { data: publicUrlData } = supabase.storage
+    const { data: publicUrlData } = await supabase.storage
         .from('event-gallery')
         .getPublicUrl(filePath);
     
