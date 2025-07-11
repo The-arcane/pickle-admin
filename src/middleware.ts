@@ -57,61 +57,52 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
-  
-  const isSuperAdminRoute = pathname.startsWith('/super-admin');
-  const isAdminRoute = pathname.startsWith('/dashboard');
-  const isEmployeeRoute = pathname.startsWith('/employee');
-  
-  const isSuperAdminLogin = pathname === '/super-admin/login';
-  const isAdminLogin = pathname === '/login' && request.nextUrl.searchParams.get('type') !== 'employee';
-  const isEmployeeLogin = pathname === '/login' && request.nextUrl.searchParams.get('type') === 'employee';
 
-  if (!user) {
-    if (isSuperAdminRoute && !isSuperAdminLogin) {
-      return NextResponse.redirect(new URL('/super-admin/login', request.url));
-    }
-    if (isAdminRoute) { // No need to check for !isAdminLogin as it's a public page
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    if (isEmployeeRoute) { // No need to check for !isEmployeeLogin
-      return NextResponse.redirect(new URL('/login?type=employee', request.url));
-    }
-    return response;
-  }
-  
   // If user is logged in, fetch their profile
-  const { data: userProfile } = await supabase
-    .from('user')
-    .select('user_type')
-    .eq('user_uuid', user.id)
-    .single();
+  const userType = user 
+    ? (await supabase.from('user').select('user_type').eq('user_uuid', user.id).single()).data?.user_type
+    : null;
 
-  const userType = userProfile?.user_type;
+  const isSuperAdminLogin = pathname === '/super-admin/login';
+  const isAdminOrEmployeeLogin = pathname === '/login';
 
-  // Handle redirects for logged-in users trying to access login pages
-  if (isSuperAdminLogin || isAdminLogin || isEmployeeLogin) {
-    switch(userType) {
-        case 2: return NextResponse.redirect(new URL('/dashboard', request.url));
-        case 3: return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
-        case 4: return NextResponse.redirect(new URL('/employee/dashboard', request.url));
-        default: return response; // Let them stay if type is unknown
+  // If the user is logged in, and tries to access a login page, redirect them to their dashboard
+  if (user && userType) {
+    if(isSuperAdminLogin || isAdminOrEmployeeLogin) {
+      if (userType === 3) return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
+      if (userType === 2) return NextResponse.redirect(new URL('/dashboard', request.url));
+      if (userType === 4) return NextResponse.redirect(new URL('/employee/dashboard', request.url));
     }
   }
 
-  // Enforce access control for protected routes
-  if (isSuperAdminRoute && userType !== 3) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/super-admin/login?error=Access%20Denied', request.url));
+  // Define protected routes and the required user type for each
+  const protectedRoutes: { path: string, requiredType: number }[] = [
+    { path: '/dashboard', requiredType: 2 },
+    { path: '/super-admin', requiredType: 3 },
+    { path: '/employee', requiredType: 4 },
+  ];
+
+  for (const route of protectedRoutes) {
+    if (pathname.startsWith(route.path)) {
+      if (!user) {
+        // Not logged in, redirect to the appropriate login page
+        const loginUrl = route.path === '/super-admin' ? '/super-admin/login' : '/login';
+        const finalUrl = route.path === '/employee' ? '/login?type=employee' : loginUrl;
+        return NextResponse.redirect(new URL(finalUrl, request.url));
+      }
+      if (userType !== route.requiredType) {
+        // Logged in, but wrong user type. Log them out and redirect.
+        await supabase.auth.signOut();
+        const loginUrl = route.path === '/super-admin' ? '/super-admin/login' : '/login';
+        const finalUrl = route.path === '/employee' ? '/login?type=employee' : loginUrl;
+        return NextResponse.redirect(new URL(`${finalUrl}?error=Access%20Denied`, request.url));
+      }
+      // User is logged in and has the correct type, allow access
+      return response;
+    }
   }
-  if (isAdminRoute && userType !== 2) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/login?error=Access%20Denied', request.url));
-  }
-  if (isEmployeeRoute && userType !== 4) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/login?type=employee&error=Access%20Denied', request.url));
-  }
-  
+
+  // Allow access to public routes (like login pages if not already logged in)
   return response;
 }
 
