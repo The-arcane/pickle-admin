@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
@@ -6,7 +7,7 @@ import { redirect } from 'next/navigation';
 export async function superAdminLogin(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
-  const supabase = createServer();
+  const supabase = await createServer();
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,

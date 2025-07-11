@@ -18,38 +18,18 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          });
+          request.cookies.set({ name, value, ...options });
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request: { headers: request.headers },
           });
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          });
+          response.cookies.set({ name, value, ...options });
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+          request.cookies.set({ name, value: '', ...options });
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request: { headers: request.headers },
           });
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+          response.cookies.set({ name, value: '', ...options });
         },
       },
     }
@@ -58,51 +38,53 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // If user is logged in, fetch their profile
-  const userType = user 
-    ? (await supabase.from('user').select('user_type').eq('user_uuid', user.id).single()).data?.user_type
-    : null;
+  const userProfile = user ? (await supabase.from('user').select('user_type').eq('user_uuid', user.id).single()).data : null;
+  const userType = userProfile?.user_type;
 
-  const isSuperAdminLogin = pathname === '/super-admin/login';
-  const isAdminOrEmployeeLogin = pathname === '/login';
+  // Define route mappings
+  const adminRoutes = ['/dashboard'];
+  const superAdminRoutes = ['/super-admin'];
+  const employeeRoutes = ['/employee'];
+  const loginRoutes = ['/login', '/super-admin/login'];
 
-  // If the user is logged in, and tries to access a login page, redirect them to their dashboard
+  const isProtectedRoute = (routes: string[]) => routes.some(route => pathname.startsWith(route));
+
+  // If user is logged in
   if (user && userType) {
-    if(isSuperAdminLogin || isAdminOrEmployeeLogin) {
-      if (userType === 3) return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
+    // If they are on a login page, redirect to their dashboard
+    if (loginRoutes.includes(pathname)) {
       if (userType === 2) return NextResponse.redirect(new URL('/dashboard', request.url));
+      if (userType === 3) return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
       if (userType === 4) return NextResponse.redirect(new URL('/employee/dashboard', request.url));
     }
-  }
+    
+    // Enforce role-based access
+    if (isProtectedRoute(adminRoutes) && userType !== 2) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(new URL('/login?error=Access%20Denied', request.url));
+    }
+    if (isProtectedRoute(superAdminRoutes) && userType !== 3) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(new URL('/super-admin/login?error=Access%20Denied', request.url));
+    }
+    if (isProtectedRoute(employeeRoutes) && userType !== 4) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(new URL('/login?type=employee&error=Access%20Denied', request.url));
+    }
 
-  // Define protected routes and the required user type for each
-  const protectedRoutes: { path: string, requiredType: number }[] = [
-    { path: '/dashboard', requiredType: 2 },
-    { path: '/super-admin', requiredType: 3 },
-    { path: '/employee', requiredType: 4 },
-  ];
-
-  for (const route of protectedRoutes) {
-    if (pathname.startsWith(route.path)) {
-      if (!user) {
-        // Not logged in, redirect to the appropriate login page
-        const loginUrl = route.path === '/super-admin' ? '/super-admin/login' : '/login';
-        const finalUrl = route.path === '/employee' ? '/login?type=employee' : loginUrl;
-        return NextResponse.redirect(new URL(finalUrl, request.url));
-      }
-      if (userType !== route.requiredType) {
-        // Logged in, but wrong user type. Log them out and redirect.
-        await supabase.auth.signOut();
-        const loginUrl = route.path === '/super-admin' ? '/super-admin/login' : '/login';
-        const finalUrl = route.path === '/employee' ? '/login?type=employee' : loginUrl;
-        return NextResponse.redirect(new URL(`${finalUrl}?error=Access%20Denied`, request.url));
-      }
-      // User is logged in and has the correct type, allow access
-      return response;
+  } else { // If user is not logged in
+    // Protect routes
+    if (isProtectedRoute(adminRoutes)) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+    if (isProtectedRoute(superAdminRoutes)) {
+      return NextResponse.redirect(new URL('/super-admin/login', request.url));
+    }
+    if (isProtectedRoute(employeeRoutes)) {
+      return NextResponse.redirect(new URL('/login?type=employee', request.url));
     }
   }
 
-  // Allow access to public routes (like login pages if not already logged in)
   return response;
 }
 

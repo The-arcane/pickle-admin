@@ -20,9 +20,9 @@ export default async function SuperAdminLayout({
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // The middleware should handle redirection for non-users.
-  // This is a final safeguard.
   if (!user) {
+    // The middleware should handle redirection for non-users.
+    // This is a final safeguard.
     return redirect('/super-admin/login');
   }
 
