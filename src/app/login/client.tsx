@@ -1,7 +1,6 @@
-
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,36 +8,40 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { employeeLogin } from './actions';
+import { login } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useFormStatus } from 'react-dom';
 
-function SubmitButton({ isEmployee = false, isPending }: { isEmployee?: boolean, isPending: boolean }) {
+function SubmitButton({ userType }: { userType: string }) {
+  const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full" disabled={isPending}>
-      {isPending ? 'Signing In...' : (isEmployee ? 'Sign In as Employee' : 'Sign In as Admin')}
+    <Button type="submit" className="w-full" disabled={pending}>
+      {pending ? 'Signing In...' : `Sign In as ${userType}`}
     </Button>
   );
 }
 
-function LoginFormFields({ isEmployee = false }: { isEmployee?: boolean }) {
+function LoginFormFields({ userType }: { userType: string }) {
     const [showPassword, setShowPassword] = useState(false);
-    
+    const emailId = `${userType}-email`;
+    const passwordId = `${userType}-password`;
+
     return (
         <div className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor={isEmployee ? "employee-email" : "admin-email"}>Email</Label>
-                <Input id={isEmployee ? "employee-email" : "admin-email"} name="email" type="email" placeholder={isEmployee ? "employee@example.com" : "admin@example.com"} required />
+                <Label htmlFor={emailId}>Email</Label>
+                <Input id={emailId} name="email" type="email" placeholder={`${userType}@example.com`} required />
             </div>
             <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                    <Label htmlFor={isEmployee ? "employee-password" : "admin-password"}>Password</Label>
+                    <Label htmlFor={passwordId}>Password</Label>
                     <a href="#" className="text-sm text-primary hover:underline">
                         Forgot Password?
                     </a>
                 </div>
                 <div className="relative">
                     <Input
-                        id={isEmployee ? "employee-password" : "admin-password"}
+                        id={passwordId}
                         name="password"
                         type={showPassword ? 'text' : 'password'}
                         placeholder="••••••••"
@@ -60,47 +63,15 @@ function LoginFormFields({ isEmployee = false }: { isEmployee?: boolean }) {
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [error, setError] = useState(searchParams.get('error'));
   const [isClient, setIsClient] = useState(false);
-  const defaultTab = searchParams.get('type') === 'employee' ? 'employee' : 'admin';
+  const defaultTab = searchParams.get('type') || 'admin';
   const [activeTab, setActiveTab] = useState(defaultTab);
-  const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
-
-  const handleAdminSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsPending(true);
-    setError(null);
-
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'An unexpected error occurred.');
-      }
-
-      // On success, the API route has set the cookie, now we just need to navigate.
-      router.push('/dashboard');
-    } catch (e: any) {
-      setError(e.message);
-    }
-
-    setIsPending(false);
-  };
+    setError(searchParams.get('error'));
+  }, [searchParams]);
 
   if (!isClient) {
     return (
@@ -129,10 +100,12 @@ export function LoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Tabs defaultValue={defaultTab} onValueChange={setActiveTab} className="w-full max-w-sm">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="admin">Admin</TabsTrigger>
+          <TabsTrigger value="super-admin">Super Admin</TabsTrigger>
           <TabsTrigger value="employee">Employee</TabsTrigger>
         </TabsList>
+        
         <TabsContent value="admin">
             <Card>
                 <CardHeader>
@@ -147,13 +120,38 @@ export function LoginForm() {
                         <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
                         </Alert>
                     )}
-                    <form onSubmit={handleAdminSubmit} className="space-y-6">
-                        <LoginFormFields />
-                        <SubmitButton isPending={isPending} />
+                    <form action={login} className="space-y-6">
+                        <input type="hidden" name="userType" value="admin" />
+                        <LoginFormFields userType="admin" />
+                        <SubmitButton userType="Admin" />
                     </form>
                 </CardContent>
             </Card>
         </TabsContent>
+
+        <TabsContent value="super-admin">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-2xl">Super Admin Login</CardTitle>
+                    <CardDescription>Enter your credentials for elevated access.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     {error && activeTab === 'super-admin' && (
+                        <Alert variant="destructive" className="mb-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Login Failed</AlertTitle>
+                        <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
+                        </Alert>
+                    )}
+                    <form action={login} className="space-y-6">
+                        <input type="hidden" name="userType" value="super-admin" />
+                        <LoginFormFields userType="super-admin" />
+                        <SubmitButton userType="Super Admin" />
+                    </form>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
         <TabsContent value="employee">
              <Card>
                 <CardHeader>
@@ -168,9 +166,10 @@ export function LoginForm() {
                         <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
                         </Alert>
                     )}
-                    <form action={employeeLogin} className="space-y-6">
-                        <LoginFormFields isEmployee={true}/>
-                        <SubmitButton isEmployee={true} isPending={false} />
+                    <form action={login} className="space-y-6">
+                        <input type="hidden" name="userType" value="employee" />
+                        <LoginFormFields userType="employee" />
+                        <SubmitButton userType="Employee" />
                     </form>
                 </CardContent>
             </Card>

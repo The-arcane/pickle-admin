@@ -1,4 +1,3 @@
-
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
@@ -35,25 +34,28 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
   const { pathname } = request.nextUrl;
 
-  // Protect all dashboard routes if the user is not logged in.
+  const user = session?.user;
+
+  // If user is not logged in, protect the dashboard routes
   if (!user) {
-    if (pathname.startsWith('/dashboard')) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    if (pathname.startsWith('/super-admin') && pathname !== '/super-admin/login') {
-      return NextResponse.redirect(new URL('/super-admin/login', request.url));
-    }
-    if (pathname.startsWith('/employee')) {
-      return NextResponse.redirect(new URL('/login?type=employee', request.url));
+    if (
+      pathname.startsWith('/dashboard') ||
+      pathname.startsWith('/super-admin') ||
+      pathname.startsWith('/employee')
+    ) {
+      const redirectUrl = new URL('/login', request.url);
+      if (pathname.startsWith('/super-admin')) {
+          redirectUrl.searchParams.set('type', 'super-admin');
+      } else if (pathname.startsWith('/employee')) {
+          redirectUrl.searchParams.set('type', 'employee');
+      }
+      return NextResponse.redirect(redirectUrl);
     }
   }
 
-  // The page-level logic will now handle redirects for already-logged-in users,
-  // which is a more stable approach.
-  
   return response;
 }
 

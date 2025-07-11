@@ -1,15 +1,14 @@
+'use client';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-import { Suspense } from 'react';
-import { SuperAdminLoginForm } from './client';
-
-export const dynamic = 'force-dynamic';
-
+// This page is no longer needed and will redirect to the main login page.
 export default function SuperAdminLoginPage() {
-    // Page-level redirects were causing loops with the middleware.
-    // The login form and server action will handle all logic now.
-    return (
-        <Suspense>
-            <SuperAdminLoginForm />
-        </Suspense>
-    );
+    const router = useRouter();
+
+    useEffect(() => {
+        router.replace('/login?type=super-admin');
+    }, [router]);
+
+    return null;
 }
