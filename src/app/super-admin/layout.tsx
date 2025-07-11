@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { Shield, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { UserNav } from '@/components/user-nav';
 import { SuperAdminNav } from '@/components/super-admin-nav';
 import { OrganizationProvider } from '@/hooks/use-organization';
@@ -21,9 +21,7 @@ export default async function SuperAdminLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    // The middleware should handle redirection for non-users.
-    // This is a final safeguard.
-    return redirect('/super-admin/login');
+    return redirect('/login?type=super-admin');
   }
 
   const { data: userProfile, error } = await supabase
@@ -32,11 +30,9 @@ export default async function SuperAdminLayout({
     .eq('user_uuid', user.id)
     .single();
 
-  // If a user is logged in but is not a super admin, or profile fails to load,
-  // the middleware should have already caught this.
   if (error || !userProfile || userProfile.user_type !== 3) {
     await supabase.auth.signOut();
-    return redirect('/super-admin/login?error=Access%20Denied');
+    return redirect('/login?type=super-admin&error=Access%20Denied');
   }
 
   return (
@@ -63,12 +59,15 @@ export default async function SuperAdminLayout({
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="flex flex-col p-0 sm:max-w-xs">
-                  <div className="flex h-16 shrink-0 items-center border-b px-6">
-                      <Link href="/super-admin/dashboard" className="flex items-center gap-2 font-semibold text-primary">
-                          <Shield className="h-6 w-6" />
-                          <span>SUPER ADMIN</span>
-                      </Link>
-                  </div>
+                  <SheetHeader className="border-b">
+                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                    <div className="flex h-16 shrink-0 items-center px-6">
+                        <Link href="/super-admin/dashboard" className="flex items-center gap-2 font-semibold text-primary">
+                            <Shield className="h-6 w-6" />
+                            <span>SUPER ADMIN</span>
+                        </Link>
+                    </div>
+                  </SheetHeader>
                   <div className="flex-1 overflow-y-auto py-4">
                       <SuperAdminNav />
                   </div>

@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { Cuboid, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { UserNav } from '@/components/user-nav';
 import { DashboardNav } from '@/components/dashboard-nav';
 
@@ -89,12 +89,15 @@ export default async function DashboardLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0 sm:max-w-xs">
-                <div className="flex h-16 shrink-0 items-center border-b px-6">
-                    <Link href="/dashboard" className="flex min-w-0 items-center gap-2 font-semibold text-primary">
-                        <Cuboid className="h-6 w-6 shrink-0" />
-                        <span className="truncate" title={organisationName}>{organisationName}</span>
-                    </Link>
-                </div>
+                <SheetHeader className="border-b">
+                   <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                    <div className="flex h-16 shrink-0 items-center px-6">
+                        <Link href="/dashboard" className="flex min-w-0 items-center gap-2 font-semibold text-primary">
+                            <Cuboid className="h-6 w-6 shrink-0" />
+                            <span className="truncate" title={organisationName}>{organisationName}</span>
+                        </Link>
+                    </div>
+                </SheetHeader>
                 <div className="flex-1 overflow-y-auto py-4">
                     <DashboardNav />
                 </div>
