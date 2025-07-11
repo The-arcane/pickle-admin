@@ -70,10 +70,10 @@ export async function middleware(request: NextRequest) {
     if (isSuperAdminRoute && !isSuperAdminLogin) {
       return NextResponse.redirect(new URL('/super-admin/login', request.url));
     }
-    if (isAdminRoute && !isAdminLogin) {
+    if (isAdminRoute) { // No need to check for !isAdminLogin as it's a public page
       return NextResponse.redirect(new URL('/login', request.url));
     }
-    if (isEmployeeRoute && !isEmployeeLogin) {
+    if (isEmployeeRoute) { // No need to check for !isEmployeeLogin
       return NextResponse.redirect(new URL('/login?type=employee', request.url));
     }
     return response;
@@ -88,7 +88,7 @@ export async function middleware(request: NextRequest) {
 
   const userType = userProfile?.user_type;
 
-  // Redirect if logged in user tries to access a login page
+  // Handle redirects for logged-in users trying to access login pages
   if (isSuperAdminLogin || isAdminLogin || isEmployeeLogin) {
     switch(userType) {
         case 2: return NextResponse.redirect(new URL('/dashboard', request.url));
