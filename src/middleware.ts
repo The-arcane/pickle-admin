@@ -98,10 +98,10 @@ export async function middleware(request: NextRequest) {
       if (pathname.startsWith('/super-admin/') && !pathname.startsWith('/super-admin/login')) {
           return NextResponse.redirect(new URL('/super-admin/login', request.url));
       }
-      if (pathname.startsWith('/dashboard/')) {
+      if (pathname.startsWith('/dashboard')) {
           return NextResponse.redirect(new URL('/login', request.url));
       }
-      if (pathname.startsWith('/employee/')) {
+      if (pathname.startsWith('/employee')) {
           return NextResponse.redirect(new URL('/login?type=employee', request.url));
       }
   }
