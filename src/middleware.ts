@@ -72,8 +72,8 @@ export async function middleware(request: NextRequest) {
 
       // If user is on a login page, redirect them to their respective dashboard
       if (pathname.startsWith('/login') || pathname.startsWith('/super-admin/login')) {
-         if (userType === 2) return NextResponse.redirect(new URL('/dashboard', request.url));
          if (userType === 3) return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
+         if (userType === 2) return NextResponse.redirect(new URL('/dashboard', request.url));
          if (userType === 4) return NextResponse.redirect(new URL('/employee/dashboard', request.url));
       }
       
