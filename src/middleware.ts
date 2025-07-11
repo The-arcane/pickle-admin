@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // If user is not logged in, protect the dashboard routes
+  // Protect all dashboard routes if the user is not logged in.
   if (!user) {
     if (pathname.startsWith('/dashboard')) {
       return NextResponse.redirect(new URL('/login', request.url));
@@ -51,8 +51,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // If the user is logged in, the page-level logic will handle redirects
-  // from login pages. This avoids complex middleware redirects.
+  // The page-level logic will now handle redirects for already-logged-in users,
+  // which is a more stable approach.
   
   return response;
 }
