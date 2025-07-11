@@ -64,17 +64,13 @@ function LoginFormFields({ userType }: { userType: string }) {
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const [error, setError] = useState(searchParams.get('error'));
+  const error = searchParams.get('error');
+  const activeTab = searchParams.get('type') || 'admin';
   const [isClient, setIsClient] = useState(false);
-  const defaultTab = searchParams.get('type') || 'admin';
-  const [activeTab, setActiveTab] = useState(defaultTab);
   
   useEffect(() => {
     setIsClient(true);
-    setError(searchParams.get('error'));
-    // Update activeTab if searchParams change
-    setActiveTab(searchParams.get('type') || 'admin');
-  }, [searchParams]);
+  }, []);
 
   if (!isClient) {
     return (
@@ -104,7 +100,7 @@ export function LoginForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-sm">
+      <Tabs value={activeTab} className="w-full max-w-sm">
         <TabsList className={cn("grid w-full", isSuperAdminTabActive ? "grid-cols-1" : "grid-cols-2")}>
           {isSuperAdminTabActive ? (
             <TabsTrigger value="super-admin">Super Admin</TabsTrigger>
