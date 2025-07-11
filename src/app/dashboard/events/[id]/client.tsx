@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -202,14 +203,29 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                         <PopoverTrigger asChild>
                                             <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {startDate ? 
-                                                    (isClient ? format(startDate, "PPP p") : <Skeleton className="h-4 w-[200px]" />) : 
-                                                    (<span>Pick a date and time</span>)
-                                                }
+                                                {startDate ? format(startDate, "PPP p") : <span>Pick a date and time</span>}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                                            <Calendar
+                                                mode="single"
+                                                selected={startDate}
+                                                onSelect={setStartDate}
+                                                initialFocus
+                                            />
+                                            <div className="p-3 border-t border-border">
+                                                <Input
+                                                    type="time"
+                                                    value={startDate ? format(startDate, 'HH:mm') : ''}
+                                                    onChange={(e) => {
+                                                        const time = e.target.value;
+                                                        const [hours, minutes] = time.split(':').map(Number);
+                                                        const newDate = startDate ? new Date(startDate) : new Date();
+                                                        newDate.setHours(hours, minutes);
+                                                        setStartDate(newDate);
+                                                    }}
+                                                />
+                                            </div>
                                         </PopoverContent>
                                     </Popover>
                                 </div>
@@ -219,14 +235,29 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                         <PopoverTrigger asChild>
                                             <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {endDate ? 
-                                                    (isClient ? format(endDate, "PPP p") : <Skeleton className="h-4 w-[200px]" />) : 
-                                                    (<span>Pick a date and time</span>)
-                                                }
+                                                {endDate ? format(endDate, "PPP p") : <span>Pick a date and time</span>}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
+                                             <Calendar
+                                                mode="single"
+                                                selected={endDate}
+                                                onSelect={setEndDate}
+                                                initialFocus
+                                            />
+                                            <div className="p-3 border-t border-border">
+                                                <Input
+                                                    type="time"
+                                                    value={endDate ? format(endDate, 'HH:mm') : ''}
+                                                    onChange={(e) => {
+                                                        const time = e.target.value;
+                                                        const [hours, minutes] = time.split(':').map(Number);
+                                                        const newDate = endDate ? new Date(endDate) : new Date();
+                                                        newDate.setHours(hours, minutes);
+                                                        setEndDate(newDate);
+                                                    }}
+                                                />
+                                            </div>
                                         </PopoverContent>
                                     </Popover>
                                 </div>
@@ -250,18 +281,16 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                 <RadioGroup name="organiser_type" value={organiserType} onValueChange={(val) => setOrganiserType(val as 'user' | 'organisation')} className="flex gap-4">
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="organisation" id="r_org" />
-                                        <Label htmlFor="r_org">Organisation</Label>
+                                        <Label htmlFor="r_org">This Organisation</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="user" id="r_user" />
-                                        <Label htmlFor="r_user">User</Label>
+                                        <Label htmlFor="r_user">Specific User</Label>
                                     </div>
                                 </RadioGroup>
                             </div>
                             
-                            {organiserType === 'organisation' ? (
-                                <div className="space-y-2"><Label htmlFor="organiser_org_id">Organiser Organisation</Label><Select name="organiser_org_id" defaultValue={event?.organiser_org_id?.toString() || ''}><SelectTrigger><SelectValue placeholder="Select an organisation" /></SelectTrigger><SelectContent>{organisations.map(org => <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>)}</SelectContent></Select></div>
-                            ) : (
+                            {organiserType === 'user' && (
                                 <div className="space-y-2"><Label htmlFor="organiser_user_id">Organiser User</Label><Select name="organiser_user_id" defaultValue={event?.organiser_user_id?.toString() || ''}><SelectTrigger><SelectValue placeholder="Select a user" /></SelectTrigger><SelectContent>{users.map(user => <SelectItem key={user.id} value={user.id.toString()}>{user.name}</SelectItem>)}</SelectContent></Select></div>
                             )}
                             

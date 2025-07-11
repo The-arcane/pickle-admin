@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, BarChartHorizontal, Clock, PartyPopper, AlertCircle, MapPin, Users } from 'lucide-react';
+import { Calendar, BarChartHorizontal, Clock, PartyPopper, AlertCircle, MapPin, Users, List } from 'lucide-react';
 import { createServer } from '@/lib/supabase/server';
 import { format, parseISO } from 'date-fns';
 import { RecentBookingsTable } from '@/components/recent-bookings-table';
@@ -52,7 +52,7 @@ async function getDashboardData(organisationId: number) {
     recentBookingsRes,
     todaysBookingsRes,
     totalRevenueRes,
-    upcomingBookingsRes,
+    totalCourtsRes,
     latestReviewRes,
     avgRatingRes,
     upcomingEventsRes,
@@ -83,13 +83,11 @@ async function getDashboardData(organisationId: number) {
         .eq('status', 1) // Confirmed
         .eq('courts.organisation_id', organisationId),
 
-    // Upcoming Bookings Count
+    // Total Courts Count for the organization
     supabase
-        .from('bookings')
-        .select('id, timeslots!inner(date), courts!inner(id)', { count: 'exact', head: true })
-        .eq('status', 1) // Confirmed
-        .gte('timeslots.date', today)
-        .eq('courts.organisation_id', organisationId),
+        .from('courts')
+        .select('id', { count: 'exact', head: true })
+        .eq('organisation_id', organisationId),
 
     // Latest review (Note: this is not org-specific currently)
     supabase
@@ -133,7 +131,7 @@ async function getDashboardData(organisationId: number) {
   if (recentBookingsRes.error) console.error("Error fetching recent bookings:", recentBookingsRes.error.message);
   if (todaysBookingsRes.error) console.error("Error fetching today's bookings:", todaysBookingsRes.error.message);
   if (totalRevenueRes.error) console.error("Error fetching total revenue:", totalRevenueRes.error.message);
-  if (upcomingBookingsRes.error) console.error("Error fetching upcoming bookings:", upcomingBookingsRes.error.message);
+  if (totalCourtsRes.error) console.error("Error fetching total courts:", totalCourtsRes.error.message);
   if (latestReviewRes.error) console.error("Error fetching latest review:", latestReviewRes.error.message);
   if (avgRatingRes.error) console.error("Error fetching ratings:", avgRatingRes.error.message);
   if (upcomingEventsRes.error) console.error("Error fetching upcoming events:", upcomingEventsRes.error.message);
@@ -166,7 +164,7 @@ async function getDashboardData(organisationId: number) {
       (acc, item) => acc + ((item.courts as any)?.price || 0), 
   0) ?? 0;
   
-  const upcomingBookingsCount = upcomingBookingsRes.count ?? 0;
+  const totalCourtsCount = totalCourtsRes.count ?? 0;
   
   const latestReview = latestReviewRes.data ? {
       comment: latestReviewRes.data.review_text,
@@ -197,7 +195,7 @@ async function getDashboardData(organisationId: number) {
     stats: {
         todaysBookings: todaysBookingsCount,
         totalRevenue: totalRevenue,
-        upcomingSlots: upcomingBookingsCount,
+        totalCourts: totalCourtsCount,
         totalEventsCount: totalEventsCount,
         totalEnrolments: totalEnrolments,
     },
@@ -249,7 +247,7 @@ export default async function DashboardPage() {
   const statCards = [
     { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar },
     { label: 'Total Revenue', value: `₹${stats.totalRevenue.toLocaleString('en-IN')}`, icon: BarChartHorizontal },
-    { label: 'Upcoming Slots', value: stats.upcomingSlots, icon: Clock },
+    { label: 'Total Courts', value: stats.totalCourts, icon: List },
     { label: 'Total Events', value: stats.totalEventsCount, icon: PartyPopper },
   ];
 
