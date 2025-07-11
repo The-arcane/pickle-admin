@@ -71,7 +71,8 @@ export async function middleware(request: NextRequest) {
       const userType = userProfile?.user_type;
 
       // If user is on a login page, redirect them to their respective dashboard
-      if (pathname.startsWith('/login') || pathname.startsWith('/super-admin/login')) {
+      const onLoginPage = pathname.startsWith('/login') || pathname.startsWith('/super-admin/login');
+      if (onLoginPage) {
          if (userType === 3) return NextResponse.redirect(new URL('/super-admin/dashboard', request.url));
          if (userType === 2) return NextResponse.redirect(new URL('/dashboard', request.url));
          if (userType === 4) return NextResponse.redirect(new URL('/employee/dashboard', request.url));
@@ -95,14 +96,17 @@ export async function middleware(request: NextRequest) {
 
   } else {
       // If no user, redirect to the correct login page for any protected route
-      if (pathname.startsWith('/super-admin/') && !pathname.startsWith('/super-admin/login')) {
-          return NextResponse.redirect(new URL('/super-admin/login', request.url));
-      }
-      if (pathname.startsWith('/dashboard')) {
-          return NextResponse.redirect(new URL('/login', request.url));
-      }
-      if (pathname.startsWith('/employee')) {
-          return NextResponse.redirect(new URL('/login?type=employee', request.url));
+      const isProtectedRoute = pathname.startsWith('/super-admin/') || pathname.startsWith('/dashboard') || pathname.startsWith('/employee');
+      const onLogin = pathname.includes('/login');
+      
+      if (isProtectedRoute && !onLogin) {
+          let loginUrl = '/login';
+          if (pathname.startsWith('/super-admin/')) {
+              loginUrl = '/super-admin/login';
+          } else if (pathname.startsWith('/employee')) {
+              loginUrl = '/login?type=employee';
+          }
+          return NextResponse.redirect(new URL(loginUrl, request.url));
       }
   }
 
@@ -116,8 +120,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - api/ (API routes)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
