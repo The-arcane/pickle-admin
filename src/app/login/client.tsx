@@ -100,9 +100,8 @@ export function LoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Tabs defaultValue={defaultTab} onValueChange={setActiveTab} className="w-full max-w-sm">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="admin">Admin</TabsTrigger>
-          <TabsTrigger value="super-admin">Super Admin</TabsTrigger>
           <TabsTrigger value="employee">Employee</TabsTrigger>
         </TabsList>
         
