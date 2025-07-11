@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { login } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFormStatus } from 'react-dom';
+import { cn } from '@/lib/utils';
 
 function SubmitButton({ userType }: { userType: string }) {
   const { pending } = useFormStatus();
@@ -67,10 +68,12 @@ export function LoginForm() {
   const [isClient, setIsClient] = useState(false);
   const defaultTab = searchParams.get('type') || 'admin';
   const [activeTab, setActiveTab] = useState(defaultTab);
-
+  
   useEffect(() => {
     setIsClient(true);
     setError(searchParams.get('error'));
+    // Update activeTab if searchParams change
+    setActiveTab(searchParams.get('type') || 'admin');
   }, [searchParams]);
 
   if (!isClient) {
@@ -97,12 +100,20 @@ export function LoginForm() {
     );
   }
 
+  const isSuperAdminTabActive = activeTab === 'super-admin';
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Tabs defaultValue={defaultTab} onValueChange={setActiveTab} className="w-full max-w-sm">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="admin">Admin</TabsTrigger>
-          <TabsTrigger value="employee">Employee</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-sm">
+        <TabsList className={cn("grid w-full", isSuperAdminTabActive ? "grid-cols-1" : "grid-cols-2")}>
+          {isSuperAdminTabActive ? (
+            <TabsTrigger value="super-admin">Super Admin</TabsTrigger>
+          ) : (
+            <>
+              <TabsTrigger value="admin">Admin</TabsTrigger>
+              <TabsTrigger value="employee">Employee</TabsTrigger>
+            </>
+          )}
         </TabsList>
         
         <TabsContent value="admin">
