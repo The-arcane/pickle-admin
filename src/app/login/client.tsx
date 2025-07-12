@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Shield, UserSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -90,7 +90,10 @@ export function LoginForm() {
         <TabsContent value="admin">
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-2xl">Admin Login</CardTitle>
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                        <Shield className="h-6 w-6"/>
+                        Admin Login
+                    </CardTitle>
                     <CardDescription>Enter your admin credentials to access the main dashboard.</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -113,7 +116,10 @@ export function LoginForm() {
         <TabsContent value="super-admin">
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-2xl">Super Admin Login</CardTitle>
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                        <Shield className="h-6 w-6"/>
+                        Super Admin Login
+                    </CardTitle>
                     <CardDescription>Enter your credentials for elevated access.</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -136,7 +142,10 @@ export function LoginForm() {
         <TabsContent value="employee">
              <Card>
                 <CardHeader>
-                    <CardTitle className="text-2xl">Employee Login</CardTitle>
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                        <UserSquare className="h-6 w-6" />
+                        Employee Login
+                    </CardTitle>
                     <CardDescription>Scan QR codes and manage today's bookings.</CardDescription>
                 </CardHeader>
                 <CardContent>
