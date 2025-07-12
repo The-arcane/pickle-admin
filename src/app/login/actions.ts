@@ -14,7 +14,7 @@ export async function login(formData: FormData) {
         password,
     });
     
-    const loginUrl = userTypeTarget === 'employee' ? '/login?type=employee' : '/login';
+    const loginUrl = userTypeTarget === 'employee' ? '/login?type=employee' : (userTypeTarget === 'super-admin' ? '/login?type=super-admin' : '/login');
 
     if (error || !user) {
         return redirect(`${loginUrl}&error=${encodeURIComponent(error?.message || 'Authentication failed.')}`);
