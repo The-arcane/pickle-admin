@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -65,7 +66,7 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const error = searchParams.get('error');
-  const activeTab = searchParams.get('type') || 'admin';
+  const activeTab = searchParams.get('type') || 'employee';
 
   const handleTabChange = (value: string) => {
     router.push(`/login?type=${value}`);
@@ -81,11 +82,37 @@ export function LoginForm() {
             <TabsTrigger value="super-admin">Super Admin</TabsTrigger>
           ) : (
             <>
-              <TabsTrigger value="admin">Admin</TabsTrigger>
               <TabsTrigger value="employee">Employee</TabsTrigger>
+              <TabsTrigger value="admin">Admin</TabsTrigger>
             </>
           )}
         </TabsList>
+
+        <TabsContent value="employee">
+             <Card>
+                <CardHeader>
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                        <UserSquare className="h-6 w-6" />
+                        Employee Login
+                    </CardTitle>
+                    <CardDescription>Scan QR codes and manage today's bookings.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     {error && activeTab === 'employee' && (
+                        <Alert variant="destructive" className="mb-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Login Failed</AlertTitle>
+                        <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
+                        </Alert>
+                    )}
+                    <form action={login} className="space-y-6">
+                        <input type="hidden" name="userType" value="employee" />
+                        <LoginFormFields userType="employee" />
+                        <SubmitButton userType="Employee" />
+                    </form>
+                </CardContent>
+            </Card>
+        </TabsContent>
         
         <TabsContent value="admin">
             <Card>
@@ -134,32 +161,6 @@ export function LoginForm() {
                         <input type="hidden" name="userType" value="super-admin" />
                         <LoginFormFields userType="super-admin" />
                         <SubmitButton userType="Super Admin" />
-                    </form>
-                </CardContent>
-            </Card>
-        </TabsContent>
-
-        <TabsContent value="employee">
-             <Card>
-                <CardHeader>
-                    <CardTitle className="text-2xl flex items-center gap-2">
-                        <UserSquare className="h-6 w-6" />
-                        Employee Login
-                    </CardTitle>
-                    <CardDescription>Scan QR codes and manage today's bookings.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                     {error && activeTab === 'employee' && (
-                        <Alert variant="destructive" className="mb-4">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Login Failed</AlertTitle>
-                        <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
-                        </Alert>
-                    )}
-                    <form action={login} className="space-y-6">
-                        <input type="hidden" name="userType" value="employee" />
-                        <LoginFormFields userType="employee" />
-                        <SubmitButton userType="Employee" />
                     </form>
                 </CardContent>
             </Card>
