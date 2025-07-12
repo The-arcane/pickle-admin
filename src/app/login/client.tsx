@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { login } from './actions';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useFormStatus } from 'react-dom';
 import { cn } from '@/lib/utils';
 
@@ -64,43 +63,19 @@ function LoginFormFields({ userType }: { userType: string }) {
 
 export function LoginForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const error = searchParams.get('error');
   const activeTab = searchParams.get('type') || 'admin';
-  const [isClient, setIsClient] = useState(false);
-  
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
-  if (!isClient) {
-    return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4">
-            <Card className="w-full max-w-sm">
-                <CardHeader>
-                    <Skeleton className="h-7 w-32" />
-                    <Skeleton className="h-4 w-full" />
-                </CardHeader>
-                <CardContent className="space-y-4 pt-6">
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-12" />
-                        <Skeleton className="h-10 w-full" />
-                    </div>
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-10 w-full" />
-                    </div>
-                    <Skeleton className="h-10 w-full" />
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
+  const handleTabChange = (value: string) => {
+    router.push(`/login?type=${value}`);
+  };
 
   const isSuperAdminTabActive = activeTab === 'super-admin';
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Tabs value={activeTab} className="w-full max-w-sm">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-sm">
         <TabsList className={cn("grid w-full", isSuperAdminTabActive ? "grid-cols-1" : "grid-cols-2")}>
           {isSuperAdminTabActive ? (
             <TabsTrigger value="super-admin">Super Admin</TabsTrigger>
