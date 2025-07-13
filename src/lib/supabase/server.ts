@@ -1,12 +1,22 @@
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export async function createServer() {
+export async function createServer(useServiceRoleKey = false) {
   const cookieStore = cookies();
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = useServiceRoleKey 
+    ? process.env.SUPABASE_SERVICE_ROLE_KEY! 
+    : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  if (useServiceRoleKey && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set in environment variables. It's required for admin actions.");
+  }
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         get(name: string) {
