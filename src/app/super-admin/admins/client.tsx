@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { format } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/status-badge';
 import { Trash2, PlusCircle, MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +74,11 @@ export function AdminsClientPage({
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
     const router = useRouter();
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const handleInviteFormAction = async (formData: FormData) => {
         const result = await addAdmin(formData);
@@ -148,7 +154,9 @@ export function AdminsClientPage({
                                         </TableCell>
                                         <TableCell>{admin.organisationName}</TableCell>
                                         <TableCell><StatusBadge status={admin.is_deleted ? 'Inactive' : 'Active'} /></TableCell>
-                                        <TableCell>{format(new Date(admin.created_at), 'PPp')}</TableCell>
+                                        <TableCell>
+                                            {isClient ? format(new Date(admin.created_at), 'PPp') : <Skeleton className="h-5 w-32" />}
+                                        </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
