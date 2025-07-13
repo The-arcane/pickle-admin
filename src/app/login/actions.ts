@@ -17,23 +17,21 @@ export async function login(formData: FormData) {
     const loginUrl = userTypeTarget === 'employee' ? '/login?type=employee' : (userTypeTarget === 'super-admin' ? '/login?type=super-admin' : '/login');
 
     if (error || !user) {
-        // This is the only place where credentials are truly invalid.
         return redirect(`${loginUrl}&error=${encodeURIComponent(error?.message || 'Invalid login credentials.')}`);
     }
 
     const { data: userProfile, error: profileError } = await supabase
         .from('user')
-        .select('user_type')
+        .select('id, user_type')
         .eq('user_uuid', user.id)
         .single();
     
     if (profileError || !userProfile) {
         await supabase.auth.signOut();
-        // This error means the user exists in auth.users but not in our public.user table.
         return redirect(`${loginUrl}&error=${encodeURIComponent('Could not retrieve user profile. Please contact an administrator.')}`);
     }
 
-    const { user_type } = userProfile;
+    const { user_type, id: userId } = userProfile;
 
     // Check if the user's role matches the login form they used
     switch (userTypeTarget) {
@@ -47,6 +45,17 @@ export async function login(formData: FormData) {
              if (user_type !== 2) {
                 await supabase.auth.signOut();
                 return redirect(`/login?error=${encodeURIComponent('Access Denied. You are not registered as an Admin.')}`);
+            }
+            // Check if the admin is associated with an organization
+            const { data: orgLink } = await supabase
+                .from('user_organisations')
+                .select('organisation_id')
+                .eq('user_id', userId)
+                .maybeSingle();
+
+            if (!orgLink?.organisation_id) {
+                await supabase.auth.signOut();
+                return redirect(`/login?error=${encodeURIComponent('Admin profile is not associated with any organization.')}`);
             }
             return redirect('/dashboard');
         case 'employee':
