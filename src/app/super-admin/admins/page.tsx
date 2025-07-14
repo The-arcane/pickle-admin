@@ -27,17 +27,12 @@ export default async function AdminsPage() {
     console.error('Error fetching admins:', adminsError);
   }
 
-  // Fetch all organizations for the "Add Admin" form dropdown
-  const { data: organisations, error: orgsError } = await supabase.from('organisations').select('id, name');
-   if (orgsError) {
-    console.error('Error fetching organisations:', orgsError);
-  }
-
   const admins = adminsData?.map(admin => ({
       ...admin,
-      organisationName: admin.organisations[0]?.organisations?.name || 'N/A'
+      // An admin might not be linked to an org yet, so we safely access the name
+      organisationName: admin.organisations[0]?.organisations?.name || 'Unassigned'
   })) || [];
 
 
-  return <AdminsClientPage admins={admins} organisations={organisations || []} />;
+  return <AdminsClientPage admins={admins} />;
 }

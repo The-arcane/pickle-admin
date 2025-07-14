@@ -24,7 +24,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 type Admin = {
     id: number;
@@ -46,7 +45,7 @@ function SubmitButton() {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" disabled={pending}>
-            {pending ? 'Inviting...' : 'Send Invitation'}
+            {pending ? 'Creating...' : 'Create Admin User'}
         </Button>
     )
 }
@@ -63,10 +62,8 @@ function getInitials(name: string | undefined | null) {
 
 export function AdminsClientPage({ 
     admins,
-    organisations
 }: { 
     admins: Admin[],
-    organisations: Organisation[]
 }) {
     const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -186,9 +183,9 @@ export function AdminsClientPage({
             <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Invite New Admin</DialogTitle>
+                        <DialogTitle>Create New Admin User</DialogTitle>
                         <DialogDescription>
-                            Enter the admin's details. They will receive an invitation to join the selected organization.
+                            Enter the user's details. They will be created as an admin and can be assigned to an organization later.
                         </DialogDescription>
                     </DialogHeader>
                     <form ref={formRef} action={handleInviteFormAction} className="space-y-4 py-4">
@@ -203,19 +200,6 @@ export function AdminsClientPage({
                         <div className="space-y-2">
                              <Label htmlFor="phone">Phone Number</Label>
                              <Input id="phone" name="phone" type="tel" placeholder="9876543210" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="organisation_id">Organization</Label>
-                            <Select name="organisation_id" required>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select an organization" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {organisations.map(org => (
-                                        <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
                         </div>
                         <DialogFooter>
                             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
