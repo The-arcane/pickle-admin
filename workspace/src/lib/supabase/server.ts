@@ -1,6 +1,7 @@
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import 'dotenv/config';
 
 export async function createServer(useServiceRoleKey = false) {
   const cookieStore = cookies();
@@ -16,7 +17,7 @@ export async function createServer(useServiceRoleKey = false) {
   }
   
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Your project's URL and Key are required to create a Supabase client! Check your .env.local file.");
+    throw new Error("Your project's URL and Key are required to create a Supabase client! Check your .env file.");
   }
 
   return createServerClient(
