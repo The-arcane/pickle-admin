@@ -59,7 +59,7 @@ export default async function EmployeeLayout({
         <div className="flex h-16 shrink-0 items-center border-b px-6">
           <Link href="/employee/dashboard" className="flex min-w-0 items-center gap-2 font-semibold text-primary">
             <Cuboid className="h-6 w-6 shrink-0" />
-            <span className="truncate" title={organisationName}>Lumen</span>
+            <span className="truncate" title={organisationName}>{organisationName}</span>
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto py-4">
@@ -81,7 +81,7 @@ export default async function EmployeeLayout({
                     <div className="flex h-16 shrink-0 items-center px-6">
                         <Link href="/employee/dashboard" className="flex min-w-0 items-center gap-2 font-semibold text-primary">
                             <Cuboid className="h-6 w-6 shrink-0" />
-                            <span className="truncate" title={organisationName}>Lumen</span>
+                            <span className="truncate" title={organisationName}>{organisationName}</span>
                         </Link>
                     </div>
                 </SheetHeader>
