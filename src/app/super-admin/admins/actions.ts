@@ -12,16 +12,14 @@ export async function addAdmin(formData: FormData) {
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const phone = formData.get('phone') as string;
+  const password = formData.get('password') as string;
 
-  if (!email || !name) {
-    return { error: "Name and email are required." };
+  if (!email || !name || !password) {
+    return { error: "Name, email, and password are required." };
   }
 
-  // Generate a temporary random password. The user will reset this via invitation.
-  const password = Math.random().toString(36).slice(-8);
-
   // 1. Call the database function to create the user and profile
-  const { data, error: rpcError } = await supabase.rpc('create_admin_user', {
+  const { error: rpcError } = await supabase.rpc('create_admin_user', {
     email,
     password,
     name,
@@ -32,20 +30,10 @@ export async function addAdmin(formData: FormData) {
     console.error("Error calling create_admin_user RPC:", rpcError);
     return { error: `Failed to create admin: ${rpcError.message}` };
   }
-  
-  // 2. Send invitation email so the user can set their actual password
-  // This part requires the service role key to send auth emails.
-  const { error: inviteError } = await (await createServer(true)).auth.admin.inviteUserByEmail(email);
-
-  if (inviteError) {
-      console.error("Error sending invite email:", inviteError);
-      // Don't fail the whole process, but notify the super admin
-      return { success: true, message: "Admin created, but failed to send invitation email. Please ask them to use the password reset flow." };
-  }
 
   revalidatePath('/super-admin/admins');
   
-  return { success: true, message: "Admin successfully created and an invitation email has been sent." };
+  return { success: true, message: "Admin user successfully created." };
 }
 
 // removeAdmin still requires the service role key to delete a user from auth schema.

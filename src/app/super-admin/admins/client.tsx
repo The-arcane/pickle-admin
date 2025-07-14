@@ -78,6 +78,11 @@ export function AdminsClientPage({
     }, []);
 
     const handleInviteFormAction = async (formData: FormData) => {
+        if (formData.get('password') !== formData.get('confirm_password')) {
+            toast({ variant: "destructive", title: "Error", description: "Passwords do not match." });
+            return;
+        }
+
         const result = await addAdmin(formData);
         if (result.error) {
             toast({ variant: "destructive", title: "Error", description: result.error });
@@ -200,6 +205,14 @@ export function AdminsClientPage({
                         <div className="space-y-2">
                              <Label htmlFor="phone">Phone Number</Label>
                              <Input id="phone" name="phone" type="tel" placeholder="9876543210" />
+                        </div>
+                        <div className="space-y-2">
+                             <Label htmlFor="password">Password</Label>
+                             <Input id="password" name="password" type="password" required />
+                        </div>
+                        <div className="space-y-2">
+                             <Label htmlFor="confirm_password">Confirm Password</Label>
+                             <Input id="confirm_password" name="confirm_password" type="password" required />
                         </div>
                         <DialogFooter>
                             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
