@@ -20,7 +20,7 @@ export async function addAdmin(formData: FormData) {
 
   // 1. Create the user in Supabase Auth.
   // The database has a trigger that will automatically create a corresponding
-  // public.user record.
+  // public.user record. We pass the name here so the trigger can access it.
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
@@ -43,6 +43,7 @@ export async function addAdmin(formData: FormData) {
     .update({
         user_type: 2, // 2 for Admin
         phone: phone || null,
+        name: name // Explicitly set name here too for robustness
     })
     .eq('user_uuid', userId);
 
