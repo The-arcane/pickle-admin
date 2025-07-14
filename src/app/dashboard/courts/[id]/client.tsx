@@ -311,6 +311,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                             <Separator />
                             <div className="space-y-4">
                                 <Label className="text-base font-medium">Recurring Unavailability</Label>
+                                <CardDescription>The court will not be available on that particular day recurringly based on day and time.</CardDescription>
                                 {unavailability.map((block, index) => (
                                     <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_0.75fr_0.75fr_1fr_auto] items-center gap-2 p-2 border rounded-md">
                                         <Select value={block.day_of_week?.toString()} onValueChange={(val) => handleUnavailabilityChange(index, 'day_of_week', parseInt(val, 10))}>
