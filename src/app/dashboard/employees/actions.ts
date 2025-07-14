@@ -1,4 +1,3 @@
-
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
@@ -11,19 +10,18 @@ export async function addEmployee(formData: FormData) {
   const email = formData.get('email') as string;
   const phone = formData.get('phone') as string;
   const organisation_id = Number(formData.get('organisation_id'));
+  const password = formData.get('password') as string;
 
-  if (!email || !name || !organisation_id) {
-    return { error: "Name, email, and organization ID are required." };
+  if (!email || !name || !organisation_id || !password) {
+    return { error: "Name, email, password, and organization ID are required." };
   }
-
-  // Generate a random password for the invitation
-  const password = Math.random().toString(36).slice(-8);
 
   // 1. Create the user in Supabase Auth
   const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true, // Auto-confirm the email
+    user_metadata: { name: name }
   });
   
   if (authError) {
@@ -33,59 +31,53 @@ export async function addEmployee(formData: FormData) {
   if (!authUser.user) {
       return { error: 'Could not create user account.' };
   }
+  const userUuid = authUser.user.id;
 
-  // 2. Insert into public.user table
-  const { error: profileError } = await supabase
+  // 2. Update the auto-created public.user record with the correct user_type and phone.
+  const { data: updatedUser, error: profileError } = await supabase
     .from('user')
-    .insert({
-        user_uuid: authUser.user.id,
-        name,
-        email,
-        phone,
+    .update({
         user_type: 4, // 4 for Employee
-    });
+        phone: phone || null,
+        name: name
+    })
+    .eq('user_uuid', userUuid)
+    .select('id')
+    .single();
 
-  if (profileError) {
+  if (profileError || !updatedUser) {
       console.error("Error creating user profile:", profileError);
       // Attempt to clean up the auth user if profile creation fails
-      await supabase.auth.admin.deleteUser(authUser.user.id);
-      return { error: `Failed to create user profile: ${profileError.message}` };
+      await supabase.auth.admin.deleteUser(userUuid);
+      return { error: `Failed to create user profile: ${profileError?.message}` };
   }
+  const userId = updatedUser.id;
 
   // 3. Link user to organization with 'Employee' role
-  const { data: userRecord } = await supabase.from('user').select('id').eq('user_uuid', authUser.user.id).single();
   const { data: employeeRole } = await supabase.from('organisation_roles').select('id').eq('name', 'Employee').single();
   
-  if (!userRecord || !employeeRole) {
-       await supabase.auth.admin.deleteUser(authUser.user.id);
-       return { error: "Could not find user record or employee role to create association." };
+  if (!employeeRole) {
+       await supabase.auth.admin.deleteUser(userUuid);
+       return { error: "Could not find 'Employee' role in the database." };
   }
 
   const { error: linkError } = await supabase
     .from('user_organisations')
     .insert({
-        user_id: userRecord.id,
+        user_id: userId,
         organisation_id: organisation_id,
         role_id: employeeRole.id,
     });
     
   if (linkError) {
        console.error("Error linking employee to organization:", linkError);
-       await supabase.auth.admin.deleteUser(authUser.user.id);
+       await supabase.auth.admin.deleteUser(userUuid);
        return { error: `Failed to link employee to organization: ${linkError.message}` };
-  }
-
-  // 4. Send invitation email
-  const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email);
-  if (inviteError) {
-      console.error("Error sending invite email:", inviteError);
-      // Don't fail the whole process, but notify the admin
-      return { success: true, message: "Employee created, but failed to send invitation email. Please ask them to use the password reset flow." };
   }
 
   revalidatePath('/dashboard/employees');
   
-  return { success: true, message: "Employee successfully invited." };
+  return { success: true, message: "Employee successfully created." };
 }
 
 

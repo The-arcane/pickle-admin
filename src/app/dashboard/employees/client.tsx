@@ -41,7 +41,7 @@ function SubmitButton() {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" disabled={pending}>
-            {pending ? 'Inviting...' : 'Send Invitation'}
+            {pending ? 'Creating...' : 'Create Employee'}
         </Button>
     )
 }
@@ -63,7 +63,7 @@ export function EmployeesClientPage({
     employees: Employee[], 
     organisationId: number
 }) {
-    const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
     const { toast } = useToast();
@@ -75,15 +75,20 @@ export function EmployeesClientPage({
         setIsClient(true);
     }, []);
 
-    const handleInviteFormAction = async (formData: FormData) => {
+    const handleAddFormAction = async (formData: FormData) => {
         formData.append('organisation_id', organisationId.toString());
+        
+        if (formData.get('password') !== formData.get('confirm_password')) {
+            toast({ variant: "destructive", title: "Error", description: "Passwords do not match." });
+            return;
+        }
 
         const result = await addEmployee(formData);
         if (result.error) {
             toast({ variant: "destructive", title: "Error", description: result.error });
         } else {
             toast({ title: "Success", description: result.message });
-            setIsInviteDialogOpen(false);
+            setIsAddDialogOpen(false);
             formRef.current?.reset();
             router.refresh();
         }
@@ -117,7 +122,7 @@ export function EmployeesClientPage({
                     <h1 className="text-3xl font-bold">Employees</h1>
                     <p className="text-muted-foreground">Manage employees for your organization.</p>
                 </div>
-                <Button onClick={() => setIsInviteDialogOpen(true)}>
+                <Button onClick={() => setIsAddDialogOpen(true)}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Employee
                 </Button>
             </div>
@@ -180,15 +185,15 @@ export function EmployeesClientPage({
                 </CardContent>
             </Card>
 
-            <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Invite New Employee</DialogTitle>
+                        <DialogTitle>Add New Employee</DialogTitle>
                         <DialogDescription>
-                            Enter the employee's details. They will receive an invitation email to set their password and join.
+                            Enter the employee's details. They will be created with the specified password.
                         </DialogDescription>
                     </DialogHeader>
-                    <form ref={formRef} action={handleInviteFormAction} className="space-y-4 py-4">
+                    <form ref={formRef} action={handleAddFormAction} className="space-y-4 py-4">
                         <div className="space-y-2">
                              <Label htmlFor="name">Full Name</Label>
                              <Input id="name" name="name" type="text" placeholder="John Doe" required />
@@ -200,6 +205,14 @@ export function EmployeesClientPage({
                          <div className="space-y-2">
                              <Label htmlFor="phone">Phone Number</Label>
                              <Input id="phone" name="phone" type="tel" placeholder="9876543210" />
+                        </div>
+                         <div className="space-y-2">
+                             <Label htmlFor="password">Password</Label>
+                             <Input id="password" name="password" type="password" required />
+                        </div>
+                        <div className="space-y-2">
+                             <Label htmlFor="confirm_password">Confirm Password</Label>
+                             <Input id="confirm_password" name="confirm_password" type="password" required />
                         </div>
                         <DialogFooter>
                             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
