@@ -52,7 +52,7 @@ export default async function DashboardLayout({
   const organisationId = orgLink.organisation_id;
 
   // Fetch the organization's name for display
-  let organisationName = 'Admin Panel';
+  let organisationName = 'Lumen';
   const { data: organisation } = await supabase
     .from('organisations')
     .select('name')
@@ -69,7 +69,7 @@ export default async function DashboardLayout({
         <div className="flex h-16 shrink-0 items-center border-b px-6">
           <Link href="/dashboard" className="flex min-w-0 items-center gap-2 font-semibold text-primary">
             <Cuboid className="h-6 w-6 shrink-0" />
-            <span className="truncate" title={organisationName}>{organisationName}</span>
+            <span className="truncate" title={organisationName}>Lumen</span>
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto py-4">
@@ -94,7 +94,7 @@ export default async function DashboardLayout({
                     <div className="flex h-16 shrink-0 items-center px-6">
                         <Link href="/dashboard" className="flex min-w-0 items-center gap-2 font-semibold text-primary">
                             <Cuboid className="h-6 w-6 shrink-0" />
-                            <span className="truncate" title={organisationName}>{organisationName}</span>
+                            <span className="truncate" title={organisationName}>Lumen</span>
                         </Link>
                     </div>
                 </SheetHeader>

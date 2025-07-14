@@ -42,7 +42,7 @@ export default async function SuperAdminLayout({
           <div className="flex h-16 shrink-0 items-center border-b px-6">
             <Link href="/super-admin/dashboard" className="flex items-center gap-2 font-semibold text-primary">
               <Shield className="h-6 w-6" />
-              <span>SUPER ADMIN</span>
+              <span>Lumen</span>
             </Link>
           </div>
           <div className="flex-1 overflow-y-auto py-4">
@@ -64,7 +64,7 @@ export default async function SuperAdminLayout({
                     <div className="flex h-16 shrink-0 items-center px-6">
                         <Link href="/super-admin/dashboard" className="flex items-center gap-2 font-semibold text-primary">
                             <Shield className="h-6 w-6" />
-                            <span>SUPER ADMIN</span>
+                            <span>Lumen</span>
                         </Link>
                     </div>
                   </SheetHeader>
