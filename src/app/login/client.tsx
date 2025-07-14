@@ -105,7 +105,7 @@ export function LoginForm() {
                         <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
                         </Alert>
                     )}
-                    <form action={login} className="space-y-6">
+                    <form action={login} className="space-y-6" suppressHydrationWarning>
                         <input type="hidden" name="userType" value="employee" />
                         <LoginFormFields userType="employee" />
                         <SubmitButton userType="Employee" />
@@ -131,7 +131,7 @@ export function LoginForm() {
                         <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
                         </Alert>
                     )}
-                    <form action={login} className="space-y-6">
+                    <form action={login} className="space-y-6" suppressHydrationWarning>
                         <input type="hidden" name="userType" value="admin" />
                         <LoginFormFields userType="admin" />
                         <SubmitButton userType="Admin" />
@@ -157,7 +157,7 @@ export function LoginForm() {
                         <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
                         </Alert>
                     )}
-                    <form action={login} className="space-y-6">
+                    <form action={login} className="space-y-6" suppressHydrationWarning>
                         <input type="hidden" name="userType" value="super-admin" />
                         <LoginFormFields userType="super-admin" />
                         <SubmitButton userType="Super Admin" />
