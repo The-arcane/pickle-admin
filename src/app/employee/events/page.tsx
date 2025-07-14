@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 
 // Re-using the admin events page component for employees.
 export default async function EmployeeEventsPage() {
-  const supabase = createServer();
+  const supabase = await createServer();
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
