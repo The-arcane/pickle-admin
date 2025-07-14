@@ -1,6 +1,7 @@
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import 'dotenv/config';
 
 export async function createServer(useServiceRoleKey = false) {
   const cookieStore = cookies();
