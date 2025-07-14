@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { redirect } from 'next/navigation';
 
 export default async function EmployeeDashboardPage() {
-  const supabase = createServer();
+  const supabase = await createServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
       return redirect('/login?type=employee');
