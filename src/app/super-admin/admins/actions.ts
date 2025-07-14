@@ -4,10 +4,10 @@
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-// This action creates a user with user_type = 2 (Admin) by calling a secure database function.
-// This avoids the need for a service role key in the environment for the creation part.
+// This action creates a user with user_type = 2 (Admin)
 export async function addAdmin(formData: FormData) {
-  const supabase = await createServer();
+  // Use service role key to bypass RLS for user creation
+  const supabase = await createServer(true); 
 
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
@@ -18,25 +18,47 @@ export async function addAdmin(formData: FormData) {
     return { error: "Name, email, and password are required." };
   }
 
-  // 1. Call the database function to create the user and profile
-  const { error: rpcError } = await supabase.rpc('create_admin_user', {
+  // 1. Create the user in Supabase Auth
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
-    name,
-    phone,
+    email_confirm: true, // Auto-confirm the email
+    user_metadata: { name: name }
   });
-
-  if (rpcError) {
-    console.error("Error calling create_admin_user RPC:", rpcError);
-    return { error: `Failed to create admin: ${rpcError.message}` };
+  
+  if (authError) {
+      console.error("Error creating auth user:", authError);
+      return { error: `Failed to create user: ${authError.message}` };
   }
+  if (!authData.user) {
+      return { error: 'Could not create user account.' };
+  }
+
+  // 2. Insert into public.user table
+  const { error: profileError } = await supabase
+    .from('user')
+    .insert({
+        user_uuid: authData.user.id,
+        name,
+        email,
+        phone,
+        user_type: 2, // 2 for Admin
+    });
+
+  if (profileError) {
+      console.error("Error creating user profile:", profileError);
+      // Attempt to clean up the auth user if profile creation fails
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return { error: `Failed to create user profile: ${profileError.message}` };
+  }
+
 
   revalidatePath('/super-admin/admins');
   
   return { success: true, message: "Admin user successfully created." };
 }
 
-// removeAdmin still requires the service role key to delete a user from auth schema.
+// removeAdmin requires the service role key to delete a user from auth schema.
 export async function removeAdmin(formData: FormData) {
     const supabase = await createServer(true); // Must use service role for deletion
 
