@@ -9,6 +9,11 @@ import { revalidatePath } from 'next/cache';
 export async function addAdmin(formData: FormData) {
   const supabase = await createServer(true);
 
+  // The createServer function now returns the client or an error object if keys are missing
+  if ('error' in supabase) {
+      return { error: supabase.error };
+  }
+
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const phone = formData.get('phone') as string;
@@ -68,6 +73,11 @@ export async function addAdmin(formData: FormData) {
 // This is identical to removeEmployee
 export async function removeAdmin(formData: FormData) {
     const supabase = await createServer(true);
+
+    if ('error' in supabase) {
+        return { error: supabase.error };
+    }
+
     const userId = formData.get('user_id') as string;
 
     if (!userId) {

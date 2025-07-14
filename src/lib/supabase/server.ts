@@ -11,7 +11,9 @@ export async function createServer(useServiceRoleKey = false) {
     : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   if (useServiceRoleKey && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set in environment variables. It's required for admin actions.");
+      // Instead of throwing, return an object with an error.
+      // This allows the calling action to handle the error gracefully.
+      return { error: "SUPABASE_SERVICE_ROLE_KEY is not set in environment variables. It's required for admin actions." };
   }
 
   return createServerClient(
