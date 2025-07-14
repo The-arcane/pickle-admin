@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 // This action creates a user with user_type = 2 (Admin) but does not link them to an organization.
 // The linking is handled by the trigger on the organisations table when an owner is assigned.
 export async function addAdmin(formData: FormData) {
-  const supabase = createServer(true);
+  const supabase = await createServer(true);
 
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
@@ -67,7 +67,7 @@ export async function addAdmin(formData: FormData) {
 
 // This is identical to removeEmployee
 export async function removeAdmin(formData: FormData) {
-    const supabase = createServer(true);
+    const supabase = await createServer(true);
     const userId = formData.get('user_id') as string;
 
     if (!userId) {
