@@ -6,8 +6,7 @@ export async function createServer(useServiceRoleKey = false) {
   const cookieStore = cookies();
 
   // Next.js automatically loads variables from .env.local.
-  // The `NEXT_PUBLIC_` prefix makes them available to the browser,
-  // while server-only variables without the prefix are secure.
+  // The `NEXT_PUBLIC_` prefix makes them available to the browser and server.
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = useServiceRoleKey 
     ? process.env.SUPABASE_SERVICE_ROLE_KEY! 
