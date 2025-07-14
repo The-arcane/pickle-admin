@@ -87,7 +87,7 @@ export function EmployeeBookingsClientPage({
                 court: court?.name ?? 'N/A',
                 date: date ? format(date, 'MMM d, yyyy') : 'N/A',
                 time: `${formatTime(timeslot?.start_time)} - ${formatTime(timeslot?.end_time)}`,
-                status: courtStatusMap[booking.status] ?? 'Unknown',
+                status: courtStatusMap[booking.booking_status] ?? 'Unknown',
                 raw_date: date,
             };
         });
