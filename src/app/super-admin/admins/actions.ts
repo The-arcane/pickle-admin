@@ -4,15 +4,10 @@
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-// This action creates a user with user_type = 2 (Admin) but does not link them to an organization.
-// The linking is handled by the trigger on the organisations table when an owner is assigned.
+// This action creates a user with user_type = 2 (Admin) by calling a secure database function.
+// This avoids the need for a service role key in the environment.
 export async function addAdmin(formData: FormData) {
-  const supabase = await createServer(true);
-
-  // The createServer function now returns the client or an error object if keys are missing
-  if ('error' in supabase) {
-      return { error: supabase.error };
-  }
+  const supabase = await createServer();
 
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
@@ -22,43 +17,25 @@ export async function addAdmin(formData: FormData) {
     return { error: "Name and email are required." };
   }
 
+  // Generate a temporary random password. The user will reset this via invitation.
   const password = Math.random().toString(36).slice(-8);
 
-  // 1. Create the user in Supabase Auth
-  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+  // 1. Call the database function to create the user and profile
+  const { data, error: rpcError } = await supabase.rpc('create_admin_user', {
     email,
     password,
-    email_confirm: true,
+    name,
+    phone,
   });
+
+  if (rpcError) {
+    console.error("Error calling create_admin_user RPC:", rpcError);
+    return { error: `Failed to create admin: ${rpcError.message}` };
+  }
   
-  if (authError) {
-      console.error("Error creating auth user:", authError);
-      return { error: `Failed to create user: ${authError.message}` };
-  }
-  if (!authUser.user) {
-      return { error: 'Could not create user account.' };
-  }
+  // 2. Send invitation email so the user can set their actual password
+  const { error: inviteError } = await (await createServer(true)).auth.admin.inviteUserByEmail(email);
 
-  // 2. Insert into public.user table with user_type 2 (Admin)
-  const { error: profileError } = await supabase
-    .from('user')
-    .insert({
-        user_uuid: authUser.user.id,
-        name,
-        email,
-        phone,
-        user_type: 2, // 2 for Admin
-    });
-
-  if (profileError) {
-      console.error("Error creating user profile:", profileError);
-      // If profile creation fails, we should delete the auth user to avoid orphans
-      await supabase.auth.admin.deleteUser(authUser.user.id);
-      return { error: `Failed to create user profile: ${profileError.message}` };
-  }
-
-  // 3. Send invitation email
-  const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email);
   if (inviteError) {
       console.error("Error sending invite email:", inviteError);
       // Don't fail the whole process, but notify the super admin
@@ -70,13 +47,9 @@ export async function addAdmin(formData: FormData) {
   return { success: true, message: "Admin successfully created. You can now assign them as an owner to an organization." };
 }
 
-// This is identical to removeEmployee
+// removeAdmin still requires the service role key to delete a user from auth schema.
 export async function removeAdmin(formData: FormData) {
-    const supabase = await createServer(true);
-
-    if ('error' in supabase) {
-        return { error: supabase.error };
-    }
+    const supabase = await createServer(true); // Must use service role for deletion
 
     const userId = formData.get('user_id') as string;
 
