@@ -18,7 +18,9 @@ export async function addAdmin(formData: FormData) {
     return { error: "Name, email, and password are required." };
   }
 
-  // 1. Create the user in Supabase Auth
+  // 1. Create the user in Supabase Auth.
+  // The database has a trigger that will automatically create a corresponding
+  // public.user record.
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
@@ -33,25 +35,23 @@ export async function addAdmin(formData: FormData) {
   if (!authData.user) {
       return { error: 'Could not create user account.' };
   }
+  const userId = authData.user.id;
 
-  // 2. Insert into public.user table
+  // 2. Update the auto-created public.user record with the correct user_type and phone.
   const { error: profileError } = await supabase
     .from('user')
-    .insert({
-        user_uuid: authData.user.id,
-        name,
-        email,
-        phone,
+    .update({
         user_type: 2, // 2 for Admin
-    });
+        phone: phone || null,
+    })
+    .eq('user_uuid', userId);
 
   if (profileError) {
-      console.error("Error creating user profile:", profileError);
-      // Attempt to clean up the auth user if profile creation fails
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      return { error: `Failed to create user profile: ${profileError.message}` };
+      console.error("Error updating user profile:", profileError);
+      // Attempt to clean up the auth user if profile update fails
+      await supabase.auth.admin.deleteUser(userId);
+      return { error: `Failed to set user role: ${profileError.message}` };
   }
-
 
   revalidatePath('/super-admin/admins');
   

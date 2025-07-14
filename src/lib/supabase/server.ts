@@ -12,13 +12,13 @@ export async function createServer(useServiceRoleKey = false) {
   const supabaseKey = useServiceRoleKey 
     ? process.env.SUPABASE_SERVICE_ROLE_KEY! 
     : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-  if (useServiceRoleKey && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("SUPABASE_SERVICE_ROLE_KEY is not set in your .env.local file. This is required for admin actions.");
-  }
   
   if (!supabaseUrl || !supabaseKey) {
     throw new Error("Your project's URL and Key are required to create a Supabase client! Check your .env.local file.");
+  }
+  
+  if (useServiceRoleKey && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("SUPABASE_SERVICE_ROLE_KEY is not set in your .env.local file. This is required for admin actions.");
   }
 
   return createServerClient(
