@@ -39,21 +39,24 @@ export async function middleware(request: NextRequest) {
 
   const user = session?.user;
 
-  // If user is not logged in, protect the dashboard routes
-  if (!user) {
-    if (
-      pathname.startsWith('/dashboard') ||
-      pathname.startsWith('/super-admin') ||
-      pathname.startsWith('/employee')
-    ) {
-      const redirectUrl = new URL('/login', request.url);
-      if (pathname.startsWith('/super-admin')) {
-          redirectUrl.searchParams.set('type', 'super-admin');
-      } else if (pathname.startsWith('/employee')) {
-          redirectUrl.searchParams.set('type', 'employee');
-      }
-      return NextResponse.redirect(redirectUrl);
+  // Define protected routes
+  const protectedPaths = ['/dashboard', '/super-admin', '/employee'];
+  const isProtected = protectedPaths.some(path => pathname.startsWith(path));
+
+  // If the user is not logged in and is trying to access a protected route
+  if (!user && isProtected) {
+    // Exclude login pages from the redirect loop
+    if (pathname.startsWith('/login') || pathname.startsWith('/super-admin/login')) {
+      return response;
     }
+
+    const redirectUrl = new URL('/login', request.url);
+    if (pathname.startsWith('/super-admin')) {
+      redirectUrl.searchParams.set('type', 'super-admin');
+    } else if (pathname.startsWith('/employee')) {
+      redirectUrl.searchParams.set('type', 'employee');
+    }
+    return NextResponse.redirect(redirectUrl);
   }
 
   return response;
