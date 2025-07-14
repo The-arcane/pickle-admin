@@ -37,7 +37,7 @@ function getCoachDataFromFormData(formData: FormData) {
         user_id: Number(formData.get('user_id')),
         organisation_id: Number(formData.get('organisation_id')),
         bio: formData.get('bio') as string,
-        is_independent: formData.get('is_independent') === 'on',
+        is_independent: formData.get('is_independent') === 'true',
     };
 }
 
@@ -53,7 +53,7 @@ export async function addCoach(formData: FormData) {
         const profileImageFile = formData.get('profile_image_file') as File | null;
         let profileImageUrl: string | null = null;
         
-        if (profileImageFile) {
+        if (profileImageFile && profileImageFile.size > 0) {
             profileImageUrl = await handleImageUpload(supabase, profileImageFile, coachData.user_id.toString());
         }
         
@@ -107,7 +107,7 @@ export async function updateCoach(formData: FormData) {
         const profileImageFile = formData.get('profile_image_file') as File | null;
         const updatePayload: any = { ...coachData };
 
-        if (profileImageFile) {
+        if (profileImageFile && profileImageFile.size > 0) {
             const profileImageUrl = await handleImageUpload(supabase, profileImageFile, coachData.user_id.toString());
             if (profileImageUrl) updatePayload.profile_image = profileImageUrl;
         }

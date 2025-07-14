@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, ImagePlus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 export function EditCoachClientPage({ coach, users, sports, organisationId }: { coach: Coach | null, users: User[], sports: Sport[], organisationId: number }) {
     const router = useRouter();
@@ -114,7 +115,7 @@ export function EditCoachClientPage({ coach, users, sports, organisationId }: { 
                         <Textarea id="bio" name="bio" defaultValue={coach?.bio ?? ''} placeholder="Tell us about the coach..." />
                     </div>
                     <div className="flex items-center gap-2 rounded-lg border p-4">
-                        <Switch id="is_independent" name="is_independent" checked={isIndependent} onCheckedChange={setIsIndependent} />
+                        <Switch id="is_independent" checked={isIndependent} onCheckedChange={setIsIndependent} />
                         <Label htmlFor="is_independent">Is an independent coach (not exclusive to this organization)?</Label>
                     </div>
                 </CardContent>
