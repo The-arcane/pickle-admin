@@ -63,7 +63,7 @@ async function getDashboardData(organisationId: number) {
     // Recent Bookings
     supabase
       .from('bookings')
-      .select('id, status, user:user_id(name, profile_image_url), courts:court_id!inner(name), timeslots:timeslot_id(date, start_time)')
+      .select('id, booking_status, user:user_id(name, profile_image_url), courts:court_id!inner(name), timeslots:timeslot_id(date, start_time)')
       .eq('courts.organisation_id', organisationId)
       .limit(5)
       .order('id', { ascending: false }),
@@ -73,14 +73,14 @@ async function getDashboardData(organisationId: number) {
         .from('bookings')
         .select('id, timeslots!inner(date), courts!inner(id)', { count: 'exact', head: true })
         .eq('timeslots.date', today)
-        .in('status', [1, 2]) // Confirmed or Pending
+        .in('booking_status', [1, 2]) // Confirmed or Pending
         .eq('courts.organisation_id', organisationId),
     
     // Total Revenue
     supabase
         .from('bookings')
         .select('courts!inner(price)')
-        .eq('status', 1) // Confirmed
+        .eq('booking_status', 1) // Confirmed
         .eq('courts.organisation_id', organisationId),
 
     // Total Courts Count for the organization
@@ -152,7 +152,7 @@ async function getDashboardData(organisationId: number) {
       court: typeof court === 'object' && court !== null && 'name' in court ? (court as any).name : 'N/A',
       date: typeof timeslot === 'object' && timeslot !== null && 'date' in timeslot ? formatDate((timeslot as any).date) : 'N/A',
       time: typeof timeslot === 'object' && timeslot !== null && 'start_time' in timeslot ? (timeslot as any).start_time as string : '',
-      status: statusMap[booking.status] ?? 'Unknown',
+      status: statusMap[booking.booking_status] ?? 'Unknown',
       avatar: typeof user === 'object' && user !== null && 'profile_image_url' in user ? (user as any).profile_image_url as string | null : null,
       initials: getInitials(userName),
     };

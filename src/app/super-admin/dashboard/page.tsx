@@ -36,7 +36,7 @@ async function getSuperAdminDashboardData() {
           .from('bookings')
           .select(`
               id, 
-              status, 
+              booking_status, 
               timeslots:timeslot_id(date), 
               user:user_id(name), 
               courts:court_id(name, organisations(name))
@@ -148,7 +148,7 @@ export default async function SuperAdminDashboardPage() {
                                     <TableCell>{booking.courts?.name ?? 'N/A'}</TableCell>
                                     <TableCell>{booking.courts?.organisations?.name ?? 'N/A'}</TableCell>
                                     <TableCell>{booking.timeslots?.date ? format(parseISO(booking.timeslots.date), 'PP') : 'N/A'}</TableCell>
-                                    <TableCell><StatusBadge status={bookingStatusMap[booking.status] ?? 'Unknown'} /></TableCell>
+                                    <TableCell><StatusBadge status={bookingStatusMap[booking.booking_status] ?? 'Unknown'} /></TableCell>
                                 </TableRow>
                             )) : (
                                 <TableRow>

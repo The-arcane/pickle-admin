@@ -29,7 +29,7 @@ export async function addBooking(formData: FormData) {
       user_id: Number(user_id),
       court_id: Number(court_id),
       timeslot_id: Number(timeslot_id),
-      status: statusValue,
+      booking_status: statusValue,
      });
 
   if (error) {
@@ -65,7 +65,7 @@ export async function updateBooking(formData: FormData) {
   const { error } = await supabase
     .from('bookings')
     .update({ 
-      status: statusValue,
+      booking_status: statusValue,
       court_id: Number(court_id),
       timeslot_id: Number(timeslot_id),
      })

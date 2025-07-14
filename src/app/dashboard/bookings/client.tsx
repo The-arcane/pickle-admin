@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 // Types for Court Bookings
 type CourtBookingFromDb = {
   id: number;
-  status: number;
+  booking_status: number;
   court_id: number;
   timeslot_id: number;
   user: { name: string } | null;
@@ -165,7 +165,7 @@ export function BookingsClientPage({
                 court: court?.name ?? 'N/A',
                 date: timeslot?.date ? format(date, 'MMM d, yyyy') : 'N/A',
                 time: `${formatTime(timeslot?.start_time)} - ${formatTime(timeslot?.end_time)}`,
-                status: courtStatusMap[booking.status] ?? 'Unknown',
+                status: courtStatusMap[booking.booking_status] ?? 'Unknown',
                 court_id: booking.court_id,
                 timeslot_id: booking.timeslot_id,
                 raw_date: timeslot?.date ? date : undefined

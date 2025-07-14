@@ -4,7 +4,7 @@ import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
 export default async function EmployeeBookingsPage() {
-  const supabase = createServer();
+  const supabase = await createServer();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -62,7 +62,7 @@ export default async function EmployeeBookingsPage() {
     const { data, error } = await supabase
       .from('bookings')
       .select(
-        'id, status, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time, end_time)'
+        'id, booking_status, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time, end_time)'
       )
       .in('court_id', courtIds)
       .order('id', { ascending: false });

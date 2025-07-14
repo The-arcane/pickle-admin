@@ -30,7 +30,7 @@ export default function BookingsPage() {
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
-          id, status, court_id, timeslot_id, 
+          id, booking_status, court_id, timeslot_id, 
           user:user_id(name), 
           courts:court_id!inner(name), 
           timeslots:timeslot_id(date, start_time, end_time)

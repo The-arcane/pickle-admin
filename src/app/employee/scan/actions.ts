@@ -9,7 +9,7 @@ const CONFIRMED_STATUS_ID_BOOKING = 1; // Assuming 1 is 'Confirmed' for bookings
 const CONFIRMED_STATUS_ID_EVENT = 1; // Assuming 1 is 'Confirmed' for event bookings
 
 export async function verifyBookingByQrText(qrText: string) {
-    const supabase = createServer();
+    const supabase = await createServer();
 
     // Get Employee's Org ID
     const { data: { user } } = await supabase.auth.getUser();
@@ -51,7 +51,7 @@ export async function verifyBookingByQrText(qrText: string) {
         const { data: booking, error: fetchError } = await supabase
             .from('bookings')
             .select(`
-                id, status, statuss,
+                id, booking_status, court_status,
                 user:user_id(name), 
                 courts:court_id!inner(name, organisation_id), 
                 timeslots:timeslot_id(date, start_time, end_time)
@@ -64,13 +64,13 @@ export async function verifyBookingByQrText(qrText: string) {
             return { error: `Court booking with ID ${qrContentId} not found in your organization.` };
         }
         
-        if (booking.statuss === 'visited') {
+        if (booking.court_status === 'visited') {
             return { error: "This court booking has already been checked in." };
         }
 
         const { error: updateError } = await supabase
             .from('bookings')
-            .update({ status: CONFIRMED_STATUS_ID_BOOKING, statuss: 'visited' })
+            .update({ booking_status: CONFIRMED_STATUS_ID_BOOKING, court_status: 'visited' })
             .eq('id', booking.id);
 
         if (updateError) {

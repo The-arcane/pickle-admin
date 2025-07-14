@@ -45,7 +45,7 @@ export default async function BookingsPage() {
   const { data: courtBookingsData, error: courtBookingsError } = await supabase
     .from('bookings')
     .select(
-      'id, status, court_id, timeslot_id, user:user_id(name), courts:court_id!inner(name), timeslots:timeslot_id(date, start_time, end_time)'
+      'id, booking_status, court_id, timeslot_id, user:user_id(name), courts:court_id!inner(name), timeslots:timeslot_id(date, start_time, end_time)'
     )
     .eq('courts.organisation_id', organisationId)
     .order('id', { ascending: false });
