@@ -5,7 +5,7 @@ import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 // This action creates a user with user_type = 2 (Admin) by calling a secure database function.
-// This avoids the need for a service role key in the environment.
+// This avoids the need for a service role key in the environment for the creation part.
 export async function addAdmin(formData: FormData) {
   const supabase = await createServer();
 
@@ -34,6 +34,7 @@ export async function addAdmin(formData: FormData) {
   }
   
   // 2. Send invitation email so the user can set their actual password
+  // This part requires the service role key to send auth emails.
   const { error: inviteError } = await (await createServer(true)).auth.admin.inviteUserByEmail(email);
 
   if (inviteError) {
@@ -44,7 +45,7 @@ export async function addAdmin(formData: FormData) {
 
   revalidatePath('/super-admin/admins');
   
-  return { success: true, message: "Admin successfully created. You can now assign them as an owner to an organization." };
+  return { success: true, message: "Admin successfully created and an invitation email has been sent." };
 }
 
 // removeAdmin still requires the service role key to delete a user from auth schema.
