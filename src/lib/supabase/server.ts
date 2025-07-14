@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 export async function createServer(useServiceRoleKey = false) {
   const cookieStore = cookies();
 
+  // Ensure these are read from server-side environment variables
   const supabaseUrl = process.env.SUPABASE_URL!;
   const supabaseKey = useServiceRoleKey 
     ? process.env.SUPABASE_SERVICE_ROLE_KEY! 
@@ -12,6 +13,10 @@ export async function createServer(useServiceRoleKey = false) {
 
   if (useServiceRoleKey && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.error("SUPABASE_SERVICE_ROLE_KEY is not set. This is required for admin actions like deleting users.");
+  }
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Your project's URL and Key are required to create a Supabase client! Check your .env.local file.");
   }
 
   return createServerClient(
