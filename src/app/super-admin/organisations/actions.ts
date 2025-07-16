@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
@@ -51,6 +52,9 @@ export async function addOrganization(formData: FormData) {
 
   if (insertError || !newOrg) {
     console.error('Error adding organization:', insertError);
+    if (insertError?.code === '23505') { // unique_violation for user_id
+        return { error: 'This user is already an owner of another organization.' };
+    }
     return { error: `Failed to add organization: ${insertError?.message}` };
   }
 
@@ -89,6 +93,22 @@ export async function updateOrganization(formData: FormData) {
 
     if (!id || !name || !address || !userId) {
         return { error: 'ID, Name, Address, and Owner are required.' };
+    }
+
+    // Check if the new owner already owns another organization
+    const { data: existingOrg, error: checkError } = await supabase
+        .from('organisations')
+        .select('id')
+        .eq('user_id', userId)
+        .not('id', 'eq', id) // Exclude the current organization from the check
+        .maybeSingle();
+
+    if (checkError) {
+        console.error('Error checking for existing ownership:', checkError);
+        return { error: 'Could not verify user ownership.' };
+    }
+    if (existingOrg) {
+        return { error: 'This user is already the owner of another organization. Please select a different user.' };
     }
 
     const updateData: { name: string; address: string; user_id: number; logo?: string } = {
