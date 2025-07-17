@@ -3,7 +3,10 @@ import { Badge } from "@/components/ui/badge";
 export function StatusBadge({ status }: { status: string }) {
   let variant: "default" | "secondary" | "destructive" | "outline";
 
-  switch (status?.toLowerCase()) {
+  // Ensure status is a string before calling toLowerCase
+  const safeStatus = typeof status === 'string' ? status.toLowerCase() : '';
+
+  switch (safeStatus) {
     case 'confirmed':
     case 'open':
     case 'active':
