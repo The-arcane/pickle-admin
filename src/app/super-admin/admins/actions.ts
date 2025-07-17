@@ -19,39 +19,23 @@ export async function addAdmin(formData: FormData) {
   }
 
   // 1. Create the user in Supabase Auth.
-  // The database has a trigger that will automatically create a corresponding
-  // public.user record. We pass the name here so the trigger can access it.
+  // A trigger (create_admin_user) in the DB will automatically create the public.user profile.
+  // We pass the name and phone in metadata so the trigger can access it.
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
-    email_confirm: true, // Auto-confirm the email
-    user_metadata: { name: name }
+    phone,
+    email_confirm: true,
+    user_metadata: { 
+        name: name,
+        phone: phone || null,
+        user_type: 2 // Specify user_type for the trigger
+    }
   });
   
   if (authError) {
       console.error("Error creating auth user:", authError);
       return { error: `Failed to create user: ${authError.message}` };
-  }
-  if (!authData.user) {
-      return { error: 'Could not create user account.' };
-  }
-  const userId = authData.user.id;
-
-  // 2. Update the auto-created public.user record with the correct user_type and phone.
-  const { error: profileError } = await supabase
-    .from('user')
-    .update({
-        user_type: 2, // 2 for Admin
-        phone: phone || null,
-        name: name // Explicitly set name here too for robustness
-    })
-    .eq('user_uuid', userId);
-
-  if (profileError) {
-      console.error("Error updating user profile:", profileError);
-      // Attempt to clean up the auth user if profile update fails
-      await supabase.auth.admin.deleteUser(userId);
-      return { error: `Failed to set user role: ${profileError.message}` };
   }
 
   revalidatePath('/super-admin/admins');

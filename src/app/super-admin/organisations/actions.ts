@@ -77,6 +77,26 @@ export async function addOrganization(formData: FormData) {
     }
   }
 
+  // 3. Link the user to the organization with the 'Admin' role
+  const { data: adminRole } = await supabase.from('organisation_roles').select('id').eq('name', 'Admin').single();
+  if (!adminRole) {
+      // This is a critical setup issue, we should probably clean up the created org
+      await supabase.from('organisations').delete().eq('id', newOrg.id);
+      return { error: "Could not find 'Admin' role. Please ensure it exists in the 'organisation_roles' table."};
+  }
+
+  const { error: linkError } = await supabase.from('user_organisations').insert({
+      user_id: Number(userId),
+      organisation_id: newOrg.id,
+      role_id: adminRole.id,
+  });
+
+  if (linkError) {
+      // Clean up the created org if linking fails
+      await supabase.from('organisations').delete().eq('id', newOrg.id);
+      return { error: `Failed to link owner to organization: ${linkError.message}` };
+  }
+
   revalidatePath('/super-admin/organisations');
   return { success: true };
 }
