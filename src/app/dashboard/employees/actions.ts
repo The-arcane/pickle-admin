@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
@@ -53,12 +54,12 @@ export async function addEmployee(formData: FormData) {
   }
   const userId = updatedUser.id;
 
-  // 3. Link user to organization with 'Employee' role
-  const { data: employeeRole } = await supabase.from('organisation_roles').select('id').eq('name', 'Employee').single();
+  // 3. Link user to organization with 'employee' role
+  const { data: employeeRole } = await supabase.from('organisation_roles').select('id').eq('name', 'employee').single();
   
   if (!employeeRole) {
        await supabase.auth.admin.deleteUser(userUuid);
-       return { error: "Could not find 'Employee' role in the database." };
+       return { error: "Could not find 'employee' role in the database." };
   }
 
   const { error: linkError } = await supabase
