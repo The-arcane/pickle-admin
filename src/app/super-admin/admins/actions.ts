@@ -19,12 +19,12 @@ export async function addAdmin(formData: FormData) {
   }
 
   // 1. Create the user in Supabase Auth.
-  // A trigger (create_admin_user) in the DB will automatically create the public.user profile.
-  // We pass the name and phone in metadata so the trigger can access it.
+  // A trigger (create_public_user_profile) in the DB will automatically create the public.user profile.
+  // We pass the name and user_type in metadata so the trigger can access it.
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
-    phone,
+    phone: phone || undefined,
     email_confirm: true,
     user_metadata: { 
         name: name,
