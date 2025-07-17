@@ -124,11 +124,20 @@ export async function addCourt(formData: FormData) {
       const { error } = await supabase.from('court_contacts').insert({ ...contact, court_id: courtId });
       if(error) { console.error('Error adding contact:', error); return { error: `Failed to save contact info: ${error.message}` };}
     }
-    if (availability.length > 0) {
-      const availabilityToInsert = availability.map(a => ({ ...a, court_id: courtId }));
+    
+    // Filter to ensure we only insert valid availability blocks
+    const validAvailability = availability.filter(a => {
+        // A block is valid if it has a date.
+        // If it specifies a start_time, it MUST also have an end_time.
+        return a.date && (!a.start_time || a.end_time);
+    });
+
+    if (validAvailability.length > 0) {
+      const availabilityToInsert = validAvailability.map(a => ({ ...a, court_id: courtId }));
       const { error } = await supabase.from('availability_blocks').insert(availabilityToInsert);
       if(error) { console.error('Error adding availability:', error); return { error: `Failed to save availability: ${error.message}` };}
     }
+
     if (unavailability.length > 0) {
       const unavailabilityToInsert = unavailability.map(u => ({ ...u, court_id: courtId }));
       const { error } = await supabase.from('recurring_unavailability').insert(unavailabilityToInsert);
