@@ -77,26 +77,10 @@ export async function addOrganization(formData: FormData) {
     }
   }
 
-  // 3. Link the user to the organization with the 'admin' role
-  const { data: adminRole } = await supabase.from('organisation_roles').select('id').eq('name', 'admin').single();
-  if (!adminRole) {
-      // This is a critical setup issue, we should probably clean up the created org
-      await supabase.from('organisations').delete().eq('id', newOrg.id);
-      return { error: "Could not find 'admin' role. Please ensure it exists in the 'organisation_roles' table."};
-  }
-
-  const { error: linkError } = await supabase.from('user_organisations').insert({
-      user_id: Number(userId),
-      organisation_id: newOrg.id,
-      role_id: adminRole.id,
-  });
-
-  if (linkError) {
-      // Clean up the created org if linking fails
-      await supabase.from('organisations').delete().eq('id', newOrg.id);
-      return { error: `Failed to link owner to organization: ${linkError.message}` };
-  }
-
+  // The user-organization link is now handled by a database trigger.
+  // The manual insertion below is redundant and causes a unique key violation.
+  // By removing it, we rely on the trigger to correctly associate the user.
+  
   revalidatePath('/super-admin/organisations');
   return { success: true };
 }
