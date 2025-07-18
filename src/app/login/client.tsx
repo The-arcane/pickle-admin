@@ -110,6 +110,7 @@ export function LoginForm() {
                         <LoginFormFields userType="employee" />
                         <SubmitButton userType="Employee" />
                     </form>
+                    <p className="mt-4 text-center text-xs text-muted-foreground">Version 1.0.0</p>
                 </CardContent>
             </Card>
         </TabsContent>
@@ -136,6 +137,7 @@ export function LoginForm() {
                         <LoginFormFields userType="admin" />
                         <SubmitButton userType="Admin" />
                     </form>
+                    <p className="mt-4 text-center text-xs text-muted-foreground">Version 1.0.0</p>
                 </CardContent>
             </Card>
         </TabsContent>
@@ -162,6 +164,7 @@ export function LoginForm() {
                         <LoginFormFields userType="super-admin" />
                         <SubmitButton userType="Super Admin" />
                     </form>
+                    <p className="mt-4 text-center text-xs text-muted-foreground">Version 1.0.0</p>
                 </CardContent>
             </Card>
         </TabsContent>
