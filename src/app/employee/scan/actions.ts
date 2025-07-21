@@ -53,7 +53,7 @@ export async function verifyBookingByQrText(qrText: string) {
         const { data: booking, error: fetchError } = await supabase
             .from('bookings')
             .select(`
-                id, booking_status, court_status,
+                id, booking_status,
                 user:user_id(name), 
                 courts:court_id!inner(name, organisation_id), 
                 timeslots:timeslot_id(date, start_time, end_time)
@@ -66,14 +66,14 @@ export async function verifyBookingByQrText(qrText: string) {
             return { error: `Court booking with ID ${qrContentId} not found in your organization.` };
         }
         
-        if (booking.court_status === completedStatusId) {
+        if (booking.booking_status === completedStatusId) {
             return { error: "This court booking has already been marked as completed." };
         }
 
         let newStatusId;
         let successMessage;
 
-        if (booking.court_status === ongoingStatusId) {
+        if (booking.booking_status === ongoingStatusId) {
             newStatusId = completedStatusId;
             successMessage = "Check-out successful (Completed)!";
         } else {
@@ -84,7 +84,7 @@ export async function verifyBookingByQrText(qrText: string) {
 
         const { error: updateError } = await supabase
             .from('bookings')
-            .update({ court_status: newStatusId })
+            .update({ booking_status: newStatusId })
             .eq('id', booking.id);
 
         if (updateError) {
