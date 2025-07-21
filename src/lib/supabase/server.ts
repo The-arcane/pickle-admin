@@ -2,24 +2,18 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export async function createServer(useServiceRoleKey = false) {
+export async function createServer() {
   const cookieStore = cookies();
 
   // Next.js automatically loads variables from .env.local.
   // The `NEXT_PUBLIC_` prefix makes them available to the browser and server.
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseKey = useServiceRoleKey 
-    ? process.env.SUPABASE_SERVICE_ROLE_KEY! 
-    : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   
   if (!supabaseUrl || !supabaseKey) {
     throw new Error("Your project's URL and Key are required to create a Supabase client! Check your .env.local file.");
   }
   
-  if (useServiceRoleKey && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("SUPABASE_SERVICE_ROLE_KEY is not set in your .env.local file. This is required for admin actions.");
-  }
-
   return createServerClient(
     supabaseUrl,
     supabaseKey,

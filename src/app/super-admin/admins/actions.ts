@@ -1,13 +1,43 @@
 
 'use server';
 
-import { createServer } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+
+// Helper to create a dedicated admin client
+function createAdminClient() {
+    const cookieStore = cookies();
+    return createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            cookies: {
+                get(name: string) {
+                    return cookieStore.get(name)?.value;
+                },
+                set(name: string, value: string, options) {
+                    try {
+                        cookieStore.set({ name, value, ...options });
+                    } catch (error) {
+                        // The `set` method was called from a Server Component.
+                    }
+                },
+                remove(name: string, options) {
+                    try {
+                        cookieStore.set({ name, value: '', ...options });
+                    } catch (error) {
+                        // The `delete` method was called from a Server Component.
+                    }
+                },
+            },
+        }
+    );
+}
 
 // This action creates a user with user_type = 2 (Admin)
 export async function addAdmin(formData: FormData) {
-  // Use service role key to bypass RLS for user creation
-  const supabase = await createServer(true); 
+  const supabaseAdmin = createAdminClient();
 
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
@@ -19,11 +49,12 @@ export async function addAdmin(formData: FormData) {
   }
 
   // 1. Create the user in Supabase Auth.
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
     phone: phone || undefined,
     email_confirm: true,
+    user_metadata: { name: name }
   });
   
   if (authError || !authData.user) {
@@ -32,7 +63,7 @@ export async function addAdmin(formData: FormData) {
   }
 
   // 2. The user profile is created via a trigger. Now, update it with the correct details.
-  const { error: profileError } = await supabase
+  const { error: profileError } = await supabaseAdmin
     .from('user')
     .update({
         user_type: 2, // Set user_type to 2 for Admin
@@ -44,7 +75,7 @@ export async function addAdmin(formData: FormData) {
   if (profileError) {
       console.error("Error updating user profile:", profileError);
       // If updating the profile fails, we should delete the auth user to avoid orphaned accounts.
-      await supabase.auth.admin.deleteUser(authData.user.id);
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return { error: `Failed to set user profile as Admin: ${profileError.message}` };
   }
 
@@ -55,7 +86,7 @@ export async function addAdmin(formData: FormData) {
 
 // removeAdmin requires the service role key to delete a user from auth schema.
 export async function removeAdmin(formData: FormData) {
-    const supabase = await createServer(true); // Must use service role for deletion
+    const supabaseAdmin = createAdminClient(); 
 
     const userId = formData.get('user_id') as string;
 
@@ -63,13 +94,13 @@ export async function removeAdmin(formData: FormData) {
         return { error: 'User ID is required.' };
     }
 
-    const { data: user } = await supabase.from('user').select('user_uuid').eq('id', userId).single();
+    const { data: user } = await supabaseAdmin.from('user').select('user_uuid').eq('id', userId).single();
     if (!user) {
         return { error: 'User not found.' };
     }
     
     // Deleting the auth user will cascade and delete the public user and user_organisations link
-    const { error } = await supabase.auth.admin.deleteUser(user.user_uuid);
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(user.user_uuid);
 
     if (error) {
         console.error("Error removing admin:", error);
