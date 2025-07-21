@@ -6,7 +6,6 @@ import { revalidatePath } from 'next/cache';
 import { format, parseISO } from 'date-fns';
 
 const CONFIRMED_STATUS_ID_BOOKING = 1; // Assuming 1 is 'Confirmed' for bookings
-const CONFIRMED_STATUS_ID_EVENT = 1; // Assuming 1 is 'Confirmed' for event bookings
 
 export async function verifyBookingByQrText(qrText: string) {
     const supabase = await createServer();
@@ -48,6 +47,18 @@ export async function verifyBookingByQrText(qrText: string) {
 
     if (bookingType === 'C') {
         // Handle Court Booking
+        const { data: statuses, error: statusError } = await supabase
+            .from('court_status')
+            .select('id, status')
+            .in('status', ['visited', 'completed']);
+
+        if (statusError || !statuses || statuses.length < 2) {
+            return { error: "System configuration error: 'visited' or 'completed' status not found in court_status table." };
+        }
+        
+        const visitedStatusId = statuses.find(s => s.status === 'visited')?.id;
+        const completedStatusId = statuses.find(s => s.status === 'completed')?.id;
+
         const { data: booking, error: fetchError } = await supabase
             .from('bookings')
             .select(`
@@ -64,17 +75,29 @@ export async function verifyBookingByQrText(qrText: string) {
             return { error: `Court booking with ID ${qrContentId} not found in your organization.` };
         }
         
-        if (booking.court_status === 'visited') {
-            return { error: "This court booking has already been checked in." };
+        if (booking.court_status === completedStatusId) {
+            return { error: "This court booking has already been marked as completed." };
         }
+
+        let newStatusId;
+        let successMessage;
+
+        if (booking.court_status === visitedStatusId) {
+            newStatusId = completedStatusId;
+            successMessage = "Check-out successful (Completed)!";
+        } else {
+            newStatusId = visitedStatusId;
+            successMessage = "Check-in successful (Visited)!";
+        }
+
 
         const { error: updateError } = await supabase
             .from('bookings')
-            .update({ booking_status: CONFIRMED_STATUS_ID_BOOKING, court_status: 'visited' })
+            .update({ court_status: newStatusId })
             .eq('id', booking.id);
 
         if (updateError) {
-            return { error: 'Failed to update court booking status.' };
+            return { error: `Failed to update court booking status: ${updateError.message}` };
         }
 
         revalidatePath('/dashboard/bookings');
@@ -89,7 +112,7 @@ export async function verifyBookingByQrText(qrText: string) {
                 date: booking.timeslots?.date ? format(parseISO(booking.timeslots.date), 'PPP') : 'N/A',
                 time: booking.timeslots?.start_time ? `${format(parseISO(booking.timeslots.start_time), 'p')} - ${format(parseISO(booking.timeslots.end_time!), 'p')}` : 'N/A',
             },
-            message: "Check-in successful!"
+            message: successMessage
         };
 
     } else if (bookingType === 'E') {
@@ -121,7 +144,6 @@ export async function verifyBookingByQrText(qrText: string) {
             return { error: `Event booking with ID ${qrContentId} not found in your organization.` };
         }
         
-        // Logic for two-stage scan
         if (eventBooking.statuss === completedStatusId) {
             return { error: "This event booking has already been marked as completed." };
         }
