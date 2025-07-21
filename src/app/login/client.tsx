@@ -31,7 +31,7 @@ function LoginFormFields({ userType }: { userType: string }) {
         <div className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor={emailId}>Email</Label>
-                <Input id={emailId} name="email" type="email" placeholder={`${userType}@example.com`} required />
+                <Input id={emailId} name="email" type="email" placeholder={`${userType}@example.com`} required suppressHydrationWarning />
             </div>
             <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -47,6 +47,7 @@ function LoginFormFields({ userType }: { userType: string }) {
                         type={showPassword ? 'text' : 'password'}
                         placeholder="••••••••"
                         required
+                        suppressHydrationWarning
                     />
                     <button
                         type="button"
