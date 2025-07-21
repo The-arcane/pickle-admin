@@ -93,6 +93,20 @@ export async function verifyBookingByQrText(qrText: string) {
 
     } else if (bookingType === 'E') {
         // Handle Event Booking
+
+        // Dynamically get the ID for the 'visited' status from the new events_status table
+        const { data: visitedStatus, error: visitedStatusError } = await supabase
+            .from('events_status')
+            .select('id')
+            .eq('status', 'visited')
+            .maybeSingle();
+        
+        if (visitedStatusError || !visitedStatus) {
+            return { error: "System configuration error: 'visited' status not found." };
+        }
+        const visitedStatusId = visitedStatus.id;
+
+
         const { data: eventBooking, error: fetchError } = await supabase
             .from('event_bookings')
             .select(`
@@ -108,13 +122,13 @@ export async function verifyBookingByQrText(qrText: string) {
             return { error: `Event booking with ID ${qrContentId} not found in your organization.` };
         }
         
-        if (eventBooking.statuss === 'visited') {
+        if (eventBooking.statuss === visitedStatusId) {
             return { error: "This event booking has already been checked in." };
         }
 
         const { error: updateError } = await supabase
             .from('event_bookings')
-            .update({ status: CONFIRMED_STATUS_ID_EVENT, statuss: 'visited' })
+            .update({ status: CONFIRMED_STATUS_ID_EVENT, statuss: visitedStatusId })
             .eq('id', eventBooking.id);
 
         if (updateError) {
