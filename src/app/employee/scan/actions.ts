@@ -50,13 +50,13 @@ export async function verifyBookingByQrText(qrText: string) {
         const { data: statuses, error: statusError } = await supabase
             .from('court_status')
             .select('id, status')
-            .in('status', ['visited', 'completed']);
+            .in('status', ['ongoing', 'completed']);
 
         if (statusError || !statuses || statuses.length < 2) {
-            return { error: "System configuration error: 'visited' or 'completed' status not found in court_status table." };
+            return { error: "System configuration error: 'ongoing' or 'completed' status not found in court_status table." };
         }
         
-        const visitedStatusId = statuses.find(s => s.status === 'visited')?.id;
+        const ongoingStatusId = statuses.find(s => s.status === 'ongoing')?.id;
         const completedStatusId = statuses.find(s => s.status === 'completed')?.id;
 
         const { data: booking, error: fetchError } = await supabase
@@ -82,12 +82,12 @@ export async function verifyBookingByQrText(qrText: string) {
         let newStatusId;
         let successMessage;
 
-        if (booking.court_status === visitedStatusId) {
+        if (booking.court_status === ongoingStatusId) {
             newStatusId = completedStatusId;
             successMessage = "Check-out successful (Completed)!";
         } else {
-            newStatusId = visitedStatusId;
-            successMessage = "Check-in successful (Visited)!";
+            newStatusId = ongoingStatusId;
+            successMessage = "Check-in successful (Ongoing)!";
         }
 
 
