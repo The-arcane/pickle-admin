@@ -30,10 +30,10 @@ export function QrScannerClient() {
   const router = useRouter();
 
   useEffect(() => {
-    if (scanResult?.success) {
+    if (scanResult) { // Set timer for any result
       redirectTimerRef.current = setTimeout(() => {
-        router.push('/employee/dashboard');
-      }, 5000); // Increased redirect time slightly
+        resetScanner(); // Reset scanner instead of redirecting
+      }, 5000); 
     }
     // Cleanup the timer if the component unmounts
     return () => {
@@ -41,7 +41,7 @@ export function QrScannerClient() {
         clearTimeout(redirectTimerRef.current);
       }
     };
-  }, [scanResult, router]);
+  }, [scanResult]);
 
   const handleDecode = useCallback(async (result: QrScanner.ScanResult) => {
     if (isProcessing) return;
@@ -55,8 +55,8 @@ export function QrScannerClient() {
             setScanResult({ success: false, message: serverResult.error });
             toast({ variant: "destructive", title: "Verification Failed", description: serverResult.error });
         } else if (serverResult.success && serverResult.data) {
-            setScanResult({ success: true, data: serverResult.data as ScanResultData, message: "Booking Verified!" });
-            toast({ title: "Booking Verified!", description: `Booking for ${serverResult.data.user} confirmed.` });
+            setScanResult({ success: true, data: serverResult.data as ScanResultData, message: serverResult.message || "Action Successful!" });
+            toast({ title: "Success!", description: serverResult.message });
         }
     } catch (e) {
         const errorMessage = "An unexpected error occurred during verification.";
@@ -65,6 +65,18 @@ export function QrScannerClient() {
     }
 
   }, [isProcessing, toast]);
+
+    const resetScanner = useCallback(() => {
+        if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+        }
+        setScanResult(null);
+        setIsProcessing(false);
+        if (hasCameraPermission) {
+           scannerRef.current?.start();
+        }
+    }, [hasCameraPermission]);
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -101,16 +113,6 @@ export function QrScannerClient() {
     };
   }, [handleDecode, toast]);
 
-  const resetScanner = () => {
-    if (redirectTimerRef.current) {
-      clearTimeout(redirectTimerRef.current);
-      redirectTimerRef.current = null;
-    }
-    setScanResult(null);
-    setIsProcessing(false);
-    scannerRef.current?.start();
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -144,21 +146,22 @@ export function QrScannerClient() {
               <CardHeader className="text-center">
                   <CardTitle className={`flex items-center justify-center gap-2 ${scanResult.success ? 'text-green-600' : 'text-red-600'}`}>
                       {scanResult.success ? <CheckCircle /> : <XCircle />}
-                      {scanResult.success ? "Verified" : "Verification Failed"}
+                      {scanResult.success ? "Success" : "Verification Failed"}
                   </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                   {scanResult.success && scanResult.data ? (
                     <div className="text-left space-y-2">
+                        <p className="font-semibold text-center pb-2">{scanResult.message}</p>
                         <p><strong>Type:</strong> {scanResult.data.type}</p>
                         <p><strong>User:</strong> {scanResult.data.user}</p>
                         <p><strong>Item:</strong> {scanResult.data.item}</p>
                         <p><strong>Details:</strong> {scanResult.data.date}</p>
                         <p><strong>More Details:</strong> {scanResult.data.time}</p>
-                        <p className="pt-2 text-center text-xs text-muted-foreground">You will be redirected to the dashboard shortly.</p>
+                        <p className="pt-2 text-center text-xs text-muted-foreground">This message will disappear and scanner will reset shortly.</p>
                         <Button onClick={resetScanner} className="w-full mt-4" variant="outline">
                            <ScanLine className="mr-2 h-4 w-4" />
-                           Scan Another QR Code
+                           Scan Another QR Code Now
                         </Button>
                     </div>
                   ) : (
@@ -166,7 +169,7 @@ export function QrScannerClient() {
                       <p className="text-center">{scanResult.message}</p>
                        <Button onClick={resetScanner} className="w-full mt-4" variant="outline">
                         <ScanLine className="mr-2 h-4 w-4" />
-                        Scan Another QR Code
+                        Try Scanning Again
                       </Button>
                     </>
                   )}
