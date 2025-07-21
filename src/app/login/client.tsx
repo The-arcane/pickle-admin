@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 function SubmitButton({ userType }: { userType: string }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full" disabled={pending}>
+    <Button type="submit" className="w-full" disabled={pending} suppressHydrationWarning>
       {pending ? 'Signing In...' : `Sign In as ${userType}`}
     </Button>
   );
@@ -54,6 +54,7 @@ function LoginFormFields({ userType }: { userType: string }) {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                         aria-label={showPassword ? "Hide password" : "Show password"}
+                        suppressHydrationWarning
                     >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
