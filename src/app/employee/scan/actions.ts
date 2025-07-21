@@ -47,17 +47,8 @@ export async function verifyBookingByQrText(qrText: string) {
 
     if (bookingType === 'C') {
         // Handle Court Booking
-        const { data: statuses, error: statusError } = await supabase
-            .from('court_status')
-            .select('id, status')
-            .in('status', ['ongoing', 'completed']);
-
-        if (statusError || !statuses || statuses.length < 2) {
-            return { error: "System configuration error: 'ongoing' or 'completed' status not found in court_status table." };
-        }
-        
-        const ongoingStatusId = statuses.find(s => s.status === 'ongoing')?.id;
-        const completedStatusId = statuses.find(s => s.status === 'completed')?.id;
+        const ongoingStatusId = 6;
+        const completedStatusId = 4;
 
         const { data: booking, error: fetchError } = await supabase
             .from('bookings')
