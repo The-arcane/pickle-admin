@@ -54,7 +54,12 @@ export async function addAdmin(formData: FormData) {
     password,
     phone: phone || undefined,
     email_confirm: true,
-    user_metadata: { name: name }
+    user_metadata: { name: name },
+    // This is a security override needed when creating users with the service role key
+    // if the "Allow new users to sign up" setting is disabled in your Supabase project.
+    gotrue_meta_security: {
+        "x-real-ip":"127.0.0.1",
+    }
   });
   
   if (authError || !authData.user) {
