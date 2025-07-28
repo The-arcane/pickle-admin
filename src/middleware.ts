@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { getSiteURL } from '@/lib/get-site-url';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -45,12 +46,7 @@ export async function middleware(request: NextRequest) {
 
   // If the user is not logged in and is trying to access a protected route
   if (!user && isProtected) {
-    // Exclude login pages from the redirect loop
-    if (pathname.startsWith('/login')) {
-      return response;
-    }
-
-    const redirectUrl = new URL('/login', request.url);
+    const redirectUrl = new URL('/login', getSiteURL());
     if (pathname.startsWith('/super-admin')) {
       redirectUrl.searchParams.set('type', 'super-admin');
     } else if (pathname.startsWith('/employee')) {

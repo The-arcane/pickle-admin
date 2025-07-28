@@ -85,8 +85,6 @@ export async function inviteResidents(formData: FormData) {
   const existingEmailsForOrg = new Set(existingInvites.map(i => i.email));
 
   // 5. Prepare residence records for NEW invites only.
-  // This logic assumes the unique constraint on the 'phone' column has been removed from the 'residences' table,
-  // allowing a user to be invited to multiple organizations.
   const residencesToInsert = residentsDataFromCsv
     .filter(resident => !existingEmailsForOrg.has(resident.email!))
     .map(resident => ({
@@ -108,10 +106,6 @@ export async function inviteResidents(formData: FormData) {
 
     if (insertError) {
         console.error("Error inserting residences:", insertError);
-        // Provide a more helpful error message for the unique phone constraint
-        if (insertError.message.includes('residences_phone_key')) {
-            return { error: 'A phone number in the CSV already exists in another organization. To allow this, the unique constraint on the `phone` column in the `residences` table must be removed from your database.' };
-        }
         return { error: `An unexpected error occurred during invitations: ${insertError.message}.` };
     }
     successCount = insertedData?.length ?? 0;
