@@ -5,7 +5,7 @@ import { createServerClient } from '@supabase/ssr';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
-// Helper to create a dedicated admin client
+// Helper to create a dedicated admin client with service_role key
 function createAdminClient() {
     const cookieStore = cookies();
     return createServerClient(
