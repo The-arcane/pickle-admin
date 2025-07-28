@@ -70,6 +70,7 @@ function getEventDataFromFormData(formData: FormData) {
         requires_login: formData.get('requires_login') === 'on',
         requires_invitation_code: formData.get('requires_invitation_code') === 'on',
         is_discoverable: formData.get('is_discoverable') === 'on',
+        is_public: formData.get('is_public') === 'on',
         max_bookings_per_user: getNullOrNumber('max_bookings_per_user'),
         max_total_capacity: getNullOrNumber('max_total_capacity'),
     };
@@ -182,10 +183,20 @@ export async function updateEvent(formData: FormData) {
     if (!id) return { error: 'Event ID is missing.' };
 
     const { data: existingEvent } = await supabase.from('events').select('organiser_org_id').eq('id', id).single();
-    if (!existingEvent) return { error: 'Event not found.' };
-
+    
     const eventUpdateData = getEventDataFromFormData(formData) as any;
     
+    // If the event doesn't exist, remove the ID and create it.
+    if (!existingEvent) {
+      delete eventUpdateData.id; 
+      // Re-route to addEvent logic if needed, or handle creation here.
+      // For simplicity, we'll just show an error if it's an update attempt on a non-existent event.
+      // This part of the logic might need refinement based on desired UX.
+      // A more robust solution might call addEvent directly.
+      return { error: 'Event not found. Cannot update.' };
+    }
+
+
     // --- Handle Image Upload ---
     const coverImageFile = formData.get('cover_image_file') as File | null;
     const coverImageUrl = await handleEventImageUpload(supabase, coverImageFile, id.toString());
