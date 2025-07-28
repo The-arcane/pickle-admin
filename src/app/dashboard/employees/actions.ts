@@ -1,41 +1,12 @@
+
 'use server';
 
-import { createServerClient } from '@supabase/ssr';
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-
-// Helper to create a dedicated admin client
-function createAdminClient() {
-    const cookieStore = cookies();
-    return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        {
-            cookies: {
-                get(name: string) {
-                    return cookieStore.get(name)?.value;
-                },
-                set(name: string, value: string, options) {
-                    try {
-                        cookieStore.set({ name, value, ...options });
-                    } catch (error) {
-                        // The `set` method was called from a Server Component.
-                    }
-                },
-                remove(name: string, options) {
-                    try {
-                        cookieStore.set({ name, value: '', ...options });
-                    } catch (error) {
-                        // The `delete` method was called from a Server Component.
-                    }
-                },
-            },
-        }
-    );
-}
+import { createServer, createServiceRoleServer } from '@/lib/supabase/server';
 
 export async function addEmployee(formData: FormData) {
-  const supabaseAdmin = createAdminClient();
+  const supabase = createServer(); // For getting current user
+  const supabaseAdmin = createServiceRoleServer(); // For creating a new user
 
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
@@ -48,11 +19,11 @@ export async function addEmployee(formData: FormData) {
   }
   
   // Get the current logged-in user (the admin) who will be the manager.
-  const { data: { user: adminUser } } = await supabaseAdmin.auth.getUser();
+  const { data: { user: adminUser } } = await supabase.auth.getUser();
   if (!adminUser) {
     return { error: 'You must be logged in to add an employee.' };
   }
-  const { data: managerProfile } = await supabaseAdmin.from('user').select('id').eq('user_uuid', adminUser.id).single();
+  const { data: managerProfile } = await supabase.from('user').select('id').eq('user_uuid', adminUser.id).single();
    if (!managerProfile) {
     return { error: 'Could not find your admin profile.' };
   }
@@ -171,7 +142,7 @@ export async function addEmployee(formData: FormData) {
 
 
 export async function removeEmployee(formData: FormData) {
-    const supabaseAdmin = createAdminClient();
+    const supabaseAdmin = createServiceRoleServer();
     const userId = formData.get('user_id') as string;
 
     if (!userId) {

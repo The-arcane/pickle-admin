@@ -7,7 +7,7 @@ import Papa from 'papaparse';
 
 // This action handles inviting new residents in bulk from a CSV file.
 export async function inviteResidents(formData: FormData) {
-  const supabase = await createServer();
+  const supabase = createServer();
 
   // 1. Get current user to set as 'invited_by'
   const { data: { user: inviter } } = await supabase.auth.getUser();
@@ -93,7 +93,7 @@ export async function inviteResidents(formData: FormData) {
         status: 'invited',
         "Name": resident.Name,
         email: resident.email,
-        phone: resident.phone ? Number(resident.phone) : null,
+        phone: resident.phone,
         user_id: null
     }));
     

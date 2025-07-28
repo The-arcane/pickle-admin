@@ -1,43 +1,12 @@
 
 'use server';
 
-import { createServerClient } from '@supabase/ssr';
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-
-// Helper to create a dedicated admin client with service_role key
-function createAdminClient() {
-    const cookieStore = cookies();
-    return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        {
-            cookies: {
-                get(name: string) {
-                    return cookieStore.get(name)?.value;
-                },
-                set(name: string, value: string, options) {
-                    try {
-                        cookieStore.set({ name, value, ...options });
-                    } catch (error) {
-                        // The `set` method was called from a Server Component.
-                    }
-                },
-                remove(name: string, options) {
-                    try {
-                        cookieStore.set({ name, value: '', ...options });
-                    } catch (error) {
-                        // The `delete` method was called from a Server Component.
-                    }
-                },
-            },
-        }
-    );
-}
+import { createServiceRoleServer } from '@/lib/supabase/server';
 
 // This action creates a user with user_type = 2 (Admin)
 export async function addAdmin(formData: FormData) {
-  const supabaseAdmin = createAdminClient();
+  const supabaseAdmin = createServiceRoleServer();
 
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
@@ -91,7 +60,7 @@ export async function addAdmin(formData: FormData) {
 
 // removeAdmin requires the service role key to delete a user from auth schema.
 export async function removeAdmin(formData: FormData) {
-    const supabaseAdmin = createAdminClient(); 
+    const supabaseAdmin = createServiceRoleServer(); 
 
     const userId = formData.get('user_id') as string;
 

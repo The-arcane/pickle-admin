@@ -1,39 +1,16 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { getSiteURL } from '@/lib/get-site-url';
+import { createServer } from '@/lib/supabase/server';
+import { getSiteURL } from './lib/get-site-url';
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
+  const { supabase, response } = {
+    supabase: await createServer(),
+    response: NextResponse.next({
+        request: {
+          headers: request.headers,
         },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options });
-          response = NextResponse.next({
-            request: { headers: request.headers },
-          });
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: '', ...options });
-          response = NextResponse.next({
-            request: { headers: request.headers },
-          });
-          response.cookies.set({ name, value: '', ...options });
-        },
-      },
-    }
-  );
+      }),
+    };
 
   const { data: { session } } = await supabase.auth.getSession();
   const { pathname } = request.nextUrl;
@@ -43,7 +20,7 @@ export async function middleware(request: NextRequest) {
   // Define protected routes
   const protectedPaths = ['/dashboard', '/super-admin', '/employee'];
   const isProtected = protectedPaths.some(path => pathname.startsWith(path));
-
+  
   // If the user is not logged in and is trying to access a protected route
   if (!user && isProtected) {
     const redirectUrl = new URL('/login', getSiteURL());
@@ -54,6 +31,24 @@ export async function middleware(request: NextRequest) {
     }
     return NextResponse.redirect(redirectUrl);
   }
+
+  // If user is logged in, prevent access to login pages
+  if (user && pathname.startsWith('/login')) {
+      const { data: userProfile } = await supabase
+        .from('user')
+        .select('user_type')
+        .eq('user_uuid', user.id)
+        .single();
+        
+      if(userProfile) {
+        switch (userProfile.user_type) {
+            case 2: return NextResponse.redirect(new URL('/dashboard', getSiteURL()));
+            case 3: return NextResponse.redirect(new URL('/super-admin/dashboard', getSiteURL()));
+            case 4: return NextResponse.redirect(new URL('/employee/dashboard', getSiteURL()));
+        }
+      }
+  }
+
 
   return response;
 }
