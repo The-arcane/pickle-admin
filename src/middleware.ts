@@ -1,6 +1,5 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { getSiteURL } from '@/lib/get-site-url';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -32,9 +31,6 @@ export async function middleware(request: NextRequest) {
           response.cookies.set({ name, value: '', ...options });
         },
       },
-      auth: {
-        redirectTo: getSiteURL(),
-      }
     }
   );
 
