@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
   // If the user is not logged in and is trying to access a protected route
   if (!user && isProtected) {
     // Exclude login pages from the redirect loop
-    if (pathname.startsWith('/login') || pathname.startsWith('/super-admin/login')) {
+    if (pathname.startsWith('/login')) {
       return response;
     }
 
