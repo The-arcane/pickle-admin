@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/status-badge';
-import { Trash2, PlusCircle, MoreHorizontal } from 'lucide-react';
+import { Trash2, PlusCircle, MoreHorizontal, Briefcase } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -118,9 +118,12 @@ export function EmployeesClientPage({
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Employees</h1>
-                    <p className="text-muted-foreground">Manage employees for your organization.</p>
+                <div className="flex items-center gap-3">
+                    <Briefcase className="h-8 w-8 text-orange-500" />
+                    <div>
+                        <h1 className="text-3xl font-bold">Employees</h1>
+                        <p className="text-muted-foreground">Manage employees for your organization.</p>
+                    </div>
                 </div>
                 <Button onClick={() => setIsAddDialogOpen(true)}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Employee
@@ -237,3 +240,5 @@ export function EmployeesClientPage({
         </div>
     )
 }
+
+    

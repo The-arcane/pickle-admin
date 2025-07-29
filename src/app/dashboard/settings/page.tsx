@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Edit } from 'lucide-react';
+import { Edit, Settings } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { ThemeSelect } from '@/components/theme-select';
 import { LogoutButton } from '@/components/logout-button';
@@ -8,11 +8,14 @@ import { LogoutButton } from '@/components/logout-button';
 export default function SettingsPage() {
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">
-          Control how and where you receive updates and recommendations.
-        </p>
+      <div className="flex items-center gap-3">
+        <Settings className="h-8 w-8 text-gray-500" />
+        <div>
+            <h1 className="text-3xl font-bold">Settings</h1>
+            <p className="text-muted-foreground">
+              Control how and where you receive updates and recommendations.
+            </p>
+        </div>
       </div>
 
       <Separator />
@@ -85,3 +88,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    

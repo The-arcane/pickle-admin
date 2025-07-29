@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
-import { Pencil } from 'lucide-react';
+import { Pencil, Users } from 'lucide-react';
 import { updateUser } from './actions';
 import { useToast } from "@/hooks/use-toast";
 
@@ -65,10 +66,13 @@ export function UsersClientPage({ users, error }: { users: User[], error: any })
     <>
       <div className="space-y-8">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Users</h1>
-            <p className="text-muted-foreground">Manage your users and their permissions.</p>
-          </div>
+            <div className="flex items-center gap-3">
+                <Users className="h-8 w-8 text-violet-500" />
+                <div>
+                    <h1 className="text-3xl font-bold">Users</h1>
+                    <p className="text-muted-foreground">Manage your users and their permissions.</p>
+                </div>
+            </div>
         </div>
         <Card>
           <CardContent className="pt-6">
@@ -166,3 +170,5 @@ export function UsersClientPage({ users, error }: { users: User[], error: any })
     </>
   );
 }
+
+    

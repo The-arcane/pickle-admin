@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { MoreHorizontal, PlusCircle, Star } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Star, Contact2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -39,9 +39,12 @@ export function CoachesClientPage({ initialCoaches }: { initialCoaches: Coach[] 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Coaches</h1>
-                    <p className="text-muted-foreground">Manage coaches for your organization.</p>
+                <div className="flex items-center gap-3">
+                    <Contact2 className="h-8 w-8 text-rose-500" />
+                    <div>
+                        <h1 className="text-3xl font-bold">Coaches</h1>
+                        <p className="text-muted-foreground">Manage coaches for your organization.</p>
+                    </div>
                 </div>
                 <Button asChild>
                     <Link href="/dashboard/coaches/add">
@@ -111,3 +114,5 @@ export function CoachesClientPage({ initialCoaches }: { initialCoaches: Coach[] 
         </div>
     );
 }
+
+    

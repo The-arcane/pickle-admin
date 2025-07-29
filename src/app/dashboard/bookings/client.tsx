@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -8,11 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
-import { Calendar as CalendarIcon, Pencil, Search, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Pencil, Search, X, Calendar } from 'lucide-react';
 import { addBooking, updateBooking, getTimeslots } from './actions';
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, formatISO, isEqual, startOfDay } from 'date-fns';
-import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -382,9 +382,12 @@ export function BookingsClientPage({
     <>
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <div>
-                <h1 className="text-3xl font-bold">Bookings</h1>
-                <p className="text-muted-foreground">Manage court and event bookings.</p>
+                <div className="flex items-center gap-3">
+                    <Calendar className="h-8 w-8 text-green-500" />
+                    <div>
+                        <h1 className="text-3xl font-bold">Bookings</h1>
+                        <p className="text-muted-foreground">Manage court and event bookings.</p>
+                    </div>
                 </div>
             </div>
 
@@ -697,3 +700,5 @@ export function BookingsClientPage({
     </>
   );
 }
+
+    

@@ -2,6 +2,7 @@
 import { createServer } from '@/lib/supabase/server';
 import { ResidencesClientPage } from './client';
 import { redirect } from 'next/navigation';
+import { Home } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,9 +62,12 @@ export default async function ResidencesPage() {
     return (
         <div className="space-y-6">
              <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Residences</h1>
-                    <p className="text-muted-foreground">Manage and invite residents to your organization.</p>
+                <div className="flex items-center gap-3">
+                    <Home className="h-8 w-8 text-teal-500" />
+                    <div>
+                        <h1 className="text-3xl font-bold">Residences</h1>
+                        <p className="text-muted-foreground">Manage and invite residents to your organization.</p>
+                    </div>
                 </div>
             </div>
             <ResidencesClientPage 
@@ -74,3 +78,5 @@ export default async function ResidencesPage() {
         </div>
     );
 }
+
+    

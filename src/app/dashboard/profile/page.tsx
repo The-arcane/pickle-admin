@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { createServer } from '@/lib/supabase/server';
+import { User } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
 export default async function ProfilePage() {
@@ -32,9 +33,12 @@ export default async function ProfilePage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Admin Profile</h1>
-        <p className="text-muted-foreground">Manage your profile information and activity.</p>
+      <div className="flex items-center gap-3">
+        <User className="h-8 w-8 text-slate-500" />
+        <div>
+            <h1 className="text-3xl font-bold">Admin Profile</h1>
+            <p className="text-muted-foreground">Manage your profile information and activity.</p>
+        </div>
       </div>
 
       <div className="space-y-1">
@@ -80,3 +84,5 @@ export default async function ProfilePage() {
     </div>
   );
 }
+
+    

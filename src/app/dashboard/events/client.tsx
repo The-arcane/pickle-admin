@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { MoreHorizontal, Pencil, Search, Trash2, Globe, ShieldOff } from 'lucide-react';
+import { MoreHorizontal, Pencil, Search, Trash2, Globe, ShieldOff, PartyPopper } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { deleteEvent } from './actions';
@@ -82,9 +82,12 @@ export function EventsClientPage({ events }: { events: Event[] }) {
   return (
     <>
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold">Event Management</h1>
-                <p className="text-muted-foreground">Manage your events, bookings, and schedules.</p>
+            <div className="flex items-center gap-3">
+                <PartyPopper className="h-8 w-8 text-pink-500" />
+                <div>
+                    <h1 className="text-3xl font-bold">Event Management</h1>
+                    <p className="text-muted-foreground">Manage your events, bookings, and schedules.</p>
+                </div>
             </div>
 
             <div className="flex items-center justify-between gap-4">
@@ -202,3 +205,5 @@ export function EventsClientPage({ events }: { events: Event[] }) {
     </>
   );
 }
+
+    

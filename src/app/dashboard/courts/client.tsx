@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye, Pencil, MoreVertical, Search, Globe, ShieldOff } from 'lucide-react';
+import { Eye, Pencil, MoreVertical, Search, Globe, ShieldOff, List } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusBadge } from '@/components/status-badge';
 
@@ -46,9 +47,12 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
 
   return (
     <div className="space-y-6">
-        <div>
-            <h1 className="text-3xl font-bold">Court Management</h1>
-            <p className="text-muted-foreground">Manage your courts and their availability</p>
+        <div className="flex items-center gap-3">
+            <List className="h-8 w-8 text-amber-500" />
+            <div>
+                <h1 className="text-3xl font-bold">Court Management</h1>
+                <p className="text-muted-foreground">Manage your courts and their availability</p>
+            </div>
         </div>
 
         <div className="flex items-center justify-between gap-4">
@@ -145,3 +149,5 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
     </div>
   );
 }
+
+    
