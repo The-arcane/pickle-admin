@@ -1,3 +1,4 @@
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServer } from '@/lib/supabase/server';
 import { getSiteURL } from './lib/get-site-url';
@@ -19,33 +20,38 @@ export async function middleware(request: NextRequest) {
 
   // Define protected routes
   const protectedPaths = ['/dashboard', '/super-admin', '/employee'];
-  const isProtected = protectedPaths.some(path => pathname.startsWith(path));
+  const isProtected = protectedPaths.some(path => pathname.startsWith(path) && path !== '/super-admin/login');
   
   // If the user is not logged in and is trying to access a protected route
   if (!user && isProtected) {
-    const redirectUrl = new URL('/login', getSiteURL());
+    let redirectUrl;
     if (pathname.startsWith('/super-admin')) {
-      redirectUrl.searchParams.set('type', 'super-admin');
+      redirectUrl = new URL('/super-admin/login', getSiteURL());
     } else if (pathname.startsWith('/employee')) {
-      redirectUrl.searchParams.set('type', 'employee');
+       redirectUrl = new URL('/employee/login', getSiteURL());
+    }
+    else {
+      redirectUrl = new URL('/login', getSiteURL());
     }
     return NextResponse.redirect(redirectUrl);
   }
 
-  // If user is logged in, prevent access to login pages
-  if (user && pathname.startsWith('/login')) {
-      const { data: userProfile } = await supabase
-        .from('user')
-        .select('user_type')
-        .eq('user_uuid', user.id)
-        .single();
-        
-      if(userProfile) {
-        switch (userProfile.user_type) {
-            case 2: return NextResponse.redirect(new URL('/dashboard', getSiteURL()));
-            case 3: return NextResponse.redirect(new URL('/super-admin/dashboard', getSiteURL()));
-            case 4: return NextResponse.redirect(new URL('/employee/dashboard', getSiteURL()));
-        }
+  // If user is logged in, prevent access to their respective login pages
+  if (user) {
+      if (pathname === '/login' || pathname === '/employee/login' || pathname === '/super-admin/login') {
+         const { data: userProfile } = await supabase
+            .from('user')
+            .select('user_type')
+            .eq('user_uuid', user.id)
+            .single();
+            
+          if(userProfile) {
+            switch (userProfile.user_type) {
+                case 2: return NextResponse.redirect(new URL('/dashboard', getSiteURL()));
+                case 3: return NextResponse.redirect(new URL('/super-admin/dashboard', getSiteURL()));
+                case 4: return NextResponse.redirect(new URL('/employee/dashboard', getSiteURL()));
+            }
+          }
       }
   }
 
