@@ -7,16 +7,16 @@ import { BarChart, Calendar, List, Settings, User, Users, PartyPopper, Home, Bri
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: BarChart },
-  { href: '/dashboard/bookings', label: 'Bookings', icon: Calendar },
-  { href: '/dashboard/users', label: 'Users', icon: Users },
-  { href: '/dashboard/employees', label: 'Employees', icon: Briefcase },
-  { href: '/dashboard/residences', label: 'Residences', icon: Home },
-  { href: '/dashboard/courts', label: 'Court List', icon: List },
-  { href: '/dashboard/coaches', label: 'Coaches', icon: Contact2 },
-  { href: '/dashboard/events', label: 'Events', icon: PartyPopper },
-  { href: '/dashboard/profile', label: 'Admin Profile', icon: User },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard', label: 'Dashboard', icon: BarChart, color: 'text-sky-500' },
+  { href: '/dashboard/bookings', label: 'Bookings', icon: Calendar, color: 'text-green-500' },
+  { href: '/dashboard/users', label: 'Users', icon: Users, color: 'text-violet-500' },
+  { href: '/dashboard/employees', label: 'Employees', icon: Briefcase, color: 'text-orange-500' },
+  { href: '/dashboard/residences', label: 'Residences', icon: Home, color: 'text-teal-500' },
+  { href: '/dashboard/courts', label: 'Court List', icon: List, color: 'text-amber-500' },
+  { href: '/dashboard/coaches', label: 'Coaches', icon: Contact2, color: 'text-rose-500' },
+  { href: '/dashboard/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
+  { href: '/dashboard/profile', label: 'Admin Profile', icon: User, color: 'text-slate-500' },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings, color: 'text-gray-500' },
 ];
 
 export function DashboardNav() {
@@ -34,7 +34,7 @@ export function DashboardNav() {
             pathname === item.href && item.href === '/dashboard' && 'bg-muted text-primary'
           )}
         >
-          <item.icon className="h-4 w-4" />
+          <item.icon className={cn("h-4 w-4", item.color)} />
           {item.label}
         </Link>
       ))}
