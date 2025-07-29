@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Calendar, List, Settings, User, Users, PartyPopper, Home, Briefcase, Contact2 } from 'lucide-react';
+import { BarChart, Calendar, List, Settings, User, Users, PartyPopper, Home, Briefcase, Contact2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { href: '/dashboard/courts', label: 'Court List', icon: List, color: 'text-amber-500' },
   { href: '/dashboard/coaches', label: 'Coaches', icon: Contact2, color: 'text-rose-500' },
   { href: '/dashboard/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
+  { href: '/dashboard/channels', label: 'Channels', icon: Radio, color: 'text-indigo-500' },
   { href: '/dashboard/profile', label: 'Admin Profile', icon: User, color: 'text-slate-500' },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings, color: 'text-gray-500' },
 ];
