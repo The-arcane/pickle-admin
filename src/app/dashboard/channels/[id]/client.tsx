@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Radio, PlusCircle, Trash2 } from 'lucide-react';
+import { Radio, PlusCircle, Trash2, Search } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogClose, DialogFooter, DialogDescription, DialogHeader, DialogTitle, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -37,6 +37,7 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
     const isAdding = !channel;
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+    const [userSearch, setUserSearch] = useState('');
 
     const handleFormAction = async (formData: FormData) => {
         const result = await saveChannel(formData);
@@ -68,6 +69,7 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
         } else {
             toast({ title: 'Success', description: 'Members invited successfully.' });
             setSelectedUsers([]);
+            setUserSearch('');
         }
     };
 
@@ -80,7 +82,10 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
         }
     };
 
-    const availableUsersToInvite = users.filter(u => !members.some(m => m.invited_user_id === u.id));
+    const availableUsersToInvite = users.filter(u => 
+        !members.some(m => m.invited_user_id === u.id) &&
+        (u.name?.toLowerCase().includes(userSearch.toLowerCase()) || u.email?.toLowerCase().includes(userSearch.toLowerCase()))
+    );
 
     return (
         <div className="space-y-8">
@@ -151,11 +156,20 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
                             <DialogTrigger asChild>
                                 <Button><PlusCircle className="mr-2 h-4 w-4" /> Invite Members</Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="sm:max-w-md">
                                 <DialogHeader>
                                     <DialogTitle>Invite Members</DialogTitle>
                                     <DialogDescription>Select users to invite to this channel.</DialogDescription>
                                 </DialogHeader>
+                                 <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input 
+                                        placeholder="Search by name or email..." 
+                                        className="pl-10"
+                                        value={userSearch}
+                                        onChange={(e) => setUserSearch(e.target.value)}
+                                    />
+                                </div>
                                 <ScrollArea className="h-72">
                                     <div className="space-y-4 pr-6">
                                     {availableUsersToInvite.map(user => (
@@ -165,7 +179,10 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
                                                     <AvatarImage src={user.profile_image_url ?? undefined} alt={user.name ?? ''} />
                                                     <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                                                 </Avatar>
-                                                <p className="font-medium">{user.name}</p>
+                                                <div>
+                                                    <p className="font-medium text-sm">{user.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                                                </div>
                                             </div>
                                             <Checkbox
                                                 checked={selectedUsers.includes(user.id)}
@@ -179,6 +196,11 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
                                             />
                                         </div>
                                     ))}
+                                     {availableUsersToInvite.length === 0 && (
+                                        <p className="text-center text-sm text-muted-foreground py-4">
+                                            No users found matching your search.
+                                        </p>
+                                    )}
                                     </div>
                                 </ScrollArea>
                                  <DialogFooter>
@@ -186,7 +208,7 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
                                         <Button type="button" variant="outline">Cancel</Button>
                                     </DialogClose>
                                     <DialogClose asChild>
-                                        <Button onClick={handleInviteAction} disabled={selectedUsers.length === 0}>Invite</Button>
+                                        <Button onClick={handleInviteAction} disabled={selectedUsers.length === 0}>Invite ({selectedUsers.length})</Button>
                                     </DialogClose>
                                 </DialogFooter>
                             </DialogContent>
@@ -201,7 +223,10 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
                                             <AvatarImage src={member.user?.profile_image_url ?? undefined} alt={member.user?.name ?? ''} />
                                             <AvatarFallback>{getInitials(member.user?.name)}</AvatarFallback>
                                         </Avatar>
-                                        <p className="font-medium">{member.user?.name}</p>
+                                        <div>
+                                            <p className="font-medium">{member.user?.name}</p>
+                                            <p className="text-xs text-muted-foreground">{member.user?.email}</p>
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <Badge variant="outline" className="capitalize">{member.status}</Badge>

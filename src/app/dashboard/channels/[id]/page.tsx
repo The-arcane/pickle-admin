@@ -13,6 +13,17 @@ export default async function EditChannelPage({ params }: { params: { id: string
     if (!user) {
         return redirect('/login');
     }
+    
+    // Fetch user's own profile to get their organization ID
+    const { data: userProfile } = await supabase.from('user').select('id, user_organisations(organisation_id)').eq('user_uuid', user.id).single();
+    if (!userProfile) {
+        return notFound();
+    }
+    const organisationId = userProfile.user_organisations[0]?.organisation_id;
+    if (!organisationId) {
+        return <p>You are not associated with any organization.</p>;
+    }
+
 
     let channel: Channel | null = null;
     let members = [];
@@ -34,22 +45,22 @@ export default async function EditChannelPage({ params }: { params: { id: string
         // Fetch members
         const { data: memberData, error: memberError } = await supabase
             .from('channel_invitations')
-            .select('*, user:invited_user_id(id, name, profile_image_url)')
+            .select('*, user:invited_user_id(id, name, email, profile_image_url)')
             .eq('channel_id', id);
         
         if(memberError) console.error("Error fetching members:", memberError);
         else members = memberData;
         
-        // Fetch users in the same organization for inviting
-        const { data: orgUsers, error: orgUsersError } = await supabase
-            .from('user_organisations')
-            .select('user!inner(id, name, profile_image_url)')
-            .eq('organisation_id', channel.owner_org_id);
-        
-        if (orgUsersError) console.error("Error fetching org users:", orgUsersError);
-        else usersInOrg = orgUsers.map(u => u.user).filter(Boolean);
-
     }
+    
+    // Fetch users in the same organization for inviting, whether adding or editing
+    const { data: orgUsers, error: orgUsersError } = await supabase
+        .from('user_organisations')
+        .select('user!inner(id, name, email, profile_image_url)')
+        .eq('organisation_id', organisationId);
+    
+    if (orgUsersError) console.error("Error fetching org users:", orgUsersError);
+    else usersInOrg = orgUsers.map(u => u.user).filter(Boolean);
 
     return (
         <EditChannelClientPage
