@@ -49,7 +49,7 @@ export default async function ChannelsPage() {
             visibility,
             type,
             created_at,
-            created_by:user ( name, profile_image_url )
+            created_by:user!realtime_channels_created_by_fkey ( name, profile_image_url )
         `)
         .eq('owner_org_id', organisationId)
         .order('created_at', { ascending: false });
