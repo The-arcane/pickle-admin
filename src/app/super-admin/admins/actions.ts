@@ -24,6 +24,8 @@ export async function addAdmin(formData: FormData) {
     phone: phone || undefined,
     email_confirm: true,
     user_metadata: { name: name },
+    // @ts-ignore
+    data: { bypass_email_provider_block: true },
   });
   
   if (authError || !authData.user) {
