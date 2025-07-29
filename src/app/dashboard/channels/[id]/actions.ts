@@ -93,3 +93,45 @@ export async function deleteChannel(formData: FormData) {
     revalidatePath('/dashboard/channels');
     redirect('/dashboard/channels');
 }
+
+export async function inviteMembers(channelId: string, userIds: number[]) {
+    const supabase = await createServer();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'Not authenticated' };
+
+    const { data: userProfile } = await supabase.from('user').select('id').eq('user_uuid', user.id).single();
+    if (!userProfile) return { error: 'Could not find your profile.' };
+
+    const invitations = userIds.map(userId => ({
+        channel_id: channelId,
+        invited_user_id: userId,
+        invited_by_user_id: userProfile.id,
+    }));
+
+    const { error } = await supabase.from('channel_invitations').insert(invitations);
+    if(error) {
+        console.error("Error inviting members:", error);
+        return { error: 'Could not invite members to the channel.' };
+    }
+
+    revalidatePath(`/dashboard/channels/${channelId}`);
+    return { success: true };
+}
+
+
+export async function removeMember(invitationId: number) {
+    const supabase = await createServer();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'Not authenticated' };
+
+    const { error } = await supabase.from('channel_invitations').delete().eq('id', invitationId);
+
+    if (error) {
+        console.error("Error removing member:", error);
+        return { error: 'Could not remove member from channel.' };
+    }
+    
+    revalidatePath('/dashboard/channels');
+    return { success: true };
+}
