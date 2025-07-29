@@ -36,6 +36,8 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
     const { toast } = useToast();
     const isAdding = !channel;
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isInviteConfirmDialogOpen, setIsInviteConfirmDialogOpen] = useState(false);
+    const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
     const [userSearch, setUserSearch] = useState('');
 
@@ -63,6 +65,18 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
 
     const handleInviteAction = async () => {
         if (!channel || selectedUsers.length === 0) return;
+
+        // If inviting a lot of users, show confirmation dialog
+        if (selectedUsers.length > 20) {
+            setIsInviteConfirmDialogOpen(true);
+            return;
+        }
+
+        await performInvite();
+    };
+
+    const performInvite = async () => {
+        if (!channel) return;
         const result = await inviteMembers(channel.id, selectedUsers);
         if(result?.error) {
             toast({ variant: 'destructive', title: 'Error', description: result.error });
@@ -70,7 +84,9 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
             toast({ title: 'Success', description: 'Members invited successfully.' });
             setSelectedUsers([]);
             setUserSearch('');
+            setIsInviteDialogOpen(false); // Close the main dialog after successful invite
         }
+        setIsInviteConfirmDialogOpen(false); // Close confirmation dialog regardless of outcome
     };
 
     const handleRemoveMemberAction = async (invitationId: number) => {
@@ -86,6 +102,14 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
         !members.some(m => m.invited_user_id === u.id) &&
         (u.name?.toLowerCase().includes(userSearch.toLowerCase()) || u.email?.toLowerCase().includes(userSearch.toLowerCase()))
     );
+
+    const handleSelectAll = () => {
+        setSelectedUsers(availableUsersToInvite.map(u => u.id));
+    };
+
+    const handleDeselectAll = () => {
+        setSelectedUsers([]);
+    }
 
     return (
         <div className="space-y-8">
@@ -152,7 +176,7 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
                             <CardTitle>Channel Members</CardTitle>
                             <CardDescription>Users who have been invited to this channel.</CardDescription>
                         </div>
-                        <Dialog>
+                        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                             <DialogTrigger asChild>
                                 <Button><PlusCircle className="mr-2 h-4 w-4" /> Invite Members</Button>
                             </DialogTrigger>
@@ -169,6 +193,10 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
                                         value={userSearch}
                                         onChange={(e) => setUserSearch(e.target.value)}
                                     />
+                                </div>
+                                <div className="flex justify-between items-center text-xs">
+                                    <Button variant="link" size="sm" onClick={handleSelectAll}>Select All ({availableUsersToInvite.length})</Button>
+                                    <Button variant="link" size="sm" onClick={handleDeselectAll} disabled={selectedUsers.length === 0}>Clear Selection</Button>
                                 </div>
                                 <ScrollArea className="h-72">
                                     <div className="space-y-4 pr-6">
@@ -207,9 +235,7 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
                                     <DialogClose asChild>
                                         <Button type="button" variant="outline">Cancel</Button>
                                     </DialogClose>
-                                    <DialogClose asChild>
-                                        <Button onClick={handleInviteAction} disabled={selectedUsers.length === 0}>Invite ({selectedUsers.length})</Button>
-                                    </DialogClose>
+                                    <Button onClick={handleInviteAction} disabled={selectedUsers.length === 0}>Invite ({selectedUsers.length})</Button>
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>
@@ -263,6 +289,21 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDeleteAction} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={isInviteConfirmDialogOpen} onOpenChange={setIsInviteConfirmDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Bulk Invitation</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            You are about to invite {selectedUsers.length} users to this channel. Are you sure you want to proceed?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={performInvite}>Confirm & Invite</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
