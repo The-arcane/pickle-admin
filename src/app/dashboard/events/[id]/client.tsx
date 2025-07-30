@@ -116,8 +116,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
             toast({ variant: "destructive", title: "Error", description: result.error });
         } else {
             toast({ title: "Success", description: `Event ${isAdding ? 'added' : 'updated'} successfully.` });
-            router.push('/dashboard/events');
-            router.refresh();
+            // The action will handle redirection on success
         }
     };
     
