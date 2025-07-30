@@ -1,6 +1,7 @@
 
 export const getSiteURL = () => {
     let url =
+      process.env.NEXT_PUBLIC_SITE_URL ?? // Set this to your local URL in .env.local
       process.env.NEXT_PUBLIC_VERCEL_URL ?? // Vercel deployment URL
       process.env.URL ??                    // Netlify deployment URL
       'http://localhost:9002';
