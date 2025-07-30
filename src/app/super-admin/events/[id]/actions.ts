@@ -1,7 +1,9 @@
+
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import type { SubEvent, WhatToBringItem } from './types';
 
 // Helper to upload a file to Supabase Storage for events
@@ -72,6 +74,7 @@ function getEventDataFromFormData(formData: FormData) {
         requires_login: formData.get('requires_login') === 'on',
         requires_invitation_code: formData.get('requires_invitation_code') === 'on',
         is_discoverable: formData.get('is_discoverable') === 'on',
+        is_public: formData.get('is_public') === 'on',
         max_bookings_per_user: getNullOrNumber('max_bookings_per_user'),
         max_total_capacity: getNullOrNumber('max_total_capacity'),
     };
@@ -82,6 +85,10 @@ export async function addEvent(formData: FormData) {
   
   try {
     const eventData = getEventDataFromFormData(formData);
+    
+    if (!eventData.organiser_org_id && !eventData.organiser_user_id) {
+        return { error: 'An event must have an organizer (either an organization or a user).' };
+    }
     
     // --- 1. Insert the main event record (without image first) ---
     const { data: newEvent, error: eventError } = await supabase
@@ -124,20 +131,24 @@ export async function addEvent(formData: FormData) {
       const mainEventDateString = eventData.start_time ? new Date(eventData.start_time).toISOString().split('T')[0] : null;
       const createTimestamp = (timeStr: string | null | undefined) => !timeStr || !mainEventDateString ? null : new Date(`${mainEventDateString}T${timeStr}:00.000Z`).toISOString();
       
-      const toInsert = subEvents.map(item => ({ 
+      const toInsert = subEvents.filter(s => s.title).map(item => ({ 
           event_id: eventId,
           title: item.title || null,
           start_time: createTimestamp(item.start_time),
           end_time: createTimestamp(item.end_time),
       }));
-      const { error } = await supabase.from('event_sub_events').insert(toInsert);
-      if(error) { console.error('Error adding sub-events:', error); return { error: `Failed to save sub-events: ${error.message}` }; }
+      if (toInsert.length > 0) {
+        const { error } = await supabase.from('event_sub_events').insert(toInsert);
+        if(error) { console.error('Error adding sub-events:', error); return { error: `Failed to save sub-events: ${error.message}` }; }
+      }
     }
 
     if (whatToBring.length > 0) {
-      const toInsert = whatToBring.map(item => ({ item: item.item, event_id: eventId }));
-      const { error } = await supabase.from('event_what_to_bring').insert(toInsert);
-      if(error) { console.error('Error adding what to bring:', error); return { error: `Failed to save what to bring list: ${error.message}` };}
+      const toInsert = whatToBring.filter(s => s.item).map(item => ({ item: item.item, event_id: eventId }));
+      if (toInsert.length > 0) {
+        const { error } = await supabase.from('event_what_to_bring').insert(toInsert);
+        if(error) { console.error('Error adding what to bring:', error); return { error: `Failed to save what to bring list: ${error.message}` };}
+      }
     }
 
   } catch (e: any) {
@@ -146,7 +157,7 @@ export async function addEvent(formData: FormData) {
   }
 
   revalidatePath('/super-admin/events');
-  return { success: true };
+  redirect('/super-admin/events');
 }
 
 export async function updateEvent(formData: FormData) {
@@ -181,11 +192,12 @@ export async function updateEvent(formData: FormData) {
         const { error } = await supabase.from('event_sub_events').delete().in('id', toDelete);
         if (error) { return { error: `Failed to delete old sub-events: ${error.message}` }; }
     }
-    if(subEvents.length > 0) {
+    const subEventsToUpsert = subEvents.filter(s => s.title);
+    if(subEventsToUpsert.length > 0) {
         const mainEventDateString = eventUpdateData.start_time ? new Date(eventUpdateData.start_time).toISOString().split('T')[0] : null;
         const createTimestamp = (timeStr: string | null | undefined) => !timeStr || !mainEventDateString ? null : new Date(`${mainEventDateString}T${timeStr}:00.000Z`).toISOString();
         
-        const toUpsert = subEvents.map(item => {
+        const toUpsert = subEventsToUpsert.map(item => {
             const record: any = { event_id: id, title: item.title, start_time: createTimestamp(item.start_time), end_time: createTimestamp(item.end_time) };
             if (item.id) record.id = item.id;
             return record;
@@ -205,8 +217,9 @@ export async function updateEvent(formData: FormData) {
         const { error } = await supabase.from('event_what_to_bring').delete().in('id', bringToDelete);
         if (error) { return { error: `Failed to delete old "what to bring" items: ${error.message}` }; }
     }
-    if(whatToBring.length > 0) {
-      const toUpsert = whatToBring.map(item => {
+    const bringToUpsert = whatToBring.filter(s => s.item);
+    if(bringToUpsert.length > 0) {
+      const toUpsert = bringToUpsert.map(item => {
         const record: any = { item: item.item, event_id: id };
         if (item.id) record.id = item.id;
         return record;
@@ -222,7 +235,7 @@ export async function updateEvent(formData: FormData) {
 
   revalidatePath('/super-admin/events');
   revalidatePath(`/super-admin/events/${id}`);
-  return { success: true };
+  redirect('/super-admin/events');
 }
 
 
