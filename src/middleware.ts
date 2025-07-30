@@ -17,44 +17,53 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const user = session?.user;
+  const siteUrl = getSiteURL();
 
-  // Define protected routes
-  const protectedPaths = ['/dashboard', '/super-admin', '/employee'];
-  const isProtected = protectedPaths.some(path => pathname.startsWith(path) && path !== '/super-admin/login');
+  const protectedPaths = {
+      dashboard: '/dashboard',
+      superAdmin: '/super-admin',
+      employee: '/employee'
+  };
+
+  const isProtectedRoute = Object.values(protectedPaths).some(p => pathname.startsWith(p));
   
-  // If the user is not logged in and is trying to access a protected route
-  if (!user && isProtected) {
+  if (!user && isProtectedRoute) {
     let redirectUrl;
-    if (pathname.startsWith('/super-admin')) {
-      redirectUrl = new URL('/super-admin/login', getSiteURL());
-    } else if (pathname.startsWith('/employee')) {
-       redirectUrl = new URL('/employee/login', getSiteURL());
-    }
-    else {
-      redirectUrl = new URL('/login', getSiteURL());
+    if (pathname.startsWith(protectedPaths.superAdmin)) {
+      redirectUrl = new URL('/login?type=super-admin', siteUrl);
+    } else if (pathname.startsWith(protectedPaths.employee)) {
+      redirectUrl = new URL('/login?type=employee', siteUrl);
+    } else {
+      redirectUrl = new URL('/login', siteUrl);
     }
     return NextResponse.redirect(redirectUrl);
   }
 
-  // If user is logged in, prevent access to their respective login pages
   if (user) {
-      if (pathname === '/login' || pathname === '/employee/login' || pathname === '/super-admin/login') {
-         const { data: userProfile } = await supabase
-            .from('user')
-            .select('user_type')
-            .eq('user_uuid', user.id)
-            .single();
-            
-          if(userProfile) {
-            switch (userProfile.user_type) {
-                case 2: return NextResponse.redirect(new URL('/dashboard', getSiteURL()));
-                case 3: return NextResponse.redirect(new URL('/super-admin/dashboard', getSiteURL()));
-                case 4: return NextResponse.redirect(new URL('/employee/dashboard', getSiteURL()));
-            }
-          }
-      }
-  }
+    const { data: userProfile } = await supabase
+        .from('user')
+        .select('user_type')
+        .eq('user_uuid', user.id)
+        .single();
+    
+    // Redirect logged-in users from login pages to their respective dashboards
+    if (pathname.startsWith('/login')) {
+      if (userProfile?.user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
+      if (userProfile?.user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
+      if (userProfile?.user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
+    }
 
+    // Enforce role-based access to protected routes
+    if (pathname.startsWith(protectedPaths.dashboard) && userProfile?.user_type !== 2) {
+      return NextResponse.redirect(new URL('/login?error=Access%20Denied', siteUrl));
+    }
+    if (pathname.startsWith(protectedPaths.superAdmin) && userProfile?.user_type !== 3) {
+      return NextResponse.redirect(new URL('/login?type=super-admin&error=Access%20Denied', siteUrl));
+    }
+    if (pathname.startsWith(protectedPaths.employee) && userProfile?.user_type !== 4) {
+      return NextResponse.redirect(new URL('/login?type=employee&error=Access%20Denied', siteUrl));
+    }
+  }
 
   return response;
 }

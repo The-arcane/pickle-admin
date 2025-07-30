@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
@@ -14,7 +15,12 @@ export async function login(formData: FormData) {
         password,
     });
     
-    const loginUrl = userTypeTarget === 'employee' ? '/login?type=employee' : (userTypeTarget === 'super-admin' ? '/login?type=super-admin' : '/login');
+    let loginUrl = '/login';
+    if (userTypeTarget === 'employee') {
+        loginUrl = '/login?type=employee';
+    } else if (userTypeTarget === 'super-admin') {
+        loginUrl = '/login?type=super-admin';
+    }
 
     if (error || !user) {
         return redirect(`${loginUrl}&error=${encodeURIComponent(error?.message || 'Invalid login credentials.')}`);
@@ -22,7 +28,7 @@ export async function login(formData: FormData) {
 
     const { data: userProfile, error: profileError } = await supabase
         .from('user')
-        .select('id, user_type')
+        .select('user_type, user_organisations(organisation_id)')
         .eq('user_uuid', user.id)
         .single();
     
@@ -31,41 +37,39 @@ export async function login(formData: FormData) {
         return redirect(`${loginUrl}&error=${encodeURIComponent('Could not retrieve user profile. Please contact an administrator.')}`);
     }
 
-    const { user_type, id: userId } = userProfile;
+    const { user_type, user_organisations } = userProfile;
+    const organisationId = user_organisations[0]?.organisation_id;
 
-    // Check if the user's role matches the login form they used
-    switch (userTypeTarget) {
-        case 'super-admin':
-            if (user_type !== 3) {
+    // Check if the user's role matches the login form they used and redirect
+    switch (user_type) {
+        case 2: // Admin
+            if (userTypeTarget !== 'admin') {
                 await supabase.auth.signOut();
-                return redirect(`/login?type=super-admin&error=${encodeURIComponent('Access Denied. You are not registered as a Super Admin.')}`);
+                return redirect(`${loginUrl}&error=${encodeURIComponent('Access Denied. Please use the Admin login form.')}`);
             }
-            return redirect('/super-admin/dashboard');
-        case 'admin':
-             if (user_type !== 2) {
-                await supabase.auth.signOut();
-                return redirect(`/login?error=${encodeURIComponent('Access Denied. You are not registered as an Admin.')}`);
-            }
-            // Check if the admin is associated with an organization
-            const { data: orgLink } = await supabase
-                .from('user_organisations')
-                .select('organisation_id')
-                .eq('user_id', userId)
-                .maybeSingle();
-
-            if (!orgLink?.organisation_id) {
-                await supabase.auth.signOut();
-                return redirect(`/login?error=${encodeURIComponent('Admin profile is not associated with any organization.')}`);
+            if (!organisationId) {
+                 await supabase.auth.signOut();
+                 return redirect(`/login?error=${encodeURIComponent('Admin profile is not associated with any organization.')}`);
             }
             return redirect('/dashboard');
-        case 'employee':
-            if (user_type !== 4) {
+        case 3: // Super Admin
+             if (userTypeTarget !== 'super-admin') {
                 await supabase.auth.signOut();
-                return redirect(`/login?type=employee&error=${encodeURIComponent('Access Denied. You are not registered as an Employee.')}`);
+                return redirect(`${loginUrl}&error=${encodeURIComponent('Access Denied. Please use the Super Admin login form.')}`);
+            }
+            return redirect('/super-admin/dashboard');
+        case 4: // Employee
+             if (userTypeTarget !== 'employee') {
+                await supabase.auth.signOut();
+                return redirect(`${loginUrl}&error=${encodeURIComponent('Access Denied. Please use the Employee login form.')}`);
+            }
+             if (!organisationId) {
+                 await supabase.auth.signOut();
+                 return redirect(`/login?type=employee&error=${encodeURIComponent('Employee profile is not associated with any organization.')}`);
             }
             return redirect('/employee/dashboard');
         default:
              await supabase.auth.signOut();
-             return redirect(`/login?error=${encodeURIComponent('Invalid login attempt.')}`);
+             return redirect(`${loginUrl}&error=${encodeURIComponent('Invalid user role.')}`);
     }
 }

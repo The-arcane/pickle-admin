@@ -68,19 +68,26 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const error = searchParams.get('error');
-  const activeTab = searchParams.get('type') || 'employee';
+  const typeParam = searchParams.get('type');
+  
+  // Determine the active tab. Default to 'employee'.
+  // Ensure 'super-admin' is only accessible via its specific URL query.
+  const activeTab = typeParam === 'super-admin' ? 'super-admin' : (typeParam === 'admin' ? 'admin' : 'employee');
 
   const handleTabChange = (value: string) => {
+    // Only allow changing tabs between admin and employee.
+    // Super-admin login should be accessed by its specific URL.
+    if (value === 'super-admin') return;
     router.push(`/login?type=${value}`);
   };
 
-  const isSuperAdminTabActive = activeTab === 'super-admin';
+  const isSuperAdminPath = typeParam === 'super-admin';
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-sm">
-        <TabsList className={cn("grid w-full", isSuperAdminTabActive ? "grid-cols-1" : "grid-cols-2")}>
-          {isSuperAdminTabActive ? (
+        <TabsList className={cn("grid w-full", isSuperAdminPath ? "grid-cols-1" : "grid-cols-2")}>
+          {isSuperAdminPath ? (
             <TabsTrigger value="super-admin">Super Admin</TabsTrigger>
           ) : (
             <>
