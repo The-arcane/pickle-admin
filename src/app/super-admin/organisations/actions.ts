@@ -43,31 +43,36 @@ export async function addOrganization(formData: FormData) {
       return { error: 'Name, Address, and Owner are required.' };
   }
 
-  // 1. Insert org record. The user_id is passed here, which should trigger a DB function 
-  // to create the user-organization link automatically in `user_organisations`.
-  const { data: newOrg, error: insertError } = await supabase
-    .from('organisations')
-    .insert({ name, address, user_id: Number(userId) })
-    .select()
-    .single();
+  // 1. Call the RPC function to handle the complex transaction
+  const { data: newOrg, error: rpcError } = await supabase
+    .rpc('create_organisation_and_assign_admin', {
+        org_name: name,
+        org_address: address,
+        owner_user_id: Number(userId)
+    });
 
-  if (insertError || !newOrg) {
-    console.error('Error adding organization:', insertError);
-    if (insertError?.code === '23505') { // unique_violation for user_id
-        return { error: 'This user is already an owner of another organization.' };
+  if (rpcError) {
+    console.error('Error calling create_organisation_and_assign_admin RPC:', rpcError);
+    // Provide a more user-friendly error message
+    if (rpcError.message.includes("already an admin")) {
+         return { error: 'This user is already an admin of another organization.' };
     }
-    return { error: `Failed to add organization: ${insertError?.message}` };
+    return { error: `Failed to create organization: ${rpcError.message}` };
+  }
+  
+  if (!newOrg) {
+    return { error: 'Failed to create organization. The operation did not return the new organization ID.' };
   }
 
   // 2. Upload logo and update record if a logo is provided.
   if (logoFile && logoFile.size > 0) {
     try {
-        const logoUrl = await handleLogoUpload(supabase, logoFile, newOrg.id.toString());
+        const logoUrl = await handleLogoUpload(supabase, logoFile, newOrg.toString());
         if (logoUrl) {
             const { error: updateError } = await supabase
                 .from('organisations')
                 .update({ logo: logoUrl })
-                .eq('id', newOrg.id);
+                .eq('id', newOrg);
 
             if (updateError) {
                  return { error: `Organization added, but failed to save logo: ${updateError.message}` };
