@@ -22,12 +22,8 @@ export async function addAdmin(formData: FormData) {
     email,
     password,
     phone: phone || undefined,
-    email_confirm: true,
+    email_confirm: true, // Auto-confirm the user's email
     user_metadata: { name: name },
-    // This `options` block is now correctly structured at the top level
-    data: {
-      bypass_email_provider_block: true,
-    }
   });
   
   if (authError || !authData.user) {
