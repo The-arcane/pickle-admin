@@ -42,45 +42,53 @@ export async function addOrganization(formData: FormData) {
   if (!name || !address || !userId) {
       return { error: 'Name, Address, and Owner are required.' };
   }
-
-  // 1. Call the RPC function to handle the complex transaction
-  const { data: newOrg, error: rpcError } = await supabase
-    .rpc('create_organisation_and_assign_admin', {
-        org_name: name,
-        org_address: address,
-        owner_user_id: Number(userId)
-    });
-
-  if (rpcError) {
-    console.error('Error calling create_organisation_and_assign_admin RPC:', rpcError);
-    // Provide a more user-friendly error message
-    if (rpcError.message.includes("already an admin")) {
-         return { error: 'This user is already an admin of another organization.' };
-    }
-    return { error: `Failed to create organization: ${rpcError.message}` };
-  }
   
-  if (!newOrg) {
-    return { error: 'Failed to create organization. The operation did not return the new organization ID.' };
-  }
+  try {
+    // 1. Insert the organization record. 
+    // The database trigger is expected to handle the user_organisations mapping
+    // and user role update.
+    const { data: newOrg, error: orgInsertError } = await supabase
+        .from('organisations')
+        .insert({
+            name,
+            address,
+            user_id: Number(userId)
+        })
+        .select()
+        .single();
+    
+    if (orgInsertError) {
+        console.error('Error creating organization:', orgInsertError);
+        if (orgInsertError.message.includes('violates foreign key constraint')) {
+            return { error: 'The selected user does not exist or cannot be assigned as an owner.' };
+        }
+        if (orgInsertError.message.includes('user_organisations_user_id_key') || orgInsertError.message.includes('already an admin')) {
+            return { error: 'This user is already an admin of another organization.' };
+        }
+        return { error: `Failed to create organization: ${orgInsertError.message}` };
+    }
 
-  // 2. Upload logo and update record if a logo is provided.
-  if (logoFile && logoFile.size > 0) {
-    try {
-        const logoUrl = await handleLogoUpload(supabase, logoFile, newOrg.toString());
+    if (!newOrg) {
+        return { error: 'Failed to create organization. No data was returned after insert.' };
+    }
+
+    // 2. Upload logo and update record if a logo is provided.
+    if (logoFile && logoFile.size > 0) {
+        const logoUrl = await handleLogoUpload(supabase, logoFile, newOrg.id.toString());
         if (logoUrl) {
             const { error: updateError } = await supabase
                 .from('organisations')
                 .update({ logo: logoUrl })
-                .eq('id', newOrg);
+                .eq('id', newOrg.id);
 
             if (updateError) {
-                 return { error: `Organization added, but failed to save logo: ${updateError.message}` };
+                    return { error: `Organization added, but failed to save logo: ${updateError.message}` };
             }
         }
-    } catch(e: any) {
-        return { error: e.message };
     }
+  
+  } catch(e: any) {
+      return { error: `An unexpected error occurred: ${e.message}`};
   }
   
   revalidatePath('/super-admin/organisations');
@@ -99,22 +107,6 @@ export async function updateOrganization(formData: FormData) {
 
     if (!id || !name || !address || !userId) {
         return { error: 'ID, Name, Address, and Owner are required.' };
-    }
-
-    // Check if the new owner already owns another organization
-    const { data: existingOrg, error: checkError } = await supabase
-        .from('organisations')
-        .select('id')
-        .eq('user_id', userId)
-        .not('id', 'eq', id) // Exclude the current organization from the check
-        .maybeSingle();
-
-    if (checkError) {
-        console.error('Error checking for existing ownership:', checkError);
-        return { error: 'Could not verify user ownership.' };
-    }
-    if (existingOrg) {
-        return { error: 'This user is already the owner of another organization. Please select a different user.' };
     }
 
     const updateData: { name: string; address: string; user_id: number; logo?: string } = {
@@ -142,6 +134,10 @@ export async function updateOrganization(formData: FormData) {
 
     if (error) {
         console.error('Error updating organization:', error);
+        // Provide a more user-friendly error message
+        if (error.message.includes('user_organisations_user_id_key')) {
+             return { error: 'This user is already an admin of another organization.' };
+        }
         return { error: `Failed to update organization: ${error.message}` };
     }
 
