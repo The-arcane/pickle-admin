@@ -36,7 +36,7 @@ export function createServer() {
           }
         },
       },
-       auth: {
+      auth: {
         redirectTo: getSiteURL(),
       }
     }
@@ -77,6 +77,10 @@ export function createServiceRoleServer() {
           }
         },
       },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     }
   );
 }
