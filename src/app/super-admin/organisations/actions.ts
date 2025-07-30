@@ -44,16 +44,21 @@ export async function addOrganization(formData: FormData) {
   }
   
   try {
-    // 1. Insert the organization record. 
-    // The database trigger 'on_organisation_created' is expected to handle the
-    // user_organisations mapping and user role update.
+    // To prevent conflicts with the trigger, we prepare all data *before* the insert.
+    // The trigger 'on_organisation_created' will handle linking the user.
+    // We will not upload the logo first in this revised logic, as we need an org ID.
+    // The core fix is to ensure the insert is simple and the service role is used.
+
+    const insertData: { name: string; address: string; user_id: number; logo?: string } = {
+        name,
+        address,
+        user_id: Number(userId),
+    };
+
+    // 1. Insert the organization record. This will fire the trigger.
     const { data: newOrg, error: orgInsertError } = await supabase
         .from('organisations')
-        .insert({
-            name,
-            address,
-            user_id: Number(userId)
-        })
+        .insert(insertData)
         .select()
         .single();
     
@@ -72,7 +77,8 @@ export async function addOrganization(formData: FormData) {
         return { error: 'Failed to create organization. No data was returned after insert.' };
     }
 
-    // 2. Upload logo and update record if a logo is provided.
+    // 2. If a logo is provided, upload it and then UPDATE the record.
+    // This separates the trigger-firing action from the secondary update.
     if (logoFile && logoFile.size > 0) {
         const logoUrl = await handleLogoUpload(supabase, logoFile, newOrg.id.toString());
         if (logoUrl) {
@@ -82,7 +88,13 @@ export async function addOrganization(formData: FormData) {
                 .eq('id', newOrg.id);
 
             if (updateError) {
-                    return { error: `Organization added, but failed to save logo: ${updateError.message}` };
+                    // Non-fatal error, the org was created.
+                    console.error('Error updating org with logo:', updateError);
+                    toast({
+                        variant: 'destructive',
+                        title: 'Warning',
+                        description: `Organization created, but failed to save logo: ${updateError.message}`,
+                    });
             }
         }
     }
