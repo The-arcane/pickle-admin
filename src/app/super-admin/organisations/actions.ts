@@ -1,7 +1,7 @@
 
 'use server';
 
-import { createServer } from '@/lib/supabase/server';
+import { createServiceRoleServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 // Helper for logo upload
@@ -32,7 +32,7 @@ async function handleLogoUpload(supabase: any, file: File | null, orgId: string)
 
 
 export async function addOrganization(formData: FormData) {
-  const supabase = await createServer();
+  const supabase = createServiceRoleServer();
   
   const name = formData.get('name') as string;
   const address = formData.get('address') as string;
@@ -84,7 +84,7 @@ export async function addOrganization(formData: FormData) {
 
 
 export async function updateOrganization(formData: FormData) {
-    const supabase = await createServer();
+    const supabase = createServiceRoleServer();
     const id = formData.get('id') as string;
 
     const name = formData.get('name') as string;
@@ -145,7 +145,7 @@ export async function updateOrganization(formData: FormData) {
 }
 
 export async function deleteOrganization(formData: FormData) {
-    const supabase = await createServer();
+    const supabase = createServiceRoleServer();
     const id = formData.get('id') as string;
 
     if (!id) {
