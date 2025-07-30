@@ -45,7 +45,7 @@ export async function login(formData: FormData) {
         case 2: // Admin
             if (userTypeTarget !== 'admin') {
                 await supabase.auth.signOut();
-                return redirect(`${loginUrl}&error=${encodeURIComponent('Access Denied. Please use the Admin login form.')}`);
+                return redirect(`/login?error=${encodeURIComponent('Access Denied. Please use the Admin login form.')}`);
             }
             if (!organisationId) {
                  await supabase.auth.signOut();
@@ -55,13 +55,13 @@ export async function login(formData: FormData) {
         case 3: // Super Admin
              if (userTypeTarget !== 'super-admin') {
                 await supabase.auth.signOut();
-                return redirect(`${loginUrl}&error=${encodeURIComponent('Access Denied. Please use the Super Admin login form.')}`);
+                return redirect(`/login?type=super-admin&error=${encodeURIComponent('Access Denied. Please use the Super Admin login form.')}`);
             }
             return redirect('/super-admin/dashboard');
         case 4: // Employee
              if (userTypeTarget !== 'employee') {
                 await supabase.auth.signOut();
-                return redirect(`${loginUrl}&error=${encodeURIComponent('Access Denied. Please use the Employee login form.')}`);
+                return redirect(`/login?type=employee&error=${encodeURIComponent('Access Denied. Please use the Employee login form.')}`);
             }
              if (!organisationId) {
                  await supabase.auth.signOut();
