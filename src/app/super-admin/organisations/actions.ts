@@ -43,7 +43,8 @@ export async function addOrganization(formData: FormData) {
       return { error: 'Name, Address, and Owner are required.' };
   }
 
-  // 1. Insert org record without logo
+  // 1. Insert org record. The user_id is passed here, which should trigger a DB function 
+  // to create the user-organization link automatically in `user_organisations`.
   const { data: newOrg, error: insertError } = await supabase
     .from('organisations')
     .insert({ name, address, user_id: Number(userId) })
@@ -58,7 +59,7 @@ export async function addOrganization(formData: FormData) {
     return { error: `Failed to add organization: ${insertError?.message}` };
   }
 
-  // 2. Upload logo and update record
+  // 2. Upload logo and update record if a logo is provided.
   if (logoFile && logoFile.size > 0) {
     try {
         const logoUrl = await handleLogoUpload(supabase, logoFile, newOrg.id.toString());
@@ -76,10 +77,6 @@ export async function addOrganization(formData: FormData) {
         return { error: e.message };
     }
   }
-
-  // The user-organization link is now handled by a database trigger.
-  // The manual insertion below is redundant and causes a unique key violation.
-  // By removing it, we rely on the trigger to correctly associate the user.
   
   revalidatePath('/super-admin/organisations');
   return { success: true };

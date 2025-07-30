@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -28,15 +29,17 @@ export function UserNav({ user, basePath = '/dashboard' }: { user: UserProfile, 
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    // Redirect to the appropriate login page based on the base path
+
+    // Determine the correct login URL
+    let loginUrl = '/login';
     if (basePath.startsWith('/super-admin')) {
-      router.push('/super-admin/login');
+      loginUrl = '/login?type=super-admin';
     } else if (basePath.startsWith('/employee')) {
-       router.push('/login?type=employee');
+      loginUrl = '/login?type=employee';
     }
-    else {
-      router.push('/login');
-    }
+    
+    // Redirect first, then refresh the page to ensure all state is cleared.
+    router.push(loginUrl);
     router.refresh();
   };
 

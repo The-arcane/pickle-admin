@@ -76,7 +76,7 @@ export default async function DashboardLayout({
             <DashboardNav />
         </div>
         <div className="mt-auto p-4">
-            <p className="text-xs text-muted-foreground">Version 1.0.0(R)</p>
+            <p className="text-xs text-muted-foreground">Version 9.0.0(R)</p>
         </div>
       </aside>
       <div className="flex flex-col sm:pl-60">

@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
         .single();
     
     // Redirect logged-in users from login pages to their respective dashboards
-    if (pathname.startsWith('/login') || pathname === '/') {
+    if (pathname.startsWith('/login')) {
       if (userProfile?.user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
       if (userProfile?.user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
       if (userProfile?.user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
@@ -55,15 +55,12 @@ export async function middleware(request: NextRequest) {
 
     // Enforce role-based access to protected routes
     if (pathname.startsWith(protectedPaths.dashboard) && userProfile?.user_type !== 2) {
-      await supabase.auth.signOut();
       return NextResponse.redirect(new URL('/login?error=Access%20Denied', siteUrl));
     }
     if (pathname.startsWith(protectedPaths.superAdmin) && userProfile?.user_type !== 3) {
-      await supabase.auth.signOut();
       return NextResponse.redirect(new URL('/login?type=super-admin&error=Access%20Denied', siteUrl));
     }
     if (pathname.startsWith(protectedPaths.employee) && userProfile?.user_type !== 4) {
-      await supabase.auth.signOut();
       return NextResponse.redirect(new URL('/login?type=employee&error=Access%20Denied', siteUrl));
     }
   }
