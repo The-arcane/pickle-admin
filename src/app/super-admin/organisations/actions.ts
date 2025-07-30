@@ -45,8 +45,8 @@ export async function addOrganization(formData: FormData) {
   
   try {
     // 1. Insert the organization record. 
-    // The database trigger is expected to handle the user_organisations mapping
-    // and user role update.
+    // The database trigger 'on_organisation_created' is expected to handle the
+    // user_organisations mapping and user role update.
     const { data: newOrg, error: orgInsertError } = await supabase
         .from('organisations')
         .insert({
