@@ -1,9 +1,10 @@
 
 export const getSiteURL = () => {
     let url =
-      process.env.URL ?? // Automatically set by Netlify.
-      process.env.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+      process.env.NEXT_PUBLIC_VERCEL_URL ?? // Vercel deployment URL
+      process.env.URL ??                    // Netlify deployment URL
       'http://localhost:9002';
+      
     // Make sure to include `https://` when not localhost.
     url = url.includes('http') ? url : `https://${url}`;
     // Make sure to include a trailing `/`.
