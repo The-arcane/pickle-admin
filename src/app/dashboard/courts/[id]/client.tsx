@@ -477,6 +477,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                     name="images"
                                     type="file"
                                     multiple
+                                    accept="image/*"
                                     className="sr-only"
                                     onChange={(e) => setGalleryFiles(e.target.files)}
                                  />
