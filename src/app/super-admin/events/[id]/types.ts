@@ -1,3 +1,4 @@
+
 // This file defines the types used in the add/edit event page.
 
 export type Organisation = {
@@ -71,6 +72,7 @@ export type Event = {
   requires_login: boolean | null;
   requires_invitation_code: boolean | null;
   is_discoverable: boolean | null;
+  is_public: boolean | null;
   max_bookings_per_user: number | null;
   max_total_capacity: number | null;
   

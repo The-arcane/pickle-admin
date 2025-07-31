@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -14,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, ImagePlus, Calendar as CalendarIcon, Upload } from 'lucide-react';
+import { Plus, Trash2, ImagePlus, Calendar as CalendarIcon, Upload, Globe } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -53,6 +54,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
 
     // Form State
     const [isFree, setIsFree] = useState(true);
+    const [isPublic, setIsPublic] = useState(true);
     const [organiserType, setOrganiserType] = useState<'user' | 'organisation'>('organisation');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -66,22 +68,23 @@ export function EditEventClientPage({ event, organisations, users, categories, t
 
     // Dynamic lists
     const [subEvents, setSubEvents] = useState<Partial<SubEvent>[]>([{ title: '', start_time: '', end_time: '' }]);
-    const [whatToBring, setWhatToBring] = useState<Partial<WhatToBringItem>[]>( [{ item: '' }]);
+    const [whatToBring, setWhatToBring] = useState<Partial<WhatToBringItem>[]>([{ item: '' }]);
     
     useEffect(() => {
         setIsClient(true);
         if (event) {
             setIsFree(event.is_free ?? true);
+            setIsPublic(event.is_public ?? true);
             setOrganiserType(event.organiser_user_id ? 'user' : 'organisation');
             setStartDate(event.start_time ? parseISO(event.start_time) : undefined);
             setEndDate(event.end_time ? parseISO(event.end_time) : undefined);
             setCoverImagePreview(event.cover_image || null);
-            setSubEvents(event.event_sub_events.map(sub => ({
+            setSubEvents(event.event_sub_events.length > 0 ? event.event_sub_events.map(sub => ({
                 ...sub,
                 start_time: formatTimeToInputValue(sub.start_time),
                 end_time: formatTimeToInputValue(sub.end_time),
-            })) ?? [{ title: '', start_time: '', end_time: '' }]);
-            setWhatToBring(event.event_what_to_bring ?? [{ item: '' }]);
+            })) : [{ title: '', start_time: '', end_time: '' }]);
+            setWhatToBring(event.event_what_to_bring.length > 0 ? event.event_what_to_bring : [{ item: '' }]);
         }
     }, [event]);
 
@@ -100,6 +103,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         if(endDate) formData.append('end_time', endDate.toISOString());
         
         formData.append('is_free', String(isFree));
+        formData.append('is_public', String(isPublic));
         formData.append('sub_events', JSON.stringify(subEvents.filter(s => s.title)));
         formData.append('what_to_bring', JSON.stringify(whatToBring.filter(s => s.item)));
 
@@ -274,10 +278,11 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="flex items-center gap-2 rounded-lg border p-3"><Switch id="is_discoverable" name="is_discoverable" defaultChecked={event?.is_discoverable ?? true}/><Label htmlFor="is_discoverable">Discoverable</Label></div>
                                 <div className="flex items-center gap-2 rounded-lg border p-3"><Switch id="requires_login" name="requires_login" defaultChecked={event?.requires_login ?? false}/><Label htmlFor="requires_login">Requires Login</Label></div>
                                 <div className="flex items-center gap-2 rounded-lg border p-3"><Switch id="requires_invitation_code" name="requires_invitation_code" defaultChecked={event?.requires_invitation_code ?? false}/><Label htmlFor="requires_invitation_code">Invitation Code</Label></div>
+                                <div className="flex items-center gap-2 rounded-lg border p-3"><Switch id="is_public" name="is_public" checked={isPublic} onCheckedChange={setIsPublic}/><Label htmlFor="is_public" className="flex items-center gap-2"><Globe className="h-4 w-4" /> Publicly Visible</Label></div>
                             </div>
                         </CardContent>
                     </Card>

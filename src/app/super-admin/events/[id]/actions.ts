@@ -26,7 +26,7 @@ async function handleEventImageUpload(supabase: any, file: File | null, eventId:
         throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
     }
 
-    const { data: publicUrlData } = supabase.storage
+    const { data: publicUrlData } = await supabase.storage
         .from('events')
         .getPublicUrl(filePath);
     
