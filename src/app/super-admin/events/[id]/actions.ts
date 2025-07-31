@@ -259,7 +259,7 @@ async function handleEventGalleryImageUpload(supabase: any, file: File, eventId:
         throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
     }
 
-    const { data: publicUrlData } = supabase.storage
+    const { data: publicUrlData } = await supabase.storage
         .from('event-gallery')
         .getPublicUrl(filePath);
     
@@ -267,7 +267,7 @@ async function handleEventGalleryImageUpload(supabase: any, file: File, eventId:
 }
 
 export async function addEventGalleryImages(formData: FormData) {
-    const supabase = createServer();
+    const supabase = await createServer();
     const eventId = formData.get('event_id') as string;
     const images = formData.getAll('images') as File[];
 
@@ -308,7 +308,7 @@ export async function addEventGalleryImages(formData: FormData) {
 
 
 export async function deleteEventGalleryImage(formData: FormData) {
-    const supabase = createServer();
+    const supabase = await createServer();
     const eventId = formData.get('event_id') as string;
     const imageId = formData.get('image_id') as string;
     const imageUrl = formData.get('image_url') as string;
