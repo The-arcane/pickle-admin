@@ -1,7 +1,6 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServer } from '@/lib/supabase/server';
-import { getSiteURL } from './lib/get-site-url';
 
 export async function middleware(request: NextRequest) {
   const { supabase, response } = {
@@ -17,7 +16,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const user = session?.user;
-  const siteUrl = getSiteURL();
+  const siteUrl = request.nextUrl.origin;
 
   const protectedPaths = {
       dashboard: '/dashboard',

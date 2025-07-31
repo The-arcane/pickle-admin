@@ -1,7 +1,6 @@
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { getSiteURL } from '@/lib/get-site-url';
 
 export function createServer() {
   const cookieStore = cookies();
@@ -36,9 +35,6 @@ export function createServer() {
           }
         },
       },
-      auth: {
-         redirectTo: getSiteURL(),
-      }
     }
   );
 }
@@ -80,7 +76,6 @@ export function createServiceRoleServer() {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
-        redirectTo: getSiteURL(),
       }
     }
   );
