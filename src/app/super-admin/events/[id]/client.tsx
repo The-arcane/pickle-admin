@@ -141,6 +141,22 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         const formData = new FormData(e.currentTarget);
         await handleGallerySubmit(formData);
     }
+    
+    const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                toast({
+                    variant: 'destructive',
+                    title: 'File Too Large',
+                    description: 'The cover image cannot exceed 10MB.',
+                });
+                e.target.value = ''; // Reset the input
+                return;
+            }
+            setCoverImagePreview(URL.createObjectURL(file));
+        }
+    };
 
     // Sub-events handlers
     const handleAddSubEvent = () => setSubEvents([...subEvents, { title: '', start_time: '', end_time: '' }]);
@@ -263,10 +279,9 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="access_type">Access Type</Label>
-                                    <Select name="access_type" defaultValue={event?.access_type || 'public'}>
+                                    <Select name="access_type" defaultValue={event?.access_type || 'private'}>
                                         <SelectTrigger><SelectValue placeholder="Select access type" /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="public">Public</SelectItem>
                                             <SelectItem value="private">Private</SelectItem>
                                             <SelectItem value="invite-only">Invite Only</SelectItem>
                                         </SelectContent>
@@ -337,7 +352,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <Label htmlFor="cover_image_file">Cover Image</Label>
-                                    <input type="file" id="cover_image_file" accept="image/*" ref={coverImageRef} name="cover_image_file" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { setCoverImagePreview(URL.createObjectURL(f)); } }} />
+                                    <input type="file" id="cover_image_file" accept="image/*" ref={coverImageRef} name="cover_image_file" className="hidden" onChange={handleCoverImageChange} />
                                     <Button type="button" variant="outline" size="sm" className="h-auto py-1.5 ml-auto" onClick={() => coverImageRef.current?.click()}>
                                         <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
                                     </Button>
@@ -473,3 +488,5 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         </>
     );
 }
+
+    

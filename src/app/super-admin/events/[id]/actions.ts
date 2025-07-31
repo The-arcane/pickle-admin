@@ -11,6 +11,11 @@ async function handleEventImageUpload(supabase: any, file: File | null, eventId:
     if (!file || file.size === 0) {
         return null;
     }
+    
+    // Enforce a 10MB limit
+    if (file.size > 10 * 1024 * 1024) {
+        throw new Error('File size cannot exceed 10MB.');
+    }
 
     const fileExt = file.name.split('.').pop();
     const fileName = `cover-${Date.now()}.${fileExt}`;
@@ -81,7 +86,7 @@ function getEventDataFromFormData(formData: FormData) {
 }
 
 export async function addEvent(formData: FormData) {
-  const supabase = createServer();
+  const supabase = await createServer();
   
   try {
     const eventData = getEventDataFromFormData(formData);
@@ -89,6 +94,9 @@ export async function addEvent(formData: FormData) {
     if (!eventData.organiser_org_id && !eventData.organiser_user_id) {
         return { error: 'An event must have an organizer (either an organization or a user).' };
     }
+    
+    const coverImageFile = formData.get('cover_image_file') as File | null;
+    let coverImageUrl: string | null = null;
     
     // --- 1. Insert the main event record (without image first) ---
     const { data: newEvent, error: eventError } = await supabase
@@ -103,20 +111,20 @@ export async function addEvent(formData: FormData) {
     }
     
     const eventId = newEvent.id;
-    const eventUpdateData: { cover_image?: string } = {};
 
     // --- 2. Upload image and prepare update payload ---
-    const coverImageFile = formData.get('cover_image_file') as File | null;
-    const coverImageUrl = await handleEventImageUpload(supabase, coverImageFile, eventId.toString());
-    if (coverImageUrl) eventUpdateData.cover_image = coverImageUrl;
+    if (coverImageFile && coverImageFile.size > 0) {
+        coverImageUrl = await handleEventImageUpload(supabase, coverImageFile, eventId.toString());
+    }
     
     // --- 3. Update event with image URL if it was uploaded ---
-    if (Object.keys(eventUpdateData).length > 0) {
+    if (coverImageUrl) {
         const { error: imageUpdateError } = await supabase
             .from('events')
-            .update(eventUpdateData)
+            .update({ cover_image: coverImageUrl })
             .eq('id', eventId);
         if (imageUpdateError) {
+            // Non-fatal, as the event was already created
             console.error('Error updating event with image:', imageUpdateError);
             return { error: `Event added, but failed to save cover image: ${imageUpdateError.message}` };
         }
@@ -161,7 +169,7 @@ export async function addEvent(formData: FormData) {
 }
 
 export async function updateEvent(formData: FormData) {
-  const supabase = createServer();
+  const supabase = await createServer();
   const id = Number(formData.get('id'));
 
   try {
@@ -171,8 +179,10 @@ export async function updateEvent(formData: FormData) {
     
     // --- Handle Image Upload ---
     const coverImageFile = formData.get('cover_image_file') as File | null;
-    const coverImageUrl = await handleEventImageUpload(supabase, coverImageFile, id.toString());
-    if (coverImageUrl) eventUpdateData.cover_image = coverImageUrl;
+    if (coverImageFile && coverImageFile.size > 0) {
+        const coverImageUrl = await handleEventImageUpload(supabase, coverImageFile, id.toString());
+        if (coverImageUrl) eventUpdateData.cover_image = coverImageUrl;
+    }
 
 
     // --- 1. Update main event table ---
@@ -340,3 +350,5 @@ export async function deleteEventGalleryImage(formData: FormData) {
     revalidatePath(`/super-admin/events/${eventId}`);
     return { success: true };
 }
+
+    
