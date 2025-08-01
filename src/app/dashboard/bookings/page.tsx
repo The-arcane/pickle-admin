@@ -14,7 +14,7 @@ export default async function BookingsPage() {
   // Get user's internal ID from their auth UUID
   const { data: userRecord } = await supabase
     .from('user')
-    .select('id')
+    .select('id, organisation_id')
     .eq('user_uuid', user.id)
     .single();
 
@@ -23,14 +23,7 @@ export default async function BookingsPage() {
     return redirect('/login');
   }
   
-  // Get the organization ID from the join table
-  const { data: orgLink } = await supabase
-    .from('user_organisations')
-    .select('organisation_id')
-    .eq('user_id', userRecord.id)
-    .maybeSingle();
-
-  const organisationId = orgLink?.organisation_id;
+  const organisationId = userRecord?.organisation_id;
 
   if (!organisationId) {
     // This should not happen for a valid admin, but handle it gracefully
@@ -60,12 +53,12 @@ export default async function BookingsPage() {
   // Fetch related data for forms and display, scoped to the organization
   const { data: courtsData, error: courtsError } = await supabase.from('courts').select('id, name').eq('organisation_id', organisationId);
   const { data: orgUsersData, error: usersError } = await supabase
-    .from('user_organisations')
-    .select('user!inner(id, name, user_type)')
+    .from('user')
+    .select('id, name')
     .eq('organisation_id', organisationId)
-    .eq('user.user_type', 1); // Assuming user_type 1 are the bookable users
+    .eq('user_type', 1);
 
-  const users = orgUsersData?.map(u => u.user).filter(Boolean) as {id: number, name: string}[] || [];
+  const users = orgUsersData || [];
 
   const { data: courtBookingStatusesData, error: courtStatusesError } = await supabase.from('booking_status').select('id, label');
   const { data: eventBookingStatusesData, error: eventStatusesError } = await supabase.from('event_booking_status').select('id, label');

@@ -16,21 +16,15 @@ export default async function EditCoachPage({ params }: { params: { id: string }
 
     const { data: userRecord } = await supabase
         .from('user')
-        .select('id')
+        .select('id, organisation_id')
         .eq('user_uuid', user.id)
         .single();
     
     if (!userRecord) {
         return redirect('/login');
     }
-
-    const { data: orgLink } = await supabase
-        .from('user_organisations')
-        .select('organisation_id')
-        .eq('user_id', userRecord.id)
-        .maybeSingle();
     
-    const organisationId = orgLink?.organisation_id;
+    const organisationId = userRecord?.organisation_id;
 
     if (!organisationId) {
         return <p>You are not associated with an organization.</p>;
@@ -56,14 +50,13 @@ export default async function EditCoachPage({ params }: { params: { id: string }
         coach = coachData as Coach;
     }
 
-    // Fetch potential users to be assigned as coaches (user_type 5 within the same org)
+    // Fetch potential users to be assigned as coaches (from the same org)
     const { data: orgUsersData, error: usersError } = await supabase
-      .from('user_organisations')
-      .select('user!inner(id, name)')
+      .from('user')
+      .select('id, name')
       .eq('organisation_id', organisationId)
-      .eq('user.user_type', 5);
 
-    const usersForCoachAssignment = orgUsersData?.map(u => u.user).filter(Boolean) as User[] || [];
+    const usersForCoachAssignment = orgUsersData as User[] || [];
 
     const { data: sportsData, error: sportsError } = await supabase.from('sports').select('id, name');
 
