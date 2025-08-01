@@ -2,7 +2,7 @@
 import { createServer } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { EditCoachClientPage } from './client';
-import type { Coach } from './types';
+import type { Coach, User } from './types';
 
 export default async function EditCoachPage({ params }: { params: { id: string } }) {
     const supabase = await createServer();
@@ -56,8 +56,15 @@ export default async function EditCoachPage({ params }: { params: { id: string }
         coach = coachData as Coach;
     }
 
-    // Fetch potential users to be assigned as coaches (e.g., user_type for regular users)
-    const { data: usersData, error: usersError } = await supabase.from('user').select('id, name').eq('user_type', 1);
+    // Fetch potential users to be assigned as coaches (user_type 5 within the same org)
+    const { data: orgUsersData, error: usersError } = await supabase
+      .from('user_organisations')
+      .select('user!inner(id, name)')
+      .eq('organisation_id', organisationId)
+      .eq('user.user_type', 5);
+
+    const usersForCoachAssignment = orgUsersData?.map(u => u.user).filter(Boolean) as User[] || [];
+
     const { data: sportsData, error: sportsError } = await supabase.from('sports').select('id, name');
 
     if (usersError || sportsError) {
@@ -67,7 +74,7 @@ export default async function EditCoachPage({ params }: { params: { id: string }
     return (
         <EditCoachClientPage
             coach={coach}
-            users={usersData || []}
+            users={usersForCoachAssignment}
             sports={sportsData || []}
             organisationId={organisationId}
         />
