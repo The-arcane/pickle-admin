@@ -1,8 +1,10 @@
+
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { parseISO, getDay } from 'date-fns';
+import { randomUUID } from 'crypto';
 
 const statusMapToDb: { [key: string]: number } = {
   'Cancelled': 0,
@@ -22,6 +24,8 @@ export async function addBooking(formData: FormData) {
   if (!user_id || !court_id || !timeslot_id || statusValue === undefined) {
     return { error: 'All fields are required.' };
   }
+  
+  const qr_content_id = `C${randomUUID()}`;
 
   const { error } = await supabase
     .from('bookings')
@@ -30,11 +34,15 @@ export async function addBooking(formData: FormData) {
       court_id: Number(court_id),
       timeslot_id: Number(timeslot_id),
       booking_status: statusValue,
+      qr_content_id: qr_content_id,
      });
 
   if (error) {
     console.error('Error adding booking:', error);
-    return { error: 'Failed to add booking.' };
+    if (error.code === '23505') { // Unique constraint violation
+        return { error: 'This timeslot is already booked. Please choose another.' };
+    }
+    return { error: `Failed to add booking: ${error.message}` };
   }
 
   revalidatePath('/dashboard/bookings');
@@ -73,6 +81,9 @@ export async function updateBooking(formData: FormData) {
 
   if (error) {
     console.error('Error updating booking:', error);
+    if (error.code === '23505') {
+        return { error: 'This timeslot is already booked by someone else.' };
+    }
     return { error: 'Failed to update booking.' };
   }
 
