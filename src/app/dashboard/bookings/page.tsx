@@ -61,11 +61,11 @@ export default async function BookingsPage() {
   const { data: courtsData, error: courtsError } = await supabase.from('courts').select('id, name').eq('organisation_id', organisationId);
   const { data: orgUsersData, error: usersError } = await supabase
     .from('user_organisations')
-    .select('user!inner(id, name)')
+    .select('user!inner(id, name, user_type)')
     .eq('organisation_id', organisationId)
     .eq('user.user_type', 1); // Assuming user_type 1 are the bookable users
 
-  const users = orgUsersData?.map(u => u.user).filter(Boolean) || [];
+  const users = orgUsersData?.map(u => u.user).filter(Boolean) as {id: number, name: string}[] || [];
 
   const { data: courtBookingStatusesData, error: courtStatusesError } = await supabase.from('booking_status').select('id, label');
   const { data: eventBookingStatusesData, error: eventStatusesError } = await supabase.from('event_booking_status').select('id, label');
