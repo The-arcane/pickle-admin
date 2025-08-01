@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -177,6 +178,22 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         newRules[index].rule = value;
         setRules(newRules);
     };
+    
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setPreview: (url: string) => void) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                toast({
+                    variant: 'destructive',
+                    title: 'File Too Large',
+                    description: 'The image cannot exceed 2MB.',
+                });
+                e.target.value = ''; // Reset the input
+                return;
+            }
+            setPreview(URL.createObjectURL(file));
+        }
+    };
 
     // For one-off unavailability (availability_blocks)
     const handleAddAvailability = () => setAvailability([...availability, { date: null, start_time: null, end_time: null, reason: '' }]);
@@ -333,7 +350,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                     <Card id="images-pricing" className="scroll-mt-24">
                         <CardHeader>
                             <CardTitle>Images &amp; Pricing</CardTitle>
-                            <CardDescription>Manage court images, pricing, and other metadata.</CardDescription>
+                            <CardDescription>Manage court images (max 2MB each), pricing, and other metadata.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -347,12 +364,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                             ref={mainImageRef}
                                             name="main_image_file"
                                             className="hidden"
-                                            onChange={e => {
-                                                const f = e.target.files?.[0];
-                                                if (f) {
-                                                    setMainImagePreview(URL.createObjectURL(f));
-                                                }
-                                            }}
+                                            onChange={(e) => handleFileChange(e, setMainImagePreview)}
                                         />
                                         <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={() => mainImageRef.current?.click()}>
                                             <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
@@ -385,12 +397,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                             ref={coverImageRef}
                                             name="cover_image_file"
                                             className="hidden"
-                                            onChange={e => {
-                                                const f = e.target.files?.[0];
-                                                if (f) {
-                                                    setCoverImagePreview(URL.createObjectURL(f));
-                                                }
-                                            }}
+                                            onChange={(e) => handleFileChange(e, setCoverImagePreview)}
                                         />
                                         <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={() => coverImageRef.current?.click()}>
                                             <ImagePlus className="mr-2 h-4 w-4" /> Upload Image
@@ -470,7 +477,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                  <Label htmlFor="gallery-images" className="mb-4 cursor-pointer">
                                     <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
                                     <span className="mt-2 block font-semibold text-primary">Click to upload or drag & drop</span>
-                                    <span className="mt-1 block text-sm text-muted-foreground">PNG, JPG, GIF up to 10MB</span>
+                                    <span className="mt-1 block text-sm text-muted-foreground">Images only, max 2MB each</span>
                                  </Label>
                                  <Input
                                     id="gallery-images"

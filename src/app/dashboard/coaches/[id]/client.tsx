@@ -58,6 +58,22 @@ export function EditCoachClientPage({ coach, users, sports, organisationId }: { 
         }
     };
 
+    const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                toast({
+                    variant: 'destructive',
+                    title: 'File Too Large',
+                    description: 'The profile image cannot exceed 2MB.',
+                });
+                e.target.value = ''; // Reset the input
+                return;
+            }
+            setProfileImagePreview(URL.createObjectURL(file));
+        }
+    };
+
     const handleSportSelect = (sportId: number) => {
         setSelectedSports(prev =>
             prev.some(s => s.sport_id === sportId)
@@ -102,11 +118,8 @@ export function EditCoachClientPage({ coach, users, sports, organisationId }: { 
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="profile_image_file">Profile Image</Label>
-                            <Input id="profile_image_file" name="profile_image_file" type="file" accept="image/*" onChange={e => {
-                                const file = e.target.files?.[0];
-                                if (file) setProfileImagePreview(URL.createObjectURL(file));
-                            }} />
+                            <Label htmlFor="profile_image_file">Profile Image (Max 2MB)</Label>
+                            <Input id="profile_image_file" name="profile_image_file" type="file" accept="image/*" onChange={handleProfileImageChange} />
                             {profileImagePreview && <Image src={profileImagePreview} alt="Logo preview" width={80} height={80} className="mt-2 rounded-full object-cover h-20 w-20" />}
                         </div>
                     </div>

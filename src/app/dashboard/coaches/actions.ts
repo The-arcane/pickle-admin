@@ -5,10 +5,17 @@ import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { CoachPricing, CoachSport } from './[id]/types';
 
+const MAX_FILE_SIZE_MB = 2;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 // Helper to upload profile image
 async function handleImageUpload(supabase: any, file: File | null, coachUserId: string): Promise<string | null> {
     if (!file || file.size === 0) {
         return null;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+        throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
     }
 
     const fileExt = file.name.split('.').pop();

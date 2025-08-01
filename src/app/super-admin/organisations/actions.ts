@@ -4,11 +4,18 @@
 import { createServiceRoleServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
+const MAX_FILE_SIZE_MB = 2;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 // Helper for logo upload
 async function handleLogoUpload(supabase: any, file: File | null, orgId: string): Promise<string | null> {
     if (!file || file.size === 0) {
         return null;
     }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+        throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
+    }
+
     const fileExt = file.name.split('.').pop();
     const fileName = `logo-${Date.now()}.${fileExt}`;
     // Store logos in a public folder, organized by organization ID
@@ -44,11 +51,6 @@ export async function addOrganization(formData: FormData) {
   }
   
   try {
-    // To prevent conflicts with the trigger, we prepare all data *before* the insert.
-    // The trigger 'on_organisation_created' will handle linking the user.
-    // We will not upload the logo first in this revised logic, as we need an org ID.
-    // The core fix is to ensure the insert is simple and the service role is used.
-
     const insertData: { name: string; address: string; user_id: number; logo?: string } = {
         name,
         address,
@@ -78,7 +80,6 @@ export async function addOrganization(formData: FormData) {
     }
 
     // 2. If a logo is provided, upload it and then UPDATE the record.
-    // This separates the trigger-firing action from the secondary update.
     if (logoFile && logoFile.size > 0) {
         const logoUrl = await handleLogoUpload(supabase, logoFile, newOrg.id.toString());
         if (logoUrl) {
@@ -88,13 +89,9 @@ export async function addOrganization(formData: FormData) {
                 .eq('id', newOrg.id);
 
             if (updateError) {
-                    // Non-fatal error, the org was created.
-                    console.error('Error updating org with logo:', updateError);
-                    toast({
-                        variant: 'destructive',
-                        title: 'Warning',
-                        description: `Organization created, but failed to save logo: ${updateError.message}`,
-                    });
+                 // Non-fatal error, the org was created.
+                 console.error('Error updating org with logo:', updateError);
+                 return { error: `Organization created, but failed to save logo: ${updateError.message}` };
             }
         }
     }
@@ -120,38 +117,38 @@ export async function updateOrganization(formData: FormData) {
     if (!id || !name || !address || !userId) {
         return { error: 'ID, Name, Address, and Owner are required.' };
     }
-
-    const updateData: { name: string; address: string; user_id: number; logo?: string } = {
-        name,
-        address,
-        user_id: Number(userId),
-    };
-    
-    // Upload new logo if provided
-    if (logoFile && logoFile.size > 0) {
-        try {
+    try {
+        const updateData: { name: string; address: string; user_id: number; logo?: string } = {
+            name,
+            address,
+            user_id: Number(userId),
+        };
+        
+        // Upload new logo if provided
+        if (logoFile && logoFile.size > 0) {
             const logoUrl = await handleLogoUpload(supabase, logoFile, id);
             if (logoUrl) {
                 updateData.logo = logoUrl;
             }
-        } catch(e: any) {
-             return { error: e.message };
         }
+
+        const { error } = await supabase
+            .from('organisations')
+            .update(updateData)
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error updating organization:', error);
+            // Provide a more user-friendly error message
+            if (error.message.includes('user_organisations_user_id_key')) {
+                return { error: 'This user is already an admin of another organization.' };
+            }
+            return { error: `Failed to update organization: ${error.message}` };
+        }
+    } catch(e: any) {
+        return { error: `An unexpected error occurred: ${e.message}`};
     }
 
-    const { error } = await supabase
-        .from('organisations')
-        .update(updateData)
-        .eq('id', id);
-
-    if (error) {
-        console.error('Error updating organization:', error);
-        // Provide a more user-friendly error message
-        if (error.message.includes('user_organisations_user_id_key')) {
-             return { error: 'This user is already an admin of another organization.' };
-        }
-        return { error: `Failed to update organization: ${error.message}` };
-    }
 
     revalidatePath('/super-admin/organisations');
     return { success: true };

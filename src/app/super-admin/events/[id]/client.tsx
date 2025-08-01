@@ -57,7 +57,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
     const [isPublic, setIsPublic] = useState(true);
     const [organiserType, setOrganiserType] = useState<'user' | 'organisation'>('organisation');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>();
     
     const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
     const coverImageRef = useRef<HTMLInputElement>(null);
@@ -145,11 +145,11 @@ export function EditEventClientPage({ event, organisations, users, categories, t
     const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
                 toast({
                     variant: 'destructive',
                     title: 'File Too Large',
-                    description: 'The cover image cannot exceed 10MB.',
+                    description: 'The cover image cannot exceed 2MB.',
                 });
                 e.target.value = ''; // Reset the input
                 return;
@@ -346,7 +346,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                     <Card>
                         <CardHeader>
                             <CardTitle>Media & Links</CardTitle>
-                            <CardDescription>Upload a cover image and add a video link for your event.</CardDescription>
+                            <CardDescription>Upload a cover image (max 2MB) and add a video link for your event.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="space-y-2">
@@ -414,13 +414,14 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                 <Label htmlFor="event-gallery-images" className="mb-4 cursor-pointer">
                                     <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
                                     <span className="mt-2 block font-semibold text-primary">Click to upload or drag & drop</span>
-                                    <span className="mt-1 block text-sm text-muted-foreground">PNG, JPG, GIF up to 10MB</span>
+                                    <span className="mt-1 block text-sm text-muted-foreground">Images only, max 2MB each</span>
                                 </Label>
                                 <Input
                                     id="event-gallery-images"
                                     name="images"
                                     type="file"
                                     multiple
+                                    accept="image/*"
                                     className="sr-only"
                                     onChange={(e) => setGalleryFiles(e.target.files)}
                                 />
@@ -488,5 +489,3 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         </>
     );
 }
-
-    

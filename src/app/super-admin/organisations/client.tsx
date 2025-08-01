@@ -162,6 +162,22 @@ function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: {
             setLogoPreview(org?.logo || null);
         }
     }, [isOpen, org]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                toast({
+                    variant: 'destructive',
+                    title: 'File Too Large',
+                    description: 'The logo image cannot exceed 2MB.',
+                });
+                e.target.value = ''; // Reset the input
+                return;
+            }
+            setLogoPreview(URL.createObjectURL(file));
+        }
+    };
     
     async function handleFormAction(formData: FormData) {
         const action = org ? updateOrganization : addOrganization;
@@ -200,11 +216,8 @@ function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: {
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="logo">Logo</Label>
-                        <Input id="logo" name="logo" type="file" accept="image/*" onChange={e => {
-                            const file = e.target.files?.[0];
-                            if (file) setLogoPreview(URL.createObjectURL(file));
-                        }} />
+                        <Label htmlFor="logo">Logo (Max 2MB)</Label>
+                        <Input id="logo" name="logo" type="file" accept="image/*" onChange={handleFileChange} />
                         {logoPreview && <Image src={logoPreview} alt="Logo preview" width={80} height={80} className="mt-2 rounded-md object-cover" data-ai-hint="logo" />}
                     </div>
                     <DialogFooter>

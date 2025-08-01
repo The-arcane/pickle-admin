@@ -6,15 +6,17 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import type { SubEvent, WhatToBringItem } from './types';
 
+const MAX_FILE_SIZE_MB = 2;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 // Helper to upload a file to Supabase Storage for events
 async function handleEventImageUpload(supabase: any, file: File | null, eventId: string): Promise<string | null> {
     if (!file || file.size === 0) {
         return null;
     }
     
-    // Enforce a 10MB limit
-    if (file.size > 10 * 1024 * 1024) {
-        throw new Error('File size cannot exceed 10MB.');
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+        throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
     }
 
     const fileExt = file.name.split('.').pop();
@@ -255,6 +257,9 @@ async function handleEventGalleryImageUpload(supabase: any, file: File, eventId:
     if (!file || file.size === 0) {
         return null;
     }
+     if (file.size > MAX_FILE_SIZE_BYTES) {
+        throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
+    }
 
     const fileExt = file.name.split('.').pop();
     const fileName = `gallery-${Date.now()}.${fileExt}`;
@@ -334,13 +339,14 @@ export async function deleteEventGalleryImage(formData: FormData) {
         
         const { error: storageError } = await supabase.storage.from('event-gallery').remove([filePath]);
         if (storageError) {
-            return { error: `Failed to delete image from storage: ${storageError.message}`};
+            // Non-fatal error
+            console.error('Failed to delete image from storage, but continuing to delete DB record:', storageError.message);
         }
 
         // 2. Delete from database
         const { error: dbError } = await supabase.from('event_gallery_images').delete().eq('id', imageId);
         if (dbError) {
-            return { error: `Image deleted from storage, but failed to remove from gallery: ${dbError.message}`};
+            return { error: `Failed to remove image from gallery: ${dbError.message}`};
         }
 
     } catch (e: any) {
@@ -350,5 +356,3 @@ export async function deleteEventGalleryImage(formData: FormData) {
     revalidatePath(`/super-admin/events/${eventId}`);
     return { success: true };
 }
-
-    
