@@ -1,13 +1,21 @@
+
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { CourtRule, CourtContact, AvailabilityBlock, RecurringUnavailability } from './types';
 
+const MAX_FILE_SIZE_MB = 2;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 // Helper to upload a file to Supabase Storage
 async function handleImageUpload(supabase: any, file: File | null, courtId: string, imageType: 'main' | 'cover'): Promise<string | null> {
     if (!file || file.size === 0) {
         return null;
+    }
+    
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+        throw new Error(`File size for ${imageType} image cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
     }
 
     const fileExt = file.name.split('.').pop();
@@ -53,12 +61,13 @@ function getCourtFields(formData: FormData) {
         badge_type: formData.get('badge_type') as string,
         c_start_time: formData.get('c_start_time') || null,
         c_end_time: formData.get('c_end_time') || null,
+        is_public: formData.get('is_public') === 'true',
     };
 }
 
 
 export async function addCourt(formData: FormData) {
-  const supabase = createServer();
+  const supabase = await createServer();
   
   try {
     const courtFields = getCourtFields(formData);
@@ -144,7 +153,7 @@ export async function addCourt(formData: FormData) {
 }
 
 export async function updateCourt(formData: FormData) {
-  const supabase = createServer();
+  const supabase = await createServer();
   const id = formData.get('id') as string;
 
   try {
@@ -275,13 +284,17 @@ async function handleGalleryImageUpload(supabase: any, file: File, courtId: stri
         return null;
     }
 
+     if (file.size > MAX_FILE_SIZE_BYTES) {
+        throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
+    }
+
     const fileExt = file.name.split('.').pop();
     const fileName = `gallery-${Date.now()}.${fileExt}`;
     // Store images in a public folder, organized by court ID in a gallery subfolder
     const filePath = `public/${courtId}/gallery/${fileName}`;
     
     const { error: uploadError } = await supabase.storage
-        .from('courts') // Use courts bucket for gallery
+        .from('court-images') // Use courts bucket for gallery
         .upload(filePath, file);
 
     if (uploadError) {
@@ -290,14 +303,14 @@ async function handleGalleryImageUpload(supabase: any, file: File, courtId: stri
     }
 
     const { data: publicUrlData } = supabase.storage
-        .from('courts')
+        .from('court-images')
         .getPublicUrl(filePath);
     
     return publicUrlData.publicUrl;
 }
 
 export async function addCourtGalleryImages(formData: FormData) {
-    const supabase = createServer();
+    const supabase = await createServer();
     const courtId = formData.get('court_id') as string;
     const images = formData.getAll('images') as File[];
 
@@ -339,7 +352,7 @@ export async function addCourtGalleryImages(formData: FormData) {
 
 
 export async function deleteCourtGalleryImage(formData: FormData) {
-    const supabase = createServer();
+    const supabase = await createServer();
     const courtId = formData.get('court_id') as string;
     const imageId = formData.get('image_id') as string;
     const imageUrl = formData.get('image_url') as string;
@@ -351,9 +364,9 @@ export async function deleteCourtGalleryImage(formData: FormData) {
     try {
         // 1. Delete from storage
         const url = new URL(imageUrl);
-        const filePath = decodeURIComponent(url.pathname.split('/courts/')[1]);
+        const filePath = decodeURIComponent(url.pathname.split('/court-images/')[1]);
         
-        const { error: storageError } = await supabase.storage.from('courts').remove([filePath]);
+        const { error: storageError } = await supabase.storage.from('court-images').remove([filePath]);
         if (storageError) {
             console.error("Error deleting from storage:", storageError);
             return { error: `Failed to delete image from storage: ${storageError.message}`};
