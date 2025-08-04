@@ -34,8 +34,8 @@ export async function addEmployee(formData: FormData) {
   const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
+    user_metadata: { name: name },
     email_confirm: true, // Auto-confirm the email
-    user_metadata: { name: name }
   });
   
   if (authError) {
