@@ -9,7 +9,7 @@ const MAX_FILE_SIZE_MB = 2;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const BUCKET_NAME = 'organisation-websites';
 
-// Helper for image uploads
+// Helper for a single image upload
 async function handleImageUpload(supabase: any, file: File | null, orgId: string, imageType: string): Promise<string | null> {
     if (!file || file.size === 0) return null;
     
@@ -37,57 +37,65 @@ async function handleImageUpload(supabase: any, file: File | null, orgId: string
     return publicUrlData.publicUrl;
 }
 
-export async function saveWebsiteDetails(formData: FormData) {
+// Action for saving only text content
+export async function saveWebsiteTextDetails(formData: FormData) {
     const supabase = createServiceRoleServer();
-
     const orgId = Number(formData.get('org_id'));
-    const websiteId = formData.get('id') ? Number(formData.get('id')) : null;
 
-    if (!orgId) {
-        return { error: 'Organization ID is missing.' };
-    }
+    if (!orgId) return { error: 'Organization ID is missing.' };
 
     try {
-        const payload: any = {
+        const payload = {
             org_id: orgId,
             About: formData.get('about') as string,
             Our_vision: formData.get('vision') as string,
             Our_mission: formData.get('mission') as string,
         };
 
-        // Handle image uploads in parallel
-        const logoFile = formData.get('logo_file') as File | null;
-        const bgImageFile = formData.get('bg_image_file') as File | null;
-        const visImageFile = formData.get('vis_image_file') as File | null;
-        const misImageFile = formData.get('mis_image_file') as File | null;
-
-        const [logoUrl, bgImageUrl, visImageUrl, misImageUrl] = await Promise.all([
-            handleImageUpload(supabase, logoFile, orgId.toString(), 'logo'),
-            handleImageUpload(supabase, bgImageFile, orgId.toString(), 'bg'),
-            handleImageUpload(supabase, visImageFile, orgId.toString(), 'vision'),
-            handleImageUpload(supabase, misImageFile, orgId.toString(), 'mission')
-        ]);
-
-        if (logoUrl) payload.logo = logoUrl;
-        if (bgImageUrl) payload.bg_image = bgImageUrl;
-        if (visImageUrl) payload.vis_image = visImageUrl;
-        if (misImageUrl) payload.mis_image = misImageUrl;
-
-        // Upsert the data
-        const { error } = await supabase.from('organisations_website').upsert(
-          websiteId ? { id: websiteId, ...payload } : payload,
-          { onConflict: 'org_id' }
-        );
+        const { error } = await supabase.from('organisations_website').upsert(payload, { onConflict: 'org_id' });
 
         if (error) {
-            console.error('Error saving website details:', error);
+            console.error('Error saving website text details:', error);
             return { error: `Failed to save website details: ${error.message}` };
         }
-
-    } catch(e: any) {
+    } catch (e: any) {
         return { error: `An unexpected error occurred: ${e.message}` };
     }
 
     revalidatePath(`/super-admin/organisations/${orgId}/website`);
-    redirect(`/super-admin/organisations/${orgId}/website`);
+    return { success: true, message: 'Content saved successfully.' };
+}
+
+
+// A generic action to handle a single image upload and update the DB
+export async function saveWebsiteImage(formData: FormData) {
+    const supabase = createServiceRoleServer();
+    const orgId = Number(formData.get('org_id'));
+    const imageType = formData.get('image_type') as 'logo' | 'bg_image' | 'vis_image' | 'mis_image';
+    const imageFile = formData.get('image_file') as File | null;
+
+    if (!orgId || !imageType || !imageFile) {
+        return { error: 'Missing required data for image upload.' };
+    }
+
+    try {
+        const imageUrl = await handleImageUpload(supabase, imageFile, orgId.toString(), imageType);
+        
+        if (imageUrl) {
+            const { error } = await supabase
+                .from('organisations_website')
+                .upsert({ org_id: orgId, [imageType]: imageUrl }, { onConflict: 'org_id' });
+
+            if (error) {
+                 return { error: `Failed to save image URL to database: ${error.message}` };
+            }
+        } else {
+            return { error: 'Image upload failed, URL not returned.' };
+        }
+    } catch(e: any) {
+        return { error: e.message };
+    }
+    
+    revalidatePath(`/super-admin/organisations/${orgId}/website`);
+    return { success: true, message: `${imageType.replace('_', ' ')} updated successfully.` };
 }
