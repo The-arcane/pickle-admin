@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { saveWebsiteTextDetails, saveWebsiteImage } from './actions';
 import type { Organization, OrganisationWebsite } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Globe, ImagePlus, Upload } from 'lucide-react';
+import { Globe, Upload } from 'lucide-react';
 
 function TextSubmitButton() {
     const { pending } = useFormStatus();
@@ -28,7 +28,7 @@ function ImageSubmitButton({label}: {label: string}) {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" size="sm" variant="secondary" disabled={pending}>
-             {pending ? 'Uploading...' : <><Upload className="mr-2 h-4 w-4" /> Upload {label}</>}
+             {pending ? 'Uploading...' : <><Upload className="mr-2 h-4 w-4" /> Upload</>}
         </Button>
     )
 }
@@ -70,7 +70,7 @@ function ImageUploadForm({ orgId, imageType, currentImageUrl, label }: { orgId: 
             <input type="hidden" name="image_type" value={imageType} />
             <div className="space-y-2">
                 <Label htmlFor={imageType}>{label} (Max 2MB)</Label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-center gap-2">
                      <Input ref={inputFileRef} id={imageType} name="image_file" type="file" accept="image/*" onChange={handleFileChange} className="flex-grow" />
                      <ImageSubmitButton label={label}/>
                 </div>
@@ -95,7 +95,7 @@ export function EditWebsiteClientPage({ organization, websiteDetails }: { organi
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <Globe className="h-8 w-8 text-primary" />
                     <div>
@@ -103,8 +103,8 @@ export function EditWebsiteClientPage({ organization, websiteDetails }: { organi
                         <p className="text-muted-foreground">Manage content for the public page of <span className="font-semibold">{organization.name}</span>.</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" type="button" asChild><Link href="/super-admin/organisations">Back to Organizations</Link></Button>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Button variant="outline" type="button" asChild className="flex-1 sm:flex-initial"><Link href="/super-admin/organisations">Back to Organizations</Link></Button>
                 </div>
             </div>
 
