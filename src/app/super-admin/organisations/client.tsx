@@ -18,16 +18,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -37,24 +27,23 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MoreHorizontal, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Edit, ToggleRight, ToggleLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { addOrganization, updateOrganization, deleteOrganization } from './actions';
+import { addOrganization, updateOrganization, toggleOrganizationStatus } from './actions';
 import type { Organization, User } from '@/types';
 import { useOrganization } from '@/hooks/use-organization';
 import { useRouter } from 'next/navigation';
+import { StatusBadge } from '@/components/status-badge';
 
 
 export function OrganisationsClientPage({ initialOrganizations, users }: { initialOrganizations: Organization[], users: User[] }) {
   const [organizations, setOrganizations] = useState<Organization[]>(initialOrganizations);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
-  const [deletingOrgId, setDeletingOrgId] = useState<number | null>(null);
   const { refreshOrganizations } = useOrganization();
   const router = useRouter();
 
@@ -67,7 +56,6 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
     router.refresh();
     refreshOrganizations(); // This updates the global context
     setIsFormDialogOpen(false);
-    setIsDeleteDialogOpen(false);
   };
   
   const openAddDialog = () => {
@@ -80,9 +68,18 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
     setIsFormDialogOpen(true);
   };
   
-  const openDeleteDialog = (orgId: number) => {
-    setDeletingOrgId(orgId);
-    setIsDeleteDialogOpen(true);
+  const handleStatusToggle = async (org: Organization) => {
+    const formData = new FormData();
+    formData.append('id', org.id.toString());
+    formData.append('is_active', org.is_active.toString());
+    
+    const result = await toggleOrganizationStatus(formData);
+    if(result.error) {
+        toast({variant: 'destructive', title: 'Error', description: result.error});
+    } else {
+        toast({title: 'Success', description: result.message});
+        onActionFinish();
+    }
   }
 
   return (
@@ -101,6 +98,7 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
               <TableHead className="w-[80px]">Logo</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Address</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right"><span className="sr-only">Actions</span></TableHead>
             </TableRow>
           </TableHeader>
@@ -115,13 +113,19 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
                 </TableCell>
                 <TableCell className="font-medium">{org.name}</TableCell>
                 <TableCell>{org.address}</TableCell>
+                 <TableCell>
+                    <StatusBadge status={org.is_active ? 'Active' : 'Inactive'} />
+                </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem onSelect={() => openEditDialog(org)}><Edit className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => openDeleteDialog(org.id)}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => handleStatusToggle(org)}>
+                        {org.is_active ? <ToggleLeft className="mr-2 h-4 w-4" /> : <ToggleRight className="mr-2 h-4 w-4" />}
+                        {org.is_active ? 'Deactivate' : 'Activate'}
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -129,7 +133,7 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
             ))}
              {organizations.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={4} className="text-center h-24">No organizations found.</TableCell>
+                    <TableCell colSpan={5} className="text-center h-24">No organizations found.</TableCell>
                 </TableRow>
              )}
           </TableBody>
@@ -140,12 +144,6 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
         setIsOpen={setIsFormDialogOpen}
         org={editingOrg}
         users={users}
-        onFinished={onActionFinish}
-      />
-      <DeleteConfirmationDialog 
-        isOpen={isDeleteDialogOpen}
-        setIsOpen={setIsDeleteDialogOpen}
-        orgId={deletingOrgId}
         onFinished={onActionFinish}
       />
     </>
@@ -228,38 +226,5 @@ function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: {
                 </form>
             </DialogContent>
         </Dialog>
-    );
-}
-
-function DeleteConfirmationDialog({isOpen, setIsOpen, orgId, onFinished}: {isOpen: boolean, setIsOpen: (open: boolean) => void, orgId: number | null, onFinished: () => void}) {
-    const { toast } = useToast();
-    
-    async function handleDelete() {
-        if (!orgId) return;
-        const formData = new FormData();
-        formData.append('id', orgId.toString());
-
-        const result = await deleteOrganization(formData);
-        if (result?.error) {
-            toast({ variant: 'destructive', title: 'Error', description: result.error });
-        } else {
-            toast({ title: 'Success', description: 'Organization deleted.' });
-        }
-        onFinished();
-    }
-    
-    return (
-        <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>This action cannot be undone. This will permanently delete the organization and all of its associated data.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
     );
 }

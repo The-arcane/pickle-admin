@@ -154,22 +154,25 @@ export async function updateOrganization(formData: FormData) {
     return { success: true };
 }
 
-export async function deleteOrganization(formData: FormData) {
+export async function toggleOrganizationStatus(formData: FormData) {
     const supabase = createServiceRoleServer();
     const id = formData.get('id') as string;
+    const currentStatus = formData.get('is_active') === 'true';
 
     if (!id) {
         return { error: 'Organization ID is missing.' };
     }
-    // Note: To be fully robust, this should also handle deleting the logo from storage.
-    // For now, we'll just delete the DB record.
 
-    const { error } = await supabase.from('organisations').delete().eq('id', id);
-    if(error) {
-         console.error('Error deleting organization:', error);
-        return { error: `Failed to delete organization: ${error.message}` };
+    const { error } = await supabase
+        .from('organisations')
+        .update({ is_active: !currentStatus })
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error updating organization status:', error);
+        return { error: `Failed to update status: ${error.message}` };
     }
-    
+
     revalidatePath('/super-admin/organisations');
-    return { success: true };
+    return { success: true, message: `Organization status updated to ${!currentStatus ? 'Active' : 'Inactive'}.` };
 }

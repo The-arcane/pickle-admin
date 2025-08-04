@@ -5,6 +5,7 @@ export type Organization = {
   address: string;
   user_id: number;
   logo: string | null;
+  is_active: boolean;
 };
 
 export type User = {
