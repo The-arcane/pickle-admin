@@ -61,17 +61,18 @@ export async function saveWebsiteDetails(formData: FormData) {
         const visImageFile = formData.get('vis_image_file') as File | null;
         const misImageFile = formData.get('mis_image_file') as File | null;
         
-        const [logoUrl, bgUrl, visUrl, misUrl] = await Promise.all([
-             handleImageUpload(supabase, logoFile, orgId.toString(), 'logo'),
-             handleImageUpload(supabase, bgImageFile, orgId.toString(), 'bg'),
-             handleImageUpload(supabase, visImageFile, orgId.toString(), 'vision'),
-             handleImageUpload(supabase, misImageFile, orgId.toString(), 'mission'),
-        ]);
-
-        if (logoUrl) payload.logo = logoUrl;
-        if (bgUrl) payload.bg_image = bgUrl;
-        if (visUrl) payload.vis_image = visUrl;
-        if (misUrl) payload.mis_image = misUrl;
+        if (logoFile && logoFile.size > 0) {
+            payload.logo = await handleImageUpload(supabase, logoFile, orgId.toString(), 'logo');
+        }
+        if (bgImageFile && bgImageFile.size > 0) {
+            payload.bg_image = await handleImageUpload(supabase, bgImageFile, orgId.toString(), 'bg');
+        }
+        if (visImageFile && visImageFile.size > 0) {
+            payload.vis_image = await handleImageUpload(supabase, visImageFile, orgId.toString(), 'vision');
+        }
+        if (misImageFile && misImageFile.size > 0) {
+            payload.mis_image = await handleImageUpload(supabase, misImageFile, orgId.toString(), 'mission');
+        }
 
         // Upsert the data
         const { error } = await supabase.from('organisations_website').upsert(
