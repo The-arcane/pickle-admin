@@ -2,7 +2,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { PageHeader } from '@/components/page-header';
 import {
   Table,
   TableBody,
@@ -43,7 +42,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { createClient } from '@/lib/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { addOrganization, updateOrganization, deleteOrganization } from './actions';
 import type { Organization, User } from '@/types';
@@ -90,7 +88,10 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
   return (
     <>
       <div className="flex items-center justify-between">
-        <PageHeader title="Organizations" description="View and manage all organizations in the system." />
+        <div>
+            <h1 className="text-2xl font-bold tracking-tight">Organizations</h1>
+            <p className="text-muted-foreground">View and manage all organizations in the system.</p>
+        </div>
         <Button size="sm" className="gap-1" onClick={openAddDialog}><PlusCircle className="h-4 w-4" /> Add Organization</Button>
       </div>
       <Card className="overflow-hidden">
