@@ -1,65 +1,26 @@
-'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useOrganization } from '@/hooks/use-organization';
-import { createClient } from '@/lib/supabase/client';
-import { ResidencesClientPage } from '@/app/dashboard/residences/client';
-import { PageHeader } from '@/components/page-header';
+import { createServer } from '@/lib/supabase/server';
+import { SuperAdminResidencesClient } from './client';
+import type { Organization } from '@/types';
+import { redirect } from 'next/navigation';
 
-export default function SuperAdminResidencesPage() {
-    const supabase = createClient();
-    const { selectedOrgId } = useOrganization();
-    const [residences, setResidences] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
 
-    const fetchResidences = useCallback(async () => {
-        if (!selectedOrgId) {
-            setResidences([]);
-            setLoading(false);
-            return;
-        }
+export default async function SuperAdminResidencesPage() {
+    const supabase = await createServer();
+    const { data: { user } } = await supabase.auth.getUser();
 
-        setLoading(true);
-        const { data, error } = await supabase
-            .from('residences')
-            .select(`
-                id,
-                status,
-                invited_at,
-                joined_at,
-                "Name",
-                email,
-                phone,
-                user:user_id(profile_image_url)
-            `)
-            .eq('organisation_id', selectedOrgId)
-            .order('invited_at', { ascending: false });
-        
-        if (error) {
-            console.error("Error fetching residences for super admin:", error);
-            setResidences([]);
-        } else {
-            setResidences(data || []);
-        }
-        setLoading(false);
-    }, [selectedOrgId, supabase]);
+    if (!user) {
+        return redirect('/login?type=super-admin');
+    }
 
-    useEffect(() => {
-        fetchResidences();
-    }, [fetchResidences]);
+    const { data: organizations, error } = await supabase
+        .from('organisations')
+        .select('*')
+        .order('name');
+    
+    if (error) {
+        console.error("Error fetching organizations in super admin:", error);
+    }
 
-    return (
-        <div className="space-y-6">
-            <PageHeader 
-                title="Residences"
-                description="Manage and invite residents for the selected organization."
-            />
-            <ResidencesClientPage
-                initialResidences={residences}
-                organisationId={selectedOrgId}
-                loading={loading}
-                onActionFinish={fetchResidences}
-            />
-        </div>
-    );
+    return <SuperAdminResidencesClient initialOrganizations={organizations as Organization[] || []} />;
 }
