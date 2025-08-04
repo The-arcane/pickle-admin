@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Select,
@@ -18,12 +17,14 @@ export function PageHeader({
   description: string;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
         <p className="text-muted-foreground">{description}</p>
       </div>
-      <OrganizationSelect />
+      <div className="pb-px">
+        <OrganizationSelect />
+      </div>
     </div>
   );
 }
