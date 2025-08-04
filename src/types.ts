@@ -8,6 +8,18 @@ export type Organization = {
   is_active: boolean;
 };
 
+export type OrganisationWebsite = {
+  id: number;
+  org_id: number;
+  About: string | null;
+  Our_vision: string | null;
+  Our_mission: string | null;
+  logo: string | null;
+  bg_image: string | null;
+  vis_image: string | null;
+  mis_image: string | null;
+}
+
 export type User = {
   id: number;
   name: string;

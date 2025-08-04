@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
@@ -27,7 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MoreHorizontal, PlusCircle, Edit, ToggleRight, ToggleLeft } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Edit, ToggleRight, ToggleLeft, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
@@ -122,6 +121,12 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem onSelect={() => openEditDialog(org)}><Edit className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/super-admin/organisations/${org.id}/website`}>
+                          <Globe className="mr-2 h-4 w-4" />
+                          <span>Edit Public Page</span>
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => handleStatusToggle(org)}>
                         {org.is_active ? <ToggleLeft className="mr-2 h-4 w-4" /> : <ToggleRight className="mr-2 h-4 w-4" />}
                         {org.is_active ? 'Deactivate' : 'Activate'}
