@@ -55,24 +55,23 @@ export async function saveWebsiteDetails(formData: FormData) {
             Our_mission: formData.get('mission') as string,
         };
 
-        // Handle image uploads
+        // Handle image uploads in parallel
         const logoFile = formData.get('logo_file') as File | null;
         const bgImageFile = formData.get('bg_image_file') as File | null;
         const visImageFile = formData.get('vis_image_file') as File | null;
         const misImageFile = formData.get('mis_image_file') as File | null;
-        
-        if (logoFile && logoFile.size > 0) {
-            payload.logo = await handleImageUpload(supabase, logoFile, orgId.toString(), 'logo');
-        }
-        if (bgImageFile && bgImageFile.size > 0) {
-            payload.bg_image = await handleImageUpload(supabase, bgImageFile, orgId.toString(), 'bg');
-        }
-        if (visImageFile && visImageFile.size > 0) {
-            payload.vis_image = await handleImageUpload(supabase, visImageFile, orgId.toString(), 'vision');
-        }
-        if (misImageFile && misImageFile.size > 0) {
-            payload.mis_image = await handleImageUpload(supabase, misImageFile, orgId.toString(), 'mission');
-        }
+
+        const [logoUrl, bgImageUrl, visImageUrl, misImageUrl] = await Promise.all([
+            handleImageUpload(supabase, logoFile, orgId.toString(), 'logo'),
+            handleImageUpload(supabase, bgImageFile, orgId.toString(), 'bg'),
+            handleImageUpload(supabase, visImageFile, orgId.toString(), 'vision'),
+            handleImageUpload(supabase, misImageFile, orgId.toString(), 'mission')
+        ]);
+
+        if (logoUrl) payload.logo = logoUrl;
+        if (bgImageUrl) payload.bg_image = bgImageUrl;
+        if (visImageUrl) payload.vis_image = visImageUrl;
+        if (misImageUrl) payload.mis_image = misImageUrl;
 
         // Upsert the data
         const { error } = await supabase.from('organisations_website').upsert(
