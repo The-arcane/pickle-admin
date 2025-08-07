@@ -52,13 +52,14 @@ export default async function BookingsPage() {
 
   // Fetch related data for forms and display, scoped to the organization
   const { data: courtsData, error: courtsError } = await supabase.from('courts').select('id, name').eq('organisation_id', organisationId);
+  // Fetch all non-admin users for the organization
   const { data: orgUsersData, error: usersError } = await supabase
-    .from('user')
-    .select('id, name')
+    .from('user_organisations')
+    .select('user!inner(id, name)')
     .eq('organisation_id', organisationId)
-    .eq('user_type', 1);
+    .not('user.user_type', 'in', '(2,3)'); // Exclude Admins and Super Admins
 
-  const users = orgUsersData || [];
+  const users = orgUsersData?.map(u => u.user).filter(Boolean) || [];
 
   const { data: courtBookingStatusesData, error: courtStatusesError } = await supabase.from('booking_status').select('id, label');
   const { data: eventBookingStatusesData, error: eventStatusesError } = await supabase.from('event_booking_status').select('id, label');
