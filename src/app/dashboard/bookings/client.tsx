@@ -281,6 +281,9 @@ export function BookingsClientPage({
     }
     
     const handleAddFormAction = async (formData: FormData) => {
+        if (addDate) {
+            formData.append('date', formatISO(addDate, { representation: 'date' }));
+        }
         const result = await addBooking(formData);
         if (result.error) {
             toast({

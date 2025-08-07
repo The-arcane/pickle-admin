@@ -3,7 +3,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { parseISO, getDay } from 'date-fns';
+import { parseISO, getDay, format } from 'date-fns';
 import { randomUUID } from 'crypto';
 
 const statusMapToDb: { [key: string]: number } = {
@@ -12,16 +12,62 @@ const statusMapToDb: { [key: string]: number } = {
   'Pending': 2,
 };
 
+async function findOrCreateTimeslot(supabase: any, court_id: number, date: string, start_time: string, end_time: string): Promise<number | null> {
+    // This is a simplified example. In a real app, you might have pre-defined timeslots.
+    // This function finds a timeslot or creates one if it doesn't exist.
+    // NOTE: This assumes start_time and end_time are unique for a given court and date.
+    
+    // First, try to find an existing timeslot
+    let { data: existingTimeslot, error: findError } = await supabase
+        .from('timeslots')
+        .select('id')
+        .eq('court_id', court_id)
+        .eq('date', date)
+        .eq('start_time', start_time)
+        .eq('end_time', end_time)
+        .maybeSingle();
+
+    if (findError) {
+        console.error("Error finding timeslot:", findError);
+        return null;
+    }
+
+    if (existingTimeslot) {
+        return existingTimeslot.id;
+    }
+
+    // If not found, create a new one
+    const { data: newTimeslot, error: createError } = await supabase
+        .from('timeslots')
+        .insert({
+            court_id,
+            date,
+            start_time,
+            end_time
+        })
+        .select('id')
+        .single();
+    
+    if (createError) {
+        console.error("Error creating timeslot:", createError);
+        return null;
+    }
+
+    return newTimeslot.id;
+}
+
+
 export async function addBooking(formData: FormData) {
   const supabase = await createServer();
   const user_id = formData.get('user_id') as string;
   const court_id = formData.get('court_id') as string;
   const timeslot_id = formData.get('timeslot_id') as string;
   const status = formData.get('status') as string;
-  
+  const date_string = formData.get('date') as string;
+
   const statusValue = statusMapToDb[status];
 
-  if (!user_id || !court_id || !timeslot_id || statusValue === undefined) {
+  if (!user_id || !court_id || !timeslot_id || statusValue === undefined || !date_string) {
     return { error: 'All fields are required.' };
   }
   
