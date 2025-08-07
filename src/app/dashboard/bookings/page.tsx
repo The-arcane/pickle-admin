@@ -53,14 +53,14 @@ export default async function BookingsPage() {
   // Fetch related data for forms and display, scoped to the organization
   const { data: courtsData, error: courtsError } = await supabase.from('courts').select('id, name').eq('organisation_id', organisationId);
   
-  // Fetch all users with user_type = 1 for the organization
-  const { data: orgUsersData, error: usersError } = await supabase
-    .from('user_organisations')
-    .select('user!inner(id, name)')
-    .eq('organisation_id', organisationId)
-    .eq('user.user_type', 1);
+  // CORRECTED QUERY: Fetch all users with user_type = 1 for the organization
+  const { data: usersData, error: usersError } = await supabase
+    .from('user')
+    .select('id, name, user_organisations!inner(organisation_id)')
+    .eq('user_type', 1)
+    .eq('user_organisations.organisation_id', organisationId);
 
-  const users = orgUsersData?.map(u => u.user).filter(Boolean) || [];
+  const users = usersData || [];
 
   const { data: courtBookingStatusesData, error: courtStatusesError } = await supabase.from('booking_status').select('id, label');
   const { data: eventBookingStatusesData, error: eventStatusesError } = await supabase.from('event_booking_status').select('id, label');
