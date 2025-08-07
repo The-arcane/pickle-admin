@@ -11,109 +11,87 @@ export default async function BookingsPage() {
     return redirect('/login');
   }
 
-  // Get user's internal ID from their auth UUID
-  const { data: userRecord } = await supabase
+  // Get user's internal ID from their auth UUID to find their organization
+  const { data: adminProfile } = await supabase
     .from('user')
-    .select('id, organisation_id')
+    .select('organisation_id')
     .eq('user_uuid', user.id)
     .single();
 
-  if (!userRecord) {
+  if (!adminProfile || !adminProfile.organisation_id) {
     // This case should be handled by the layout, but as a safeguard:
-    return redirect('/login');
+    return redirect('/login?error=Your%20admin%20account%20is%20not%20associated%20with%20an%20organization.');
   }
   
-  const organisationId = userRecord?.organisation_id;
+  const organisationId = adminProfile.organisation_id;
 
-  if (!organisationId) {
-    // This should not happen for a valid admin, but handle it gracefully
-    return (
-        <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-muted-foreground">You are not associated with an organization.</p>
-        </div>
-    );
-  }
+  // Fetch all necessary data in parallel
+  const [
+    courtBookingsRes,
+    eventBookingsRes,
+    courtsRes,
+    usersRes,
+    courtStatusesRes,
+    eventStatusesRes,
+  ] = await Promise.all([
+    supabase
+      .from('bookings')
+      .select('id, booking_status, court_id, timeslot_id, user:user_id(name), courts:court_id!inner(name), timeslots:timeslot_id(date, start_time, end_time)')
+      .eq('courts.organisation_id', organisationId)
+      .order('id', { ascending: false }),
+    supabase
+      .from('event_bookings')
+      .select('id, event_id, booking_time, quantity, status, user:user_id(name), events:event_id!inner(title)')
+      .eq('events.organiser_org_id', organisationId)
+      .order('booking_time', { ascending: false }),
+    supabase.from('courts').select('id, name').eq('organisation_id', organisationId),
+    supabase.from('user').select('id, name').eq('organisation_id', organisationId).eq('user_type', 1),
+    supabase.from('booking_status').select('id, label'),
+    supabase.from('event_booking_status').select('id, label'),
+  ]);
 
-  // Fetch court bookings for the admin's organization
-  const { data: courtBookingsData, error: courtBookingsError } = await supabase
-    .from('bookings')
-    .select(
-      'id, booking_status, court_id, timeslot_id, user:user_id(name), courts:court_id!inner(name), timeslots:timeslot_id(date, start_time, end_time)'
-    )
-    .eq('courts.organisation_id', organisationId)
-    .order('id', { ascending: false });
-
-  // Fetch event bookings for the admin's organization
-  const { data: eventBookingsData, error: eventBookingsError } = await supabase
-    .from('event_bookings')
-    .select('id, event_id, booking_time, quantity, status, user:user_id(name), events:event_id!inner(title)')
-    .eq('events.organiser_org_id', organisationId)
-    .order('booking_time', { ascending: false });
-
-  // Fetch related data for forms and display, scoped to the organization
-  const { data: courtsData, error: courtsError } = await supabase.from('courts').select('id, name').eq('organisation_id', organisationId);
+  if (courtBookingsRes.error) console.error('Error fetching court bookings:', courtBookingsRes.error);
+  if (eventBookingsRes.error) console.error('Error fetching event bookings:', eventBookingsRes.error);
+  if (courtsRes.error) console.error('Error fetching courts:', courtsRes.error);
+  if (usersRes.error) console.error('Error fetching users:', usersRes.error);
+  if (courtStatusesRes.error) console.error('Error fetching court statuses:', courtStatusesRes.error);
+  if (eventStatusesRes.error) console.error('Error fetching event statuses:', eventStatusesRes.error);
   
-  // CORRECTED QUERY: This is the definitive fix to fetch users of type 1 for the specific organization.
-  const { data: usersData, error: usersError } = await supabase
-      .from('user')
-      .select('id, name')
-      .eq('organisation_id', organisationId)
-      .eq('user_type', 1);
+  let eventBookings = eventBookingsRes.data || [];
 
-  const users = usersData || [];
-
-  const { data: courtBookingStatusesData, error: courtStatusesError } = await supabase.from('booking_status').select('id, label');
-  const { data: eventBookingStatusesData, error: eventStatusesError } = await supabase.from('event_booking_status').select('id, label');
-
-  if (courtBookingsError || eventBookingsError || courtsError || usersError || courtStatusesError || eventStatusesError) {
-    console.error('Error fetching bookings data:', { courtBookingsError, eventBookingsError, courtsError, usersError, courtStatusesError, eventStatusesError });
-  }
-
-  let eventBookings = eventBookingsData || [];
-
-  // Calculate total enrollments for each event that has a booking
+  // Augment event bookings with total enrollment counts
   if (eventBookings.length > 0) {
-    const eventIds = [...new Set(eventBookings.map(b => b.event_id).filter(id => id != null))] as number[];
+    const eventIdsWithBookings = [...new Set(eventBookings.map(b => b.event_id).filter(Boolean))];
     
-    if (eventIds.length > 0) {
-        // Fetch all confirmed bookings for these events to calculate totals
-        const { data: allBookingsForEvents, error: totalsError } = await supabase
+    if (eventIdsWithBookings.length > 0) {
+        const { data: allBookingsForEvents } = await supabase
         .from('event_bookings')
         .select('event_id, quantity')
-        .in('event_id', eventIds)
-        .eq('status', 1); // Assuming 1 is 'Confirmed' for event bookings
+        .in('event_id', eventIdsWithBookings)
+        .eq('status', 1); // Confirmed status
 
-        if (totalsError) {
-        console.error("Error fetching event enrollment totals:", totalsError);
-        } else if (allBookingsForEvents) {
-            const totalsMap: { [key: number]: number } = {};
-            allBookingsForEvents.forEach(b => {
-                if(b.event_id) {
-                    totalsMap[b.event_id] = (totalsMap[b.event_id] || 0) + (b.quantity ?? 1);
+        if (allBookingsForEvents) {
+            const totalsMap = allBookingsForEvents.reduce((acc, b) => {
+                if (b.event_id) {
+                    acc[b.event_id] = (acc[b.event_id] || 0) + (b.quantity || 1);
                 }
-            });
+                return acc;
+            }, {} as Record<number, number>);
         
-        // Augment the eventBookings data with the total
-        eventBookings = eventBookings.map(booking => ({
-            ...booking,
-            total_enrolled: totalsMap[booking.event_id!] || 0,
-        }));
+            eventBookings = eventBookings.map(booking => ({
+                ...booking,
+                total_enrolled: totalsMap[booking.event_id!] || 0,
+            }));
         }
     }
   }
 
-
-  const courtBookings = courtBookingsData || [];
-  const courts = courtsData || [];
-  const courtBookingStatuses = courtBookingStatusesData || [];
-  const eventBookingStatuses = eventBookingStatusesData || [];
-
   return <BookingsClientPage
-    initialCourtBookings={courtBookings}
+    initialCourtBookings={courtBookingsRes.data || []}
     initialEventBookings={eventBookings}
-    courts={courts}
-    users={users}
-    courtBookingStatuses={courtBookingStatuses}
-    eventBookingStatuses={eventBookingStatuses}
+    courts={courtsRes.data || []}
+    users={usersRes.data || []}
+    courtBookingStatuses={courtStatusesRes.data || []}
+    eventBookingStatuses={eventStatusesRes.data || []}
   />;
 }
