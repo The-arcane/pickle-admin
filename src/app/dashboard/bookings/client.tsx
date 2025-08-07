@@ -439,7 +439,7 @@ export function BookingsClientPage({
                                         {courtDateFilter ? format(courtDateFilter, "PPP") : <span>Filter by date</span>}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={courtDateFilter} onSelect={setCourtDateFilter} /></PopoverContent>
+                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={courtDateFilter} onSelect={setCourtDateFilter} initialFocus /></PopoverContent>
                             </Popover>
                             {courtDateFilter && (
                                 <Button variant="outline" size="icon" onClick={() => setCourtDateFilter(undefined)} className="h-10 w-10 p-0 border-l-0 rounded-l-none">
@@ -549,6 +549,7 @@ export function BookingsClientPage({
                                     mode="single"
                                     selected={selectedDate}
                                     onSelect={setSelectedDate}
+                                    initialFocus
                                     />
                                 </PopoverContent>
                             </Popover>
@@ -651,7 +652,8 @@ export function BookingsClientPage({
                                     mode="single"
                                     selected={addDate}
                                     onSelect={setAddDate}
-                                    disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                                    initialFocus
+                                    disabled={(date) => date < startOfDay(new Date())}
                                     />
                                 </PopoverContent>
                             </Popover>
