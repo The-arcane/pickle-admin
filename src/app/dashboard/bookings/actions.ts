@@ -13,11 +13,6 @@ const statusMapToDb: { [key: string]: number } = {
 };
 
 async function findOrCreateTimeslot(supabase: any, court_id: number, date: string, start_time: string, end_time: string): Promise<number | null> {
-    // This is a simplified example. In a real app, you might have pre-defined timeslots.
-    // This function finds a timeslot or creates one if it doesn't exist.
-    // NOTE: This assumes start_time and end_time are unique for a given court and date.
-    
-    // First, try to find an existing timeslot
     let { data: existingTimeslot, error: findError } = await supabase
         .from('timeslots')
         .select('id')
@@ -36,7 +31,6 @@ async function findOrCreateTimeslot(supabase: any, court_id: number, date: strin
         return existingTimeslot.id;
     }
 
-    // If not found, create a new one
     const { data: newTimeslot, error: createError } = await supabase
         .from('timeslots')
         .insert({
@@ -85,7 +79,7 @@ export async function addBooking(formData: FormData) {
 
   if (error) {
     console.error('Error adding booking:', error);
-    if (error.code === '23505') { // Unique constraint violation
+    if (error.code === '23505') {
         return { error: 'This timeslot is already booked. Please choose another.' };
     }
     return { error: `Failed to add booking: ${error.message}` };
@@ -138,9 +132,6 @@ export async function updateBooking(formData: FormData) {
   return { success: true };
 }
 
-
-// Helper function to check for time overlaps
-// All inputs are Date objects
 function isOverlapping(slotStart: Date, slotEnd: Date, blockStart: Date, blockEnd: Date): boolean {
     return slotStart < blockEnd && slotEnd > blockStart;
 }
@@ -153,11 +144,9 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         return [];
     }
     
-    // Use parseISO to ensure we get a date object at midnight UTC
     const selectedDate = parseISO(dateString);
-    const dayOfWeek = getDay(selectedDate); // 0 = Sunday, 1 = Monday, ... (date-fns standard)
+    const dayOfWeek = getDay(selectedDate);
 
-    // 1. Fetch all data needed for filtering in parallel
     const [
         { data: allTimeslots, error: timeslotsError },
         { data: recurringUnavailability, error: recurringError },
@@ -179,7 +168,6 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         return [];
     }
 
-    // 2. Filter out already booked slots
     const timeslotIdsForDay = allTimeslots.map(t => t.id);
     const bookingsOnDate = bookingsData?.filter(b => timeslotIdsForDay.includes(b.timeslot_id));
     
@@ -193,19 +181,16 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         slot => !bookedTimeslotIds.has(slot.id)
     );
     
-    // 3. Prepare unavailability periods for comparison, ensuring all are in UTC
     const unavailabilityPeriods: { start: Date, end: Date }[] = [];
     const year = selectedDate.getUTCFullYear();
     const month = selectedDate.getUTCMonth();
     const day = selectedDate.getUTCDate();
     
-    // Process recurring unavailability for the day of the week
     recurringUnavailability?.forEach(block => {
         if(block.start_time && block.end_time) {
             const [startHour, startMinute] = block.start_time.split(':').map(Number);
             const [endHour, endMinute] = block.end_time.split(':').map(Number);
             
-            // Create UTC dates for comparison using native Date.UTC
             const blockStart = new Date(Date.UTC(year, month, day, startHour, startMinute));
             const blockEnd = new Date(Date.UTC(year, month, day, endHour, endMinute));
 
@@ -213,11 +198,9 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         }
     });
 
-    // Process one-off unavailability blocks for the specific date
     oneOffUnavailability?.forEach(block => {
         let blockStart, blockEnd;
 
-        // If start/end times are null, block the whole day in UTC
         if (!block.start_time || !block.end_time) {
             blockStart = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
             blockEnd = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
@@ -232,12 +215,10 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         unavailabilityPeriods.push({ start: blockStart, end: blockEnd });
     });
 
-    // 4. Filter slots based on all unavailability periods
     if (unavailabilityPeriods.length > 0) {
         availableTimeslots = availableTimeslots.filter(slot => {
             if (!slot.start_time || !slot.end_time) return false;
             
-            // Timeslots from DB are timestamptz, parseISO handles them correctly into UTC Date objects
             const slotStart = parseISO(slot.start_time);
             const slotEnd = parseISO(slot.end_time);
 
@@ -247,7 +228,7 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
                 isOverlapping(slotStart, slotEnd, block.start, block.end)
             );
 
-            return !isUnavailable; // Keep the slot if it is NOT unavailable
+            return !isUnavailable;
         });
     }
     

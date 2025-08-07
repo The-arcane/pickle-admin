@@ -3,6 +3,8 @@ import { createServer } from '@/lib/supabase/server';
 import { BookingsClientPage } from './client';
 import { redirect } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default async function BookingsPage() {
   const supabase = await createServer();
 
@@ -11,7 +13,6 @@ export default async function BookingsPage() {
     return redirect('/login');
   }
 
-  // Get user's internal ID from their auth UUID to find their organization
   const { data: adminProfile } = await supabase
     .from('user')
     .select('organisation_id')
@@ -19,7 +20,6 @@ export default async function BookingsPage() {
     .single();
 
   if (!adminProfile || !adminProfile.organisation_id) {
-    // This case should be handled by the layout, but as a safeguard:
     return redirect('/login?error=Your%20admin%20account%20is%20not%20associated%20with%20an%20organization.');
   }
   
@@ -36,12 +36,12 @@ export default async function BookingsPage() {
   ] = await Promise.all([
     supabase
       .from('bookings')
-      .select('id, booking_status, court_id, timeslot_id, user:user_id(name), courts:court_id!inner(name), timeslots:timeslot_id(date, start_time, end_time)')
+      .select('id, booking_status, court_id, timeslot_id, user:user_id(name), courts:court_id!inner(name, organisation_id), timeslots:timeslot_id(date, start_time, end_time)')
       .eq('courts.organisation_id', organisationId)
       .order('id', { ascending: false }),
     supabase
       .from('event_bookings')
-      .select('id, event_id, booking_time, quantity, status, user:user_id(name), events:event_id!inner(title)')
+      .select('id, event_id, booking_time, quantity, status, user:user_id(name), events:event_id!inner(title, organiser_org_id)')
       .eq('events.organiser_org_id', organisationId)
       .order('booking_time', { ascending: false }),
     supabase.from('courts').select('id, name').eq('organisation_id', organisationId),
@@ -59,7 +59,6 @@ export default async function BookingsPage() {
   
   let eventBookings = eventBookingsRes.data || [];
 
-  // Augment event bookings with total enrollment counts
   if (eventBookings.length > 0) {
     const eventIdsWithBookings = [...new Set(eventBookings.map(b => b.event_id).filter(Boolean))];
     
@@ -68,7 +67,7 @@ export default async function BookingsPage() {
         .from('event_bookings')
         .select('event_id, quantity')
         .in('event_id', eventIdsWithBookings)
-        .eq('status', 1); // Confirmed status
+        .eq('status', 1);
 
         if (allBookingsForEvents) {
             const totalsMap = allBookingsForEvents.reduce((acc, b) => {

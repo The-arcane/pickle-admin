@@ -3,13 +3,13 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
-import { Calendar as CalendarIcon, Pencil, Search, X, Calendar } from 'lucide-react';
+import { Calendar as CalendarIcon, Pencil, Search, X, Calendar, PartyPopper } from 'lucide-react';
 import { addBooking, updateBooking, getTimeslots } from './actions';
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, formatISO, isEqual, startOfDay } from 'date-fns';
@@ -163,7 +163,7 @@ export function BookingsClientPage({
         setIsEditDialogOpen(true);
     };
 
-    const handleFormSubmit = useCallback(async (action: (formData: FormData) => Promise<any>, successMsg: string, errorTitle: string) => {
+    const handleFormSubmit = useCallback(async (action: Promise<any>, successMsg: string, errorTitle: string) => {
         const result = await action;
         if (result.error) {
             toast({ variant: "destructive", title: errorTitle, description: result.error });
@@ -175,132 +175,160 @@ export function BookingsClientPage({
     }, [toast]);
     
     return (
-        <div className="space-y-4">
-            <header className="flex items-center justify-between">
+        <div className="space-y-6">
+            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <Calendar className="h-8 w-8 text-green-500" />
+                    <Calendar className="h-8 w-8 text-primary" />
                     <div>
                         <h1 className="text-3xl font-bold">Bookings</h1>
                         <p className="text-muted-foreground">Manage court and event bookings.</p>
                     </div>
                 </div>
+                 <div className="w-full sm:w-auto">
+                    {activeTab === 'courts' && <Button className="w-full" onClick={() => setIsAddDialogOpen(true)}>+ Add Court Booking</Button>}
+                    {activeTab === 'events' && <Button className="w-full" asChild><Link href="/dashboard/events/add">+ Add Event Booking</Link></Button>}
+                </div>
             </header>
 
-            <Tabs defaultValue="courts" onValueChange={setActiveTab} className="space-y-4">
-                <header className="flex justify-between items-center">
-                    <TabsList>
-                        <TabsTrigger value="courts">Court Bookings</TabsTrigger>
-                        <TabsTrigger value="events">Event Bookings</TabsTrigger>
-                    </TabsList>
-                    <div>
-                        {activeTab === 'courts' && <Button onClick={() => setIsAddDialogOpen(true)}>+ Add Court Booking</Button>}
-                        {activeTab === 'events' && <Button asChild><Link href="/dashboard/events/add">+ Add Event Booking</Link></Button>}
-                    </div>
-                </header>
+            <Tabs defaultValue="courts" onValueChange={setActiveTab}>
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="courts">
+                        <Calendar className="mr-2 h-4 w-4"/>
+                        Court Bookings
+                    </TabsTrigger>
+                    <TabsTrigger value="events">
+                        <PartyPopper className="mr-2 h-4 w-4"/>
+                        Event Bookings
+                    </TabsTrigger>
+                </TabsList>
                 
-                <TabsContent value="courts">
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                        <div className="relative flex-grow sm:flex-grow-0">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="Search by user..." className="pl-10 w-full sm:w-48" value={courtUserSearch} onChange={e => setCourtUserSearch(e.target.value)} />
-                        </div>
-                        <Select value={courtIdFilter} onValueChange={setCourtIdFilter}>
-                            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Filter by court" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Courts</SelectItem>
-                                {allCourts.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <Select value={courtStatusFilter} onValueChange={setCourtStatusFilter}>
-                            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Filter by status" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                {courtBookingStatuses.map(s => <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", !courtDateFilter && "text-muted-foreground")}>
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {courtDateFilter ? format(courtDateFilter, "PPP") : <span>Filter by date</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={courtDateFilter} onSelect={setCourtDateFilter} /></PopoverContent>
-                        </Popover>
-                        {courtDateFilter && <Button variant="ghost" size="icon" onClick={() => setCourtDateFilter(undefined)}><X className="h-4 w-4" /></Button>}
-                    </div>
-                    <Card><CardContent className="pt-6"><Table>
-                        <TableHeader><TableRow>
-                            <TableHead>User</TableHead><TableHead>Court</TableHead><TableHead>Date</TableHead>
-                            <TableHead>Time</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
-                        </TableRow></TableHeader>
-                        <TableBody>
-                            {!isClient ? Array.from({ length: 5 }).map((_, i) => (
-                                <TableRow key={`skel-court-${i}`}>
-                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell><TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
-                                </TableRow>
-                            )) : filteredCourtBookings.length === 0 ? (
-                                <TableRow><TableCell colSpan={6} className="text-center h-24">No court bookings found.</TableCell></TableRow>
-                            ) : (
-                                filteredCourtBookings.map(b => (
-                                    <TableRow key={b.id}>
-                                        <TableCell className="font-medium">{b.user}</TableCell><TableCell>{b.court}</TableCell><TableCell>{b.date}</TableCell>
-                                        <TableCell>{b.time}</TableCell><TableCell><StatusBadge status={b.status} /></TableCell>
-                                        <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => handleEditClick(b)}><Pencil className="h-4 w-4" /><span className="sr-only">Edit</span></Button></TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table></CardContent></Card>
+                <TabsContent value="courts" className="mt-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>All Court Bookings</CardTitle>
+                            <CardDescription>Filter and manage all court reservations.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex flex-col md:flex-row gap-2">
+                                <div className="relative flex-grow">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input placeholder="Search by user name..." className="pl-10 w-full" value={courtUserSearch} onChange={e => setCourtUserSearch(e.target.value)} />
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 md:flex gap-2">
+                                    <Select value={courtIdFilter} onValueChange={setCourtIdFilter}>
+                                        <SelectTrigger className="w-full"><SelectValue placeholder="Filter by court" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Courts</SelectItem>
+                                            {allCourts.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select value={courtStatusFilter} onValueChange={setCourtStatusFilter}>
+                                        <SelectTrigger className="w-full"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Statuses</SelectItem>
+                                            {courtBookingStatuses.map(s => <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <div className="flex items-center">
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !courtDateFilter && "text-muted-foreground", courtDateFilter && "rounded-r-none")}>
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {courtDateFilter ? format(courtDateFilter, "PPP") : <span>Filter by date</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={courtDateFilter} onSelect={setCourtDateFilter} /></PopoverContent>
+                                        </Popover>
+                                        {courtDateFilter && <Button variant="outline" size="icon" className="h-10 w-10 p-0 border-l-0 rounded-l-none" onClick={() => setCourtDateFilter(undefined)}><X className="h-4 w-4" /></Button>}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader><TableRow>
+                                        <TableHead>User</TableHead><TableHead>Court</TableHead><TableHead>Date</TableHead>
+                                        <TableHead>Time</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
+                                    </TableRow></TableHeader>
+                                    <TableBody>
+                                        {!isClient ? Array.from({ length: 5 }).map((_, i) => (
+                                            <TableRow key={`skel-court-${i}`}>
+                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell><TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                                            </TableRow>
+                                        )) : filteredCourtBookings.length === 0 ? (
+                                            <TableRow><TableCell colSpan={6} className="text-center h-24">No court bookings found.</TableCell></TableRow>
+                                        ) : (
+                                            filteredCourtBookings.map(b => (
+                                                <TableRow key={b.id}>
+                                                    <TableCell className="font-medium">{b.user}</TableCell><TableCell>{b.court}</TableCell><TableCell>{b.date}</TableCell>
+                                                    <TableCell>{b.time}</TableCell><TableCell><StatusBadge status={b.status} /></TableCell>
+                                                    <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => handleEditClick(b)}><Pencil className="h-4 w-4" /><span className="sr-only">Edit</span></Button></TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
                 
-                <TabsContent value="events">
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                        <div className="relative flex-grow sm:flex-grow-0">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="Search event or user..." className="pl-10 w-full sm:w-64" value={eventSearch} onChange={e => setEventSearch(e.target.value)} />
-                        </div>
-                        <Select value={eventStatusFilter} onValueChange={setEventStatusFilter}>
-                            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Filter by status" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                {eventBookingStatuses.map(s => <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <Card><CardContent className="pt-6"><Table>
-                        <TableHeader><TableRow>
-                            <TableHead>Event</TableHead><TableHead>User</TableHead><TableHead>Attendees</TableHead>
-                            <TableHead>Total (Event)</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead>
-                        </TableRow></TableHeader>
-                        <TableBody>
-                            {!isClient ? Array.from({ length: 3 }).map((_, i) => (
-                                <TableRow key={`skel-event-${i}`}>
-                                    <TableCell><Skeleton className="h-5 w-32" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-16" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                                </TableRow>
-                            )) : filteredEventBookings.length === 0 ? (
-                                <TableRow><TableCell colSpan={6} className="text-center h-24">No event bookings found.</TableCell></TableRow>
-                            ) : (
-                                filteredEventBookings.map(b => (
-                                    <TableRow key={b.id}>
-                                        <TableCell className="font-medium">{b.event}</TableCell><TableCell>{b.user}</TableCell><TableCell>{b.quantity}</TableCell>
-                                        <TableCell>{b.total_enrolled}</TableCell><TableCell>{b.date}</TableCell><TableCell><StatusBadge status={b.status} /></TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table></CardContent></Card>
+                <TabsContent value="events" className="mt-6">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>All Event Bookings</CardTitle>
+                            <CardDescription>Filter and manage all event and activity enrollments.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex flex-col md:flex-row gap-2">
+                                <div className="relative flex-grow">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input placeholder="Search event or user..." className="pl-10 w-full" value={eventSearch} onChange={e => setEventSearch(e.target.value)} />
+                                </div>
+                                <Select value={eventStatusFilter} onValueChange={setEventStatusFilter}>
+                                    <SelectTrigger className="w-full md:w-48"><SelectValue placeholder="Filter by status" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Statuses</SelectItem>
+                                        {eventBookingStatuses.map(s => <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader><TableRow>
+                                        <TableHead>Event</TableHead><TableHead>User</TableHead><TableHead>Attendees</TableHead>
+                                        <TableHead>Total Enrolled</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead>
+                                    </TableRow></TableHeader>
+                                    <TableBody>
+                                        {!isClient ? Array.from({ length: 3 }).map((_, i) => (
+                                            <TableRow key={`skel-event-${i}`}>
+                                                <TableCell><Skeleton className="h-5 w-32" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-16" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                                            </TableRow>
+                                        )) : filteredEventBookings.length === 0 ? (
+                                            <TableRow><TableCell colSpan={6} className="text-center h-24">No event bookings found.</TableCell></TableRow>
+                                        ) : (
+                                            filteredEventBookings.map(b => (
+                                                <TableRow key={b.id}>
+                                                    <TableCell className="font-medium">{b.event}</TableCell><TableCell>{b.user}</TableCell><TableCell>{b.quantity}</TableCell>
+                                                    <TableCell>{b.total_enrolled}</TableCell><TableCell>{b.date}</TableCell><TableCell><StatusBadge status={b.status} /></TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
 
             {/* Edit Dialog */}
             {selectedBooking && <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogContent><DialogHeader><DialogTitle>Edit Court Booking</DialogTitle></DialogHeader>
-                    <form action={formData => handleFormSubmit(updateBooking(formData), "Booking updated.", "Update Failed")}>
+                    <form onSubmit={(e) => { e.preventDefault(); handleFormSubmit(updateBooking(new FormData(e.currentTarget)), "Booking updated.", "Update Failed"); }}>
                         <input type="hidden" name="id" value={selectedBooking.id} />
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
@@ -339,7 +367,8 @@ export function BookingsClientPage({
             {/* Add Dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogContent><DialogHeader><DialogTitle>Add New Court Booking</DialogTitle></DialogHeader>
-                    <form action={formData => {
+                    <form onSubmit={(e) => { e.preventDefault(); 
+                        const formData = new FormData(e.currentTarget);
                         if (addDate) formData.append('date', formatISO(addDate, { representation: 'date' }));
                         handleFormSubmit(addBooking(formData), "Booking added.", "Add Failed");
                     }}>
