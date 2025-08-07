@@ -53,14 +53,30 @@ export default async function BookingsPage() {
   // Fetch related data for forms and display, scoped to the organization
   const { data: courtsData, error: courtsError } = await supabase.from('courts').select('id, name').eq('organisation_id', organisationId);
   
-  // CORRECTED QUERY: Fetch all users with user_type = 1 for the organization
-    const { data: orgUsers, error: usersError } = await supabase
+  // CORRECTED QUERY: This is the definitive fix to fetch users of type 1 for the specific organization.
+  let users: { id: number; name: string; }[] = [];
+  const { data: orgUserLinks, error: orgUserLinksError } = await supabase
     .from('user_organisations')
-    .select('user!inner(id, name)')
-    .eq('organisation_id', organisationId)
-    .eq('user.user_type', 1);
+    .select('user_id')
+    .eq('organisation_id', organisationId);
 
-    const users = orgUsers?.map(u => u.user).filter(Boolean) || [];
+  let usersError: any = orgUserLinksError;
+
+  if (orgUserLinks && orgUserLinks.length > 0) {
+    const userIds = orgUserLinks.map(link => link.user_id);
+    const { data: userData, error: userDataError } = await supabase
+        .from('user')
+        .select('id, name')
+        .in('id', userIds)
+        .eq('user_type', 1);
+
+    if (userDataError) {
+        usersError = userDataError;
+    } else {
+        users = userData || [];
+    }
+  }
+
 
   const { data: courtBookingStatusesData, error: courtStatusesError } = await supabase.from('booking_status').select('id, label');
   const { data: eventBookingStatusesData, error: eventStatusesError } = await supabase.from('event_booking_status').select('id, label');
