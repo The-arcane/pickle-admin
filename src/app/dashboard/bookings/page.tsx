@@ -14,7 +14,7 @@ export default async function BookingsPage() {
   // Get user's internal ID from their auth UUID
   const { data: userRecord } = await supabase
     .from('user')
-    .select('id, organisation_id')
+    .select('id, user_organisations(organisation_id)')
     .eq('user_uuid', user.id)
     .single();
 
@@ -23,7 +23,7 @@ export default async function BookingsPage() {
     return redirect('/login');
   }
   
-  const organisationId = userRecord?.organisation_id;
+  const organisationId = userRecord?.user_organisations[0]?.organisation_id;
 
   if (!organisationId) {
     // This should not happen for a valid admin, but handle it gracefully
