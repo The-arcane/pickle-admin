@@ -14,7 +14,7 @@ export default async function BookingsPage() {
   // Get user's internal ID from their auth UUID
   const { data: userRecord } = await supabase
     .from('user')
-    .select('id, user_organisations(organisation_id)')
+    .select('id, organisation_id')
     .eq('user_uuid', user.id)
     .single();
 
@@ -23,7 +23,7 @@ export default async function BookingsPage() {
     return redirect('/login');
   }
   
-  const organisationId = userRecord?.user_organisations[0]?.organisation_id;
+  const organisationId = userRecord?.organisation_id;
 
   if (!organisationId) {
     // This should not happen for a valid admin, but handle it gracefully
@@ -54,29 +54,13 @@ export default async function BookingsPage() {
   const { data: courtsData, error: courtsError } = await supabase.from('courts').select('id, name').eq('organisation_id', organisationId);
   
   // CORRECTED QUERY: This is the definitive fix to fetch users of type 1 for the specific organization.
-  let users: { id: number; name: string; }[] = [];
-  const { data: orgUserLinks, error: orgUserLinksError } = await supabase
-    .from('user_organisations')
-    .select('user_id')
-    .eq('organisation_id', organisationId);
+  const { data: usersData, error: usersError } = await supabase
+      .from('user')
+      .select('id, name')
+      .eq('organisation_id', organisationId)
+      .eq('user_type', 1);
 
-  let usersError: any = orgUserLinksError;
-
-  if (orgUserLinks && orgUserLinks.length > 0) {
-    const userIds = orgUserLinks.map(link => link.user_id);
-    const { data: userData, error: userDataError } = await supabase
-        .from('user')
-        .select('id, name')
-        .in('id', userIds)
-        .eq('user_type', 1);
-
-    if (userDataError) {
-        usersError = userDataError;
-    } else {
-        users = userData || [];
-    }
-  }
-
+  const users = usersData || [];
 
   const { data: courtBookingStatusesData, error: courtStatusesError } = await supabase.from('booking_status').select('id, label');
   const { data: eventBookingStatusesData, error: eventStatusesError } = await supabase.from('event_booking_status').select('id, label');

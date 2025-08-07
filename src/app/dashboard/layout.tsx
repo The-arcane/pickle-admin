@@ -26,7 +26,7 @@ export default async function DashboardLayout({
   // Check 1: Fetch the user's profile and verify they are an admin type
   const { data: userProfile, error: profileError } = await supabase
     .from('user')
-    .select('id, name, email, profile_image_url, user_type')
+    .select('id, name, email, profile_image_url, user_type, organisation_id')
     .eq('user_uuid', user.id)
     .single();
 
@@ -37,20 +37,14 @@ export default async function DashboardLayout({
   }
 
   // Check 2: Verify the admin user is associated with an organization
-  const { data: orgLink, error: orgLinkError } = await supabase
-    .from('user_organisations')
-    .select('organisation_id')
-    .eq('user_id', userProfile.id)
-    .maybeSingle();
+  const organisationId = userProfile.organisation_id;
 
   // If this fails, the user is an admin but has no org. Redirect them.
-  if (orgLinkError || !orgLink?.organisation_id) {
+  if (!organisationId) {
     await supabase.auth.signOut();
     return redirect('/login?error=Admin%20profile%20is%20not%20correctly%20associated%20with%20any%20organization');
   }
   
-  const organisationId = orgLink.organisation_id;
-
   // Fetch the organization's name for display
   let organisationName = 'Lumen';
   const { data: organisation } = await supabase
