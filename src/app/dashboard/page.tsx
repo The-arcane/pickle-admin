@@ -19,7 +19,6 @@ const statusMap: { [key: number]: string } = {
 const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
     try {
-        // Use parseISO to correctly handle date strings without timezones
         return format(parseISO(dateString), 'MMM d, yyyy');
     } catch (e) {
         return 'N/A';
@@ -39,7 +38,6 @@ async function getDashboardData(organisationId: number) {
   const supabase = await createServer();
   const today = new Date().toISOString().split('T')[0];
   
-  // Fetch the ID for 'Confirmed' event bookings to ensure query is robust
   const { data: confirmedEventStatus } = await supabase
     .from('event_booking_status')
     .select('id')
@@ -60,49 +58,36 @@ async function getDashboardData(organisationId: number) {
     totalEnrolmentsRes,
     organisationRes,
   ] = await Promise.all([
-    // Recent Bookings
     supabase
       .from('bookings')
       .select('id, booking_status, user:user_id(name, profile_image_url), courts:court_id!inner(name), timeslots:timeslot_id(date, start_time)')
       .eq('courts.organisation_id', organisationId)
       .limit(5)
       .order('id', { ascending: false }),
-
-    // Today's Bookings Count
     supabase
         .from('bookings')
         .select('id, timeslots!inner(date), courts!inner(id)', { count: 'exact', head: true })
         .eq('timeslots.date', today)
-        .in('booking_status', [1, 2]) // Confirmed or Pending
+        .in('booking_status', [1, 2])
         .eq('courts.organisation_id', organisationId),
-    
-    // Total Revenue
     supabase
         .from('bookings')
         .select('courts!inner(price)')
-        .eq('booking_status', 1) // Confirmed
+        .eq('booking_status', 1)
         .eq('courts.organisation_id', organisationId),
-
-    // Total Courts Count for the organization
     supabase
         .from('courts')
         .select('id', { count: 'exact', head: true })
         .eq('organisation_id', organisationId),
-
-    // Latest review (Note: this is not org-specific currently)
     supabase
         .from('court_reviews')
         .select('review_text, reviewer_name, rating')
         .order('review_date', { ascending: false })
         .limit(1)
         .maybeSingle(),
-
-    // All ratings for average calculation (Note: not org-specific)
     supabase
         .from('court_reviews')
         .select('rating'),
-
-    // Upcoming Events (list for display)
     supabase
         .from('events')
         .select('id, title, start_time, location_name')
@@ -110,21 +95,15 @@ async function getDashboardData(organisationId: number) {
         .gte('end_time', new Date().toISOString())
         .order('start_time', { ascending: true })
         .limit(3),
-    
-    // Total Events Count
     supabase
         .from('events')
         .select('id', { count: 'exact', head: true })
         .eq('organiser_org_id', organisationId),
-
-    // Total Event Enrolments (using dynamically fetched confirmed status ID)
     supabase
         .from('event_bookings')
         .select('quantity, events!inner(id)')
-        .eq('status', confirmedEventStatusId ?? -1) // Use fetched ID, or -1 if not found
+        .eq('status', confirmedEventStatusId ?? -1)
         .eq('events.organiser_org_id', organisationId),
-    
-    // Fetch organisation logo
     supabase.from('organisations').select('logo').eq('id', organisationId).maybeSingle(),
   ]);
 
@@ -252,8 +231,8 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <>
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
           {organisationLogo && (
             <Image
@@ -266,16 +245,16 @@ export default async function DashboardPage() {
             />
           )}
           <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground">Here&apos;s a snapshot of your facility&apos;s activity.</p>
           </div>
         </div>
-        <Link href="/dashboard/bookings">
-            <Button>+ New Booking</Button>
+        <Link href="/dashboard/bookings" className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto">+ New Booking</Button>
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {statCards.map((stat, i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -313,12 +292,12 @@ export default async function DashboardPage() {
 
             <Card>
                 <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <CardTitle>Upcoming Events</CardTitle>
                             <CardDescription>Here&apos;s what&apos;s happening soon at your facility.</CardDescription>
                         </div>
-                        <Button asChild variant="outline" size="sm">
+                        <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
                             <Link href="/dashboard/events">View All</Link>
                         </Button>
                     </div>
@@ -327,7 +306,7 @@ export default async function DashboardPage() {
                      {upcomingEvents.length > 0 ? (
                         <div className="space-y-4">
                             {upcomingEvents.map(event => (
-                                <div key={event.id} className="flex items-start justify-between gap-4 p-3 rounded-lg border">
+                                <div key={event.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 p-3 rounded-lg border">
                                     <div className="flex-1 space-y-1">
                                         <p className="font-semibold">{event.title}</p>
                                         <div className="flex flex-col sm:flex-row sm:items-center text-sm text-muted-foreground gap-x-4 gap-y-1">
@@ -341,7 +320,7 @@ export default async function DashboardPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <Button asChild variant="secondary" size="sm" className="shrink-0">
+                                    <Button asChild variant="secondary" size="sm" className="shrink-0 w-full sm:w-auto">
                                         <Link href={`/dashboard/events/${event.id}`}>View Details</Link>
                                     </Button>
                                 </div>
@@ -389,6 +368,6 @@ export default async function DashboardPage() {
           </Card>
         </div>
       </div>
-    </>
+    </div>
   );
 }

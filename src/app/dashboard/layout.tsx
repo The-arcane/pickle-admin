@@ -26,25 +26,29 @@ export default async function DashboardLayout({
   // Check 1: Fetch the user's profile and verify they are an admin type
   const { data: userProfile, error: profileError } = await supabase
     .from('user')
-    .select('id, name, email, profile_image_url, user_type, organisation_id')
+    .select('id, name, email, profile_image_url, user_type')
     .eq('user_uuid', user.id)
     .single();
 
   if (profileError || !userProfile || userProfile.user_type !== 2) {
-    // This case should be primarily handled by middleware, but serves as a final safeguard.
     await supabase.auth.signOut();
     return redirect('/login?error=Access%20Denied');
   }
 
-  // Check 2: Verify the admin user is associated with an organization
-  const organisationId = userProfile.organisation_id;
+  // Check 2: Verify the admin user is associated with an organization via the join table
+  const { data: orgLink, error: orgLinkError } = await supabase
+    .from('user_organisations')
+    .select('organisation_id')
+    .eq('user_id', userProfile.id)
+    .single();
 
-  // If this fails, the user is an admin but has no org. Redirect them.
-  if (!organisationId) {
+  if (orgLinkError || !orgLink?.organisation_id) {
     await supabase.auth.signOut();
-    return redirect('/login?error=Admin%20profile%20is%20not%20correctly%20associated%20with%20any%20organization');
+    return redirect(`/login?error=${encodeURIComponent('Admin profile is not correctly associated with any organization.')}`);
   }
   
+  const organisationId = orgLink.organisation_id;
+
   // Fetch the organization's name for display
   let organisationName = 'Lumen';
   const { data: organisation } = await supabase
@@ -106,7 +110,7 @@ export default async function DashboardLayout({
             <UserNav user={userProfile} basePath="/dashboard" />
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {children}
         </main>
       </div>

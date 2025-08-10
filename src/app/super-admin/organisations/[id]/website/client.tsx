@@ -18,16 +18,16 @@ import { Globe, Upload } from 'lucide-react';
 function TextSubmitButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="w-full md:w-auto">
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
             {pending ? 'Saving Content...' : 'Save Content Changes'}
         </Button>
     )
 }
 
-function ImageSubmitButton({label}: {label: string}) {
+function ImageSubmitButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" size="sm" variant="secondary" disabled={pending}>
+        <Button type="submit" size="sm" variant="secondary" disabled={pending} className="w-full sm:w-auto">
              {pending ? 'Uploading...' : <><Upload className="mr-2 h-4 w-4" /> Upload</>}
         </Button>
     )
@@ -44,7 +44,6 @@ function ImageUploadForm({ orgId, imageType, currentImageUrl, label }: { orgId: 
             toast({ variant: 'destructive', title: 'Error', description: result.error });
         } else {
             toast({ title: 'Success', description: result.message });
-            // The page will be revalidated, no need to reset form here.
         }
     }
 
@@ -70,9 +69,9 @@ function ImageUploadForm({ orgId, imageType, currentImageUrl, label }: { orgId: 
             <input type="hidden" name="image_type" value={imageType} />
             <div className="space-y-2">
                 <Label htmlFor={imageType}>{label} (Max 2MB)</Label>
-                <div className="flex flex-col sm:flex-row items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-stretch gap-2">
                      <Input ref={inputFileRef} id={imageType} name="image_file" type="file" accept="image/*" onChange={handleFileChange} className="flex-grow" />
-                     <ImageSubmitButton label={label}/>
+                     <ImageSubmitButton />
                 </div>
             </div>
             {preview && <Image src={preview} alt={`${label} preview`} width={160} height={90} className="mt-2 rounded-md object-cover" data-ai-hint="placeholder" />}
@@ -99,12 +98,12 @@ export function EditWebsiteClientPage({ organization, websiteDetails }: { organi
                 <div className="flex items-center gap-3">
                     <Globe className="h-8 w-8 text-primary" />
                     <div>
-                        <h1 className="text-3xl font-bold">Edit Public Page</h1>
+                        <h1 className="text-2xl sm:text-3xl font-bold">Edit Public Page</h1>
                         <p className="text-muted-foreground">Manage content for the public page of <span className="font-semibold">{organization.name}</span>.</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Button variant="outline" type="button" asChild className="flex-1 sm:flex-initial"><Link href="/super-admin/organisations">Back to Organizations</Link></Button>
+                    <Button variant="outline" type="button" asChild className="flex-1 sm:flex-initial"><Link href="/super-admin/organisations">Back</Link></Button>
                 </div>
             </div>
 

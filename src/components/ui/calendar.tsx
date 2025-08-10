@@ -8,17 +8,12 @@ import { DayPicker, type DayPickerProps, type Matcher } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
-export type CalendarProps = DayPickerProps & {
-  disabled?: Matcher | Matcher[]
-}
-
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
-  disabled,
   ...props
-}: CalendarProps) {
+}: DayPickerProps) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -61,7 +56,6 @@ function Calendar({
         IconLeft: () => <ChevronLeft className="h-4 w-4" />,
         IconRight: () => <ChevronRight className="h-4 w-4" />,
       }}
-      disabled={disabled}
       {...props}
     />
   )
@@ -69,3 +63,4 @@ function Calendar({
 Calendar.displayName = "Calendar"
 
 export { Calendar }
+export type { DayPickerProps as CalendarProps };
