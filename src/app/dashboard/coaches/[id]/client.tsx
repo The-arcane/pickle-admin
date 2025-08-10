@@ -87,7 +87,7 @@ export function EditCoachClientPage({ coach, sports, organisationId }: { coach: 
     };
 
     const handleAddPricing = (sportId: number) => {
-        setPricing([...pricing, { sport_id: sportId, pricing_type: 'session', price: 0 }]);
+        setPricing([...pricing, { sport_id: sportId, pricing_type: 'session', price: 0, description: '' }]);
     };
     
     const handleRemovePricing = (index: number) => {
@@ -96,7 +96,15 @@ export function EditCoachClientPage({ coach, sports, organisationId }: { coach: 
 
     const handlePricingChange = (index: number, field: keyof CoachPricing, value: any) => {
         const newPricing = [...pricing];
-        (newPricing[index] as any)[field] = value;
+        const currentItem = newPricing[index] as any;
+        
+        if (field === 'price') {
+             const numericValue = value === '' ? 0 : parseInt(value, 10);
+             currentItem[field] = isNaN(numericValue) ? 0 : numericValue;
+        } else {
+            currentItem[field] = value;
+        }
+        
         setPricing(newPricing);
     };
 
@@ -211,7 +219,7 @@ export function EditCoachClientPage({ coach, sports, organisationId }: { coach: 
                                                 </div>
                                                 <div className="space-y-1">
                                                     <Label>Price (INR)</Label>
-                                                    <Input type="number" value={p.price ?? ''} onChange={(e) => handlePricingChange(originalIndex, 'price', parseInt(e.target.value))} />
+                                                    <Input type="number" value={p.price ?? 0} onChange={(e) => handlePricingChange(originalIndex, 'price', e.target.value)} />
                                                 </div>
                                                 <div className="space-y-1 col-span-2 md:col-span-1">
                                                     <Label>Description</Label>

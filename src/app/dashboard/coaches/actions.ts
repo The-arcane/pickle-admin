@@ -11,18 +11,20 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 // Helper to upload profile image
 async function handleImageUpload(supabase: any, file: File | null, coachUserId: string): Promise<string | null> {
     if (!file || file.size === 0) {
+        console.log("No image file provided for upload.");
         return null;
     }
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
+        console.error(`File size ${file.size} exceeds limit of ${MAX_FILE_SIZE_BYTES} bytes.`);
         throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
     }
 
     const fileExt = file.name.split('.').pop();
     const fileName = `profile-${Date.now()}.${fileExt}`;
-    // Store images in a public folder, organized by user ID
     const filePath = `public/coaches/${coachUserId}/${fileName}`;
     
+    console.log(`Uploading coach profile image to: ${filePath}`);
     const { error: uploadError } = await supabase.storage
         .from('coach-profiles')
         .upload(filePath, file);
@@ -36,6 +38,7 @@ async function handleImageUpload(supabase: any, file: File | null, coachUserId: 
         .from('coach-profiles')
         .getPublicUrl(filePath);
     
+    console.log(`Successfully uploaded image. Public URL: ${publicUrlData.publicUrl}`);
     return publicUrlData.publicUrl;
 }
 
@@ -49,6 +52,7 @@ function getCoachDataFromFormData(formData: FormData) {
 }
 
 export async function addCoach(formData: FormData) {
+    console.log("Starting addCoach server action...");
     const supabaseAdmin = createServiceRoleServer();
 
     try {
@@ -60,10 +64,11 @@ export async function addCoach(formData: FormData) {
         const is_independent = formData.get('is_independent') === 'true';
 
         if (!name || !email || !password || !organisation_id) {
+            console.error("Validation failed: Missing required fields.");
             return { error: 'Name, email, password and organization are required.' };
         }
 
-        // 1. Create the user in Supabase Auth
+        console.log(`1. Creating user in Supabase Auth for email: ${email}`);
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email,
             password,
@@ -76,8 +81,9 @@ export async function addCoach(formData: FormData) {
             return { error: `Failed to create user: ${authError?.message || 'Could not create user account.'}` };
         }
         const newUserUuid = authUser.user.id;
+        console.log(`Successfully created auth user with UUID: ${newUserUuid}`);
         
-        // 2. Update the auto-created public.user record with user_type 5 (for coach) and link to org
+        console.log(`2. Updating public.user record for UUID ${newUserUuid}`);
         const { data: newUserProfile, error: profileError } = await supabaseAdmin
             .from('user')
             .update({
@@ -90,12 +96,13 @@ export async function addCoach(formData: FormData) {
             .single();
         
         if (profileError || !newUserProfile) {
-            await supabaseAdmin.auth.admin.deleteUser(newUserUuid); // Clean up auth user
             console.error('Error updating user profile for coach:', profileError);
+            await supabaseAdmin.auth.admin.deleteUser(newUserUuid);
             return { error: `Failed to set user as coach: ${profileError?.message}` };
         }
+        console.log(`Successfully updated user profile. User ID: ${newUserProfile.id}`);
 
-        // 3. The trigger `on_user_insert_create_coach` should have fired. Now, find the new coach record.
+        console.log(`3. Finding the new coach record created by trigger for user ID: ${newUserProfile.id}`);
         const { data: newCoach, error: findCoachError } = await supabaseAdmin
             .from('coaches')
             .select('id, user_id')
@@ -103,66 +110,70 @@ export async function addCoach(formData: FormData) {
             .single();
 
         if (findCoachError || !newCoach) {
-             await supabaseAdmin.auth.admin.deleteUser(newUserUuid); // Clean up
              console.error('Could not find coach record after trigger:', findCoachError);
+             await supabaseAdmin.auth.admin.deleteUser(newUserUuid);
              return { error: 'System error: Could not link coach profile.' };
         }
+        console.log(`Found new coach record with ID: ${newCoach.id}`);
         
         const coachId = newCoach.id;
         const coachUserId = newCoach.user_id.toString();
 
         const updatePayload: { bio: string, is_independent: boolean, profile_image?: string } = { bio, is_independent };
 
-        // 4. Handle image upload and update coach profile
+        console.log("4. Handling image upload...");
         const profileImageFile = formData.get('profile_image_file') as File | null;
         if (profileImageFile && profileImageFile.size > 0) {
             const profileImageUrl = await handleImageUpload(supabaseAdmin, profileImageFile, coachUserId);
             if(profileImageUrl) updatePayload.profile_image = profileImageUrl;
         }
 
+        console.log("Updating coach details with payload:", updatePayload);
         const { error: coachUpdateError } = await supabaseAdmin
             .from('coaches')
             .update(updatePayload)
             .eq('id', coachId);
             
         if (coachUpdateError) {
-            // This is not a fatal error, so we just log it.
             console.error('Error updating coach details:', coachUpdateError);
         }
 
-        // 5. Handle sports and pricing
+        console.log("5. Handling sports and pricing...");
         const sports = JSON.parse(formData.get('sports') as string) as Partial<CoachSport>[];
         const pricing = JSON.parse(formData.get('pricing') as string) as Partial<CoachPricing>[];
         
         if (sports.length > 0) {
             const sportsToInsert = sports.map(s => ({ coach_id: coachId, sport_id: s.sport_id }));
+            console.log("Inserting sports:", sportsToInsert);
             const { error } = await supabaseAdmin.from('coach_sports').insert(sportsToInsert);
-            if (error) return { error: `Failed to link sports: ${error.message}` };
+            if (error) { console.error("Error inserting sports:", error); return { error: `Failed to link sports: ${error.message}` }; }
         }
         
         if (pricing.length > 0) {
             const pricingToInsert = pricing.map(p => ({ ...p, coach_id: coachId, currency: 'INR', id: undefined }));
+            console.log("Inserting pricing:", pricingToInsert);
             const { error } = await supabaseAdmin.from('coach_pricing').insert(pricingToInsert);
-            if (error) return { error: `Failed to save pricing: ${error.message}` };
+            if (error) { console.error("Error inserting pricing:", error); return { error: `Failed to save pricing: ${error.message}` }; }
         }
 
     } catch (e: any) {
+        console.error("An unexpected error occurred in addCoach:", e);
         return { error: `An unexpected error occurred: ${e.message}` };
     }
 
+    console.log("Coach added successfully. Revalidating path...");
     revalidatePath('/dashboard/coaches');
     return { success: true };
 }
 
 export async function updateCoach(formData: FormData) {
-    const supabase = await createServer();
+    const supabase = createServer();
     const id = Number(formData.get('id'));
 
     try {
         if (!id) return { error: 'Coach ID is missing.' };
 
         const coachData = getCoachDataFromFormData(formData);
-
         const profileImageFile = formData.get('profile_image_file') as File | null;
         const updatePayload: any = { ...coachData };
 
@@ -171,37 +182,40 @@ export async function updateCoach(formData: FormData) {
             if (profileImageUrl) updatePayload.profile_image = profileImageUrl;
         }
 
-        // 1. Update coach record
+        console.log(`1. Updating coach record ID ${id} with payload:`, updatePayload);
         const { error: coachError } = await supabase
             .from('coaches')
             .update(updatePayload)
             .eq('id', id);
         
-        if (coachError) return { error: `Failed to update coach: ${coachError.message}` };
+        if (coachError) { console.error("Error updating coach:", coachError); return { error: `Failed to update coach: ${coachError.message}` }; }
 
-        // 2. Sync sports
+        console.log("2. Syncing sports...");
         const sports = JSON.parse(formData.get('sports') as string) as Partial<CoachSport>[];
-        // Delete all existing sports for simplicity, then re-add
         await supabase.from('coach_sports').delete().eq('coach_id', id);
         if (sports.length > 0) {
             const sportsToInsert = sports.map(s => ({ coach_id: id, sport_id: s.sport_id }));
+            console.log("Inserting sports:", sportsToInsert);
             const { error } = await supabase.from('coach_sports').insert(sportsToInsert);
-            if (error) return { error: `Failed to update sports: ${error.message}` };
+            if (error) { console.error("Error updating sports:", error); return { error: `Failed to update sports: ${error.message}` }; }
         }
 
-        // 3. Sync pricing
+        console.log("3. Syncing pricing...");
         const pricing = JSON.parse(formData.get('pricing') as string) as Partial<CoachPricing>[];
         await supabase.from('coach_pricing').delete().eq('coach_id', id);
         if (pricing.length > 0) {
             const pricingToInsert = pricing.map(p => ({ ...p, coach_id: id, currency: 'INR', id: undefined }));
+            console.log("Inserting pricing:", pricingToInsert);
             const { error } = await supabase.from('coach_pricing').insert(pricingToInsert);
-            if (error) return { error: `Failed to update pricing: ${error.message}` };
+            if (error) { console.error("Error updating pricing:", error); return { error: `Failed to update pricing: ${error.message}` }; }
         }
         
     } catch (e: any) {
+        console.error("An unexpected error occurred in updateCoach:", e);
         return { error: `An unexpected error occurred: ${e.message}` };
     }
 
+    console.log("Coach updated successfully. Revalidating paths...");
     revalidatePath('/dashboard/coaches');
     revalidatePath(`/dashboard/coaches/${id}`);
     return { success: true };
