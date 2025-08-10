@@ -117,7 +117,7 @@ export function EmployeesClientPage({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <Briefcase className="h-8 w-8 text-orange-500" />
                     <div>
@@ -125,7 +125,7 @@ export function EmployeesClientPage({
                         <p className="text-muted-foreground">Manage employees for your organization.</p>
                     </div>
                 </div>
-                <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Employee
                 </Button>
             </div>
@@ -135,9 +135,9 @@ export function EmployeesClientPage({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>User</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Phone</TableHead>
-                                <TableHead>Joined At</TableHead>
+                                <TableHead className="hidden sm:table-cell">Status</TableHead>
+                                <TableHead className="hidden md:table-cell">Phone</TableHead>
+                                <TableHead className="hidden lg:table-cell">Joined At</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -153,14 +153,14 @@ export function EmployeesClientPage({
                                                 </Avatar>
                                                 <div>
                                                     <p className="font-medium">{emp.name}</p>
-                                                    <p className="text-sm text-muted-foreground">{emp.email}</p>
+                                                    <p className="text-sm text-muted-foreground max-w-[120px] sm:max-w-none truncate">{emp.email}</p>
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell><StatusBadge status={emp.is_deleted ? 'Inactive' : 'Active'} /></TableCell>
-                                        <TableCell>{emp.phone ?? 'N/A'}</TableCell>
-                                        <TableCell>
-                                            {isClient ? format(new Date(emp.created_at), 'PPp') : <Skeleton className="h-5 w-32" />}
+                                        <TableCell className="hidden sm:table-cell"><StatusBadge status={emp.is_deleted ? 'Inactive' : 'Active'} /></TableCell>
+                                        <TableCell className="hidden md:table-cell">{emp.phone ?? 'N/A'}</TableCell>
+                                        <TableCell className="hidden lg:table-cell">
+                                            {isClient ? format(new Date(emp.created_at), 'PP') : <Skeleton className="h-5 w-24" />}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
@@ -240,5 +240,3 @@ export function EmployeesClientPage({
         </div>
     )
 }
-
-    
