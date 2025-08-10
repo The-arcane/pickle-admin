@@ -8,12 +8,19 @@ import { DayPicker, type DayPickerProps } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
+export type CalendarProps = DayPickerProps
+
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
   ...props
-}: DayPickerProps) {
+}: CalendarProps) {
+  // The 'initialFocus' prop is passed down by the Popover component.
+  // It's not a valid prop for the DayPicker component, so we intercept it here
+  // and prevent it from being passed down to the DOM element, which was causing the error.
+  const { initialFocus, ...restProps } = props as any;
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -56,11 +63,10 @@ function Calendar({
         IconLeft: () => <ChevronLeft className="h-4 w-4" />,
         IconRight: () => <ChevronRight className="h-4 w-4" />,
       }}
-      {...props}
+      {...restProps}
     />
   )
 }
 Calendar.displayName = "Calendar"
 
 export { Calendar }
-export type { DayPickerProps as CalendarProps };

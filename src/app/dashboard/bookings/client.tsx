@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
-import { Calendar as CalendarIcon, Pencil, Search, X, Calendar, PartyPopper } from 'lucide-react';
+import { Calendar as CalendarIcon, Pencil, Search, X, PartyPopper } from 'lucide-react';
 import { addBooking, updateBooking, getTimeslots } from './actions';
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, formatISO, isEqual, startOfDay } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -178,7 +179,7 @@ export function BookingsClientPage({
         <div className="space-y-6">
             <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <Calendar className="h-8 w-8 text-primary" />
+                    <CalendarIcon className="h-8 w-8 text-primary" />
                     <div>
                         <h1 className="text-3xl font-bold">Bookings</h1>
                         <p className="text-muted-foreground">Manage court and event bookings.</p>
@@ -193,7 +194,7 @@ export function BookingsClientPage({
             <Tabs defaultValue="courts" onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="courts">
-                        <Calendar className="mr-2 h-4 w-4"/>
+                        <CalendarIcon className="mr-2 h-4 w-4"/>
                         Court Bookings
                     </TabsTrigger>
                     <TabsTrigger value="events">
