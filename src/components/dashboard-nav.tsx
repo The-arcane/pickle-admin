@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BarChart, Calendar, List, Settings, User, Users, PartyPopper, Home, Briefcase, Contact2, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSheetContext } from '@/hooks/use-sheet-context';
+
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart, color: 'text-sky-500' },
@@ -22,6 +24,7 @@ const navItems = [
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const { setOpen } = useSheetContext();
 
   return (
     <nav className="grid items-start gap-1 px-4 text-sm font-medium">
@@ -29,6 +32,7 @@ export function DashboardNav() {
         <Link
           key={item.href}
           href={item.href}
+          onClick={() => setOpen && setOpen(false)}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
             pathname.startsWith(item.href) && item.href !== '/dashboard' && 'bg-muted text-primary',

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -6,8 +7,16 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { SheetContext } from "@/hooks/use-sheet-context"
 
-const Sheet = SheetPrimitive.Root
+const Sheet = ({open, onOpenChange, ...props}: React.ComponentProps<typeof SheetPrimitive.Root>) => {
+    return (
+        <SheetContext.Provider value={{open, setOpen: onOpenChange}}>
+            <SheetPrimitive.Root open={open} onOpenChange={onOpenChange} {...props} />
+        </SheetContext.Provider>
+    )
+}
+
 
 const SheetTrigger = SheetPrimitive.Trigger
 
