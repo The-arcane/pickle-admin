@@ -76,49 +76,51 @@ export function UsersClientPage({ users, error }: { users: User[], error: any })
         </div>
         <Card>
           <CardContent className="pt-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.length > 0 ? users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
-                          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{user.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.phone ?? 'N/A'}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={user.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => handleEditClick(user)}>
-                        <Pencil className="h-4 w-4" />
-                        <span className="sr-only">Edit user</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )) : (
+            <div className="overflow-x-auto">
+                <Table>
+                <TableHeader>
                     <TableRow>
-                        <TableCell colSpan={5} className="text-center h-24">
-                            No users found.
+                    <TableHead>User</TableHead>
+                    <TableHead className="hidden sm:table-cell">Email</TableHead>
+                    <TableHead className="hidden md:table-cell">Phone</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {users.length > 0 ? users.map((user) => (
+                    <TableRow key={user.id}>
+                        <TableCell>
+                        <div className="flex items-center gap-3">
+                            <Avatar>
+                            <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
+                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{user.name}</span>
+                        </div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">{user.email}</TableCell>
+                        <TableCell className="hidden md:table-cell">{user.phone ?? 'N/A'}</TableCell>
+                        <TableCell>
+                        <StatusBadge status={user.status} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(user)}>
+                            <Pencil className="h-4 w-4" />
+                            <span className="sr-only">Edit user</span>
+                        </Button>
                         </TableCell>
                     </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                    )) : (
+                        <TableRow>
+                            <TableCell colSpan={5} className="text-center h-24">
+                                No users found.
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+                </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -170,5 +172,3 @@ export function UsersClientPage({ users, error }: { users: User[], error: any })
     </>
   );
 }
-
-    

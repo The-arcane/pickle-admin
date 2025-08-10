@@ -55,20 +55,9 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
             </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-                <Select value={venueFilter} onValueChange={setVenueFilter}>
-                    <SelectTrigger className="w-auto md:w-[180px]">
-                        <span className="hidden md:inline">Venue: </span><span>{venueFilter === 'all' ? 'All Venues' : organisations.find(o => o.name === venueFilter)?.name ?? 'All Venues'}</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Venues</SelectItem>
-                        {organisations.map(org => (
-                            <SelectItem key={org.id} value={org.name}>{org.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <div className="relative flex-grow md:flex-grow-0">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
+                <div className="relative flex-grow w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
                         placeholder="Search for courts..." 
@@ -77,77 +66,78 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
+                <Select value={venueFilter} onValueChange={setVenueFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                         <SelectValue placeholder="All Venues" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Venues</SelectItem>
+                        {organisations.map(org => (
+                            <SelectItem key={org.id} value={org.name}>{org.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
-            <Button asChild>
+            <Button asChild className="w-full sm:w-auto flex-shrink-0">
               <Link href="/dashboard/courts/add">+ Add Court</Link>
             </Button>
         </div>
         
         <Card>
             <CardContent className="pt-0">
-            <Table>
-                <TableHeader>
-                <TableRow>
-                    <TableHead>Court</TableHead>
-                    <TableHead>Venue</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Max Players</TableHead>
-                    <TableHead>Visibility</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-                </TableHeader>
-                <TableBody>
-                {filteredCourts.map((court) => (
-                    <TableRow key={court.id}>
-                    <TableCell className="font-medium">{court.name}</TableCell>
-                    <TableCell>{court.venue || 'N/A'}</TableCell>
-                    <TableCell>{court.type || 'N/A'}</TableCell>
-                    <TableCell>{court.max_players || 'N/A'}</TableCell>
-                     <TableCell>
-                        <div className="flex items-center gap-2">
-                           {court.is_public ? <Globe className="h-4 w-4 text-green-500" /> : <ShieldOff className="h-4 w-4 text-red-500" />}
-                           <span className="capitalize">{court.is_public ? 'Public' : 'Private'}</span>
-                        </div>
-                    </TableCell>
-                    <TableCell>
-                        <StatusBadge status={court.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                            <Button asChild variant="ghost" size="icon">
-                              <Link href={`/dashboard/courts/${court.id}`}>
-                                <Eye className="h-4 w-4" />
-                                <span className="sr-only">View court</span>
-                              </Link>
-                            </Button>
-                            <Button asChild variant="ghost" size="icon">
-                              <Link href={`/dashboard/courts/${court.id}`}>
-                                <Pencil className="h-4 w-4" />
-                                <span className="sr-only">Edit court</span>
-                              </Link>
-                            </Button>
-                            <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                                <span className="sr-only">More actions</span>
-                            </Button>
-                        </div>
-                    </TableCell>
-                    </TableRow>
-                ))}
-                {filteredCourts.length === 0 && (
+            <div className="overflow-x-auto">
+                <Table>
+                    <TableHeader>
                     <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground h-24">
-                        No courts found matching your criteria.
-                    </TableCell>
+                        <TableHead>Court</TableHead>
+                        <TableHead className="hidden md:table-cell">Venue</TableHead>
+                        <TableHead className="hidden sm:table-cell">Type</TableHead>
+                        <TableHead className="hidden md:table-cell">Max Players</TableHead>
+                        <TableHead>Visibility</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                )}
-                </TableBody>
-            </Table>
+                    </TableHeader>
+                    <TableBody>
+                    {filteredCourts.map((court) => (
+                        <TableRow key={court.id}>
+                        <TableCell className="font-medium">{court.name}</TableCell>
+                        <TableCell className="hidden md:table-cell">{court.venue || 'N/A'}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{court.type || 'N/A'}</TableCell>
+                        <TableCell className="hidden md:table-cell">{court.max_players || 'N/A'}</TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-2">
+                            {court.is_public ? <Globe className="h-4 w-4 text-green-500" /> : <ShieldOff className="h-4 w-4 text-red-500" />}
+                            <span className="capitalize hidden sm:inline">{court.is_public ? 'Public' : 'Private'}</span>
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <StatusBadge status={court.status} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                                <Button asChild variant="ghost" size="icon">
+                                <Link href={`/dashboard/courts/${court.id}`}>
+                                    <Pencil className="h-4 w-4" />
+                                    <span className="sr-only">Edit court</span>
+                                </Link>
+                                </Button>
+                            </div>
+                        </TableCell>
+                        </TableRow>
+                    ))}
+                    {filteredCourts.length === 0 && (
+                        <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground h-24">
+                            No courts found matching your criteria.
+                        </TableCell>
+                        </TableRow>
+                    )}
+                    </TableBody>
+                </Table>
+            </div>
             </CardContent>
         </Card>
     </div>
   );
 }
-
-    
