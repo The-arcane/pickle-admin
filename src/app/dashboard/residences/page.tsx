@@ -47,7 +47,7 @@ export default async function ResidencesPage() {
             status,
             invited_at,
             joined_at,
-            "Name",
+            name,
             email,
             phone,
             user:user_id(profile_image_url)
@@ -59,6 +59,8 @@ export default async function ResidencesPage() {
         console.error("Error fetching residences:", error);
     }
     
+    const processedResidences = residences?.map(r => ({ ...r, "Name": r.name })) || [];
+
     return (
         <div className="space-y-6">
              <div className="flex items-center justify-between">
@@ -71,7 +73,7 @@ export default async function ResidencesPage() {
                 </div>
             </div>
             <ResidencesClientPage 
-                initialResidences={residences || []} 
+                initialResidences={processedResidences} 
                 organisationId={organisationId}
                 loading={false}
             />

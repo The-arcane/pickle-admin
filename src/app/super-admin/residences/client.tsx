@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -28,7 +29,7 @@ export function SuperAdminResidencesClient({ initialOrganizations }: { initialOr
                 status,
                 invited_at,
                 joined_at,
-                "Name",
+                name,
                 email,
                 phone,
                 user:user_id(profile_image_url)
@@ -40,7 +41,8 @@ export function SuperAdminResidencesClient({ initialOrganizations }: { initialOr
             console.error("Error fetching residences for super admin:", error);
             setResidences([]);
         } else {
-            setResidences(data || []);
+            const processedData = data?.map(r => ({ ...r, "Name": r.name })) || [];
+            setResidences(processedData);
         }
         setLoading(false);
     }, [selectedOrgId, supabase]);
