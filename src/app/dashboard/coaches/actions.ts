@@ -71,12 +71,9 @@ export async function addCoach(formData: FormData) {
             email_confirm: true, // Auto-confirm the email
         });
 
-        if (authError) {
+        if (authError || !authUser.user) {
             console.error("Error creating coach auth user:", authError);
-            return { error: `Failed to create user: ${authError.message}` };
-        }
-        if (!authUser.user) {
-            return { error: 'Could not create user account.' };
+            return { error: `Failed to create user: ${authError?.message || 'Could not create user account.'}` };
         }
         const newUserUuid = authUser.user.id;
         
@@ -144,7 +141,7 @@ export async function addCoach(formData: FormData) {
         }
         
         if (pricing.length > 0) {
-            const pricingToInsert = pricing.map(p => ({ ...p, coach_id: coachId, currency: 'INR' }));
+            const pricingToInsert = pricing.map(p => ({ ...p, coach_id: coachId, currency: 'INR', id: undefined }));
             const { error } = await supabaseAdmin.from('coach_pricing').insert(pricingToInsert);
             if (error) return { error: `Failed to save pricing: ${error.message}` };
         }
@@ -196,7 +193,7 @@ export async function updateCoach(formData: FormData) {
         const pricing = JSON.parse(formData.get('pricing') as string) as Partial<CoachPricing>[];
         await supabase.from('coach_pricing').delete().eq('coach_id', id);
         if (pricing.length > 0) {
-            const pricingToInsert = pricing.map(p => ({ ...p, coach_id: id, currency: 'INR' }));
+            const pricingToInsert = pricing.map(p => ({ ...p, coach_id: id, currency: 'INR', id: undefined }));
             const { error } = await supabase.from('coach_pricing').insert(pricingToInsert);
             if (error) return { error: `Failed to update pricing: ${error.message}` };
         }

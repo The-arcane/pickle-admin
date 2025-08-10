@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { addCoach, updateCoach } from '../actions';
-import type { Coach, User, Sport, CoachSport, CoachPricing } from './types';
+import type { Coach, Sport, CoachSport, CoachPricing } from './types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ import { Plus, Trash2, ImagePlus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
-export function EditCoachClientPage({ coach, users, sports, organisationId }: { coach: Coach | null, users: User[], sports: Sport[], organisationId: number }) {
+export function EditCoachClientPage({ coach, sports, organisationId }: { coach: Coach | null, sports: Sport[], organisationId: number }) {
     const router = useRouter();
     const { toast } = useToast();
     const isAdding = !coach;

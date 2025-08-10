@@ -2,7 +2,7 @@
 import { createServer } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { EditCoachClientPage } from './client';
-import type { Coach, User } from './types';
+import type { Coach } from './types';
 
 export default async function EditCoachPage({ params }: { params: { id: string } }) {
     const supabase = await createServer();
@@ -59,7 +59,6 @@ export default async function EditCoachPage({ params }: { params: { id: string }
     return (
         <EditCoachClientPage
             coach={coach}
-            users={[]} // No longer needed for 'add' page
             sports={sportsData || []}
             organisationId={organisationId}
         />
