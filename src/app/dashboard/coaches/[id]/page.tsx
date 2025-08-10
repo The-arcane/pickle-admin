@@ -49,25 +49,17 @@ export default async function EditCoachPage({ params }: { params: { id: string }
         }
         coach = coachData as Coach;
     }
-
-    // Fetch potential users to be assigned as coaches (from the same org)
-    const { data: orgUsersData, error: usersError } = await supabase
-      .from('user')
-      .select('id, name')
-      .eq('organisation_id', organisationId)
-
-    const usersForCoachAssignment = orgUsersData as User[] || [];
-
+    
     const { data: sportsData, error: sportsError } = await supabase.from('sports').select('id, name');
 
-    if (usersError || sportsError) {
-        console.error("Error fetching related data:", { usersError, sportsError });
+    if (sportsError) {
+        console.error("Error fetching sports data:", sportsError);
     }
 
     return (
         <EditCoachClientPage
             coach={coach}
-            users={usersForCoachAssignment}
+            users={[]} // No longer needed for 'add' page
             sports={sportsData || []}
             organisationId={organisationId}
         />

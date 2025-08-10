@@ -47,6 +47,10 @@ export function EditCoachClientPage({ coach, users, sports, organisationId }: { 
         const action = isAdding ? addCoach : updateCoach;
         if (!isAdding && coach) {
             formData.append('id', coach.id.toString());
+            formData.append('user_id', coach.user_id.toString());
+        } else if (isAdding && formData.get('password') !== formData.get('confirm_password')) {
+            toast({ variant: "destructive", title: "Error", description: "Passwords do not match." });
+            return;
         }
 
         const result = await action(formData);
@@ -109,20 +113,40 @@ export function EditCoachClientPage({ coach, users, sports, organisationId }: { 
             <Card>
                 <CardHeader><CardTitle>Coach Information</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {isAdding ? (
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Full Name</Label>
+                                <Input id="name" name="name" required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input id="email" name="email" type="email" required />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="password">Password</Label>
+                                <Input id="password" name="password" type="password" required />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="confirm_password">Confirm Password</Label>
+                                <Input id="confirm_password" name="confirm_password" type="password" required />
+                            </div>
+                         </div>
+                    ) : (
                         <div className="space-y-2">
-                            <Label htmlFor="user_id">Select User</Label>
-                            <Select name="user_id" value={userId} onValueChange={setUserId} required>
-                                <SelectTrigger><SelectValue placeholder="Select a user to be a coach" /></SelectTrigger>
-                                <SelectContent>{users.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>)}</SelectContent>
-                            </Select>
+                            <Label>User</Label>
+                            <Input value={coach?.user?.name ?? ''} disabled />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="profile_image_file">Profile Image (Max 2MB)</Label>
-                            <Input id="profile_image_file" name="profile_image_file" type="file" accept="image/*" onChange={handleProfileImageChange} />
-                            {profileImagePreview && <Image src={profileImagePreview} alt="Logo preview" width={80} height={80} className="mt-2 rounded-full object-cover h-20 w-20" />}
+                    )}
+                    
+                    <div className="space-y-2">
+                        <Label htmlFor="profile_image_file">Profile Image (Max 2MB)</Label>
+                        <div className="flex items-center gap-4">
+                            <Input id="profile_image_file" name="profile_image_file" type="file" accept="image/*" onChange={handleProfileImageChange} className="max-w-xs" />
+                            {profileImagePreview && <Image src={profileImagePreview} alt="Logo preview" width={80} height={80} className="rounded-full object-cover h-20 w-20" />}
                         </div>
                     </div>
+                    
                     <div className="space-y-2">
                         <Label htmlFor="bio">Biography</Label>
                         <Textarea id="bio" name="bio" defaultValue={coach?.bio ?? ''} placeholder="Tell us about the coach..." />
@@ -160,6 +184,8 @@ export function EditCoachClientPage({ coach, users, sports, organisationId }: { 
                         const sport = sports.find(s => s.id === sport_id);
                         if (!sport) return null;
                         
+                        const sportPricing = pricing.filter(p => p.sport_id === sport.id);
+
                         return (
                             <div key={sport.id} className="p-4 border rounded-lg">
                                 <div className="flex items-center justify-between mb-4">
@@ -169,31 +195,34 @@ export function EditCoachClientPage({ coach, users, sports, organisationId }: { 
                                     </Button>
                                 </div>
                                 <div className="space-y-2">
-                                    {pricing.filter(p => p.sport_id === sport.id).map((p, index) => (
-                                        <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
-                                            <div className="space-y-1">
-                                                <Label>Type</Label>
-                                                <Select value={p.pricing_type} onValueChange={(val) => handlePricingChange(pricing.indexOf(p), 'pricing_type', val)}>
-                                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="session">Per Session</SelectItem>
-                                                        <SelectItem value="monthly">Monthly</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                    {sportPricing.length > 0 ? sportPricing.map((p, index) => {
+                                        const originalIndex = pricing.findIndex(item => item === p);
+                                        return (
+                                            <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+                                                <div className="space-y-1">
+                                                    <Label>Type</Label>
+                                                    <Select value={p.pricing_type} onValueChange={(val) => handlePricingChange(originalIndex, 'pricing_type', val)}>
+                                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="session">Per Session</SelectItem>
+                                                            <SelectItem value="monthly">Monthly</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label>Price (INR)</Label>
+                                                    <Input type="number" value={p.price ?? ''} onChange={(e) => handlePricingChange(originalIndex, 'price', parseInt(e.target.value))} />
+                                                </div>
+                                                <div className="space-y-1 col-span-2 md:col-span-1">
+                                                    <Label>Description</Label>
+                                                    <Input value={p.description ?? ''} onChange={(e) => handlePricingChange(originalIndex, 'description', e.target.value)} />
+                                                </div>
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => handleRemovePricing(originalIndex)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
                                             </div>
-                                            <div className="space-y-1">
-                                                <Label>Price (INR)</Label>
-                                                <Input type="number" value={p.price ?? ''} onChange={(e) => handlePricingChange(pricing.indexOf(p), 'price', parseInt(e.target.value))} />
-                                            </div>
-                                            <div className="space-y-1 col-span-2 md:col-span-1">
-                                                <Label>Description</Label>
-                                                <Input value={p.description ?? ''} onChange={(e) => handlePricingChange(pricing.indexOf(p), 'description', e.target.value)} />
-                                            </div>
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => handleRemovePricing(pricing.indexOf(p))}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </div>
-                                    ))}
+                                        )
+                                    }) : <p className="text-sm text-muted-foreground">No pricing set for {sport.name}.</p>}
                                 </div>
                             </div>
                         )

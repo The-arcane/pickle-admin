@@ -1,7 +1,7 @@
 
 'use server';
 
-import { createServer } from '@/lib/supabase/server';
+import { createServer, createServiceRoleServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { CoachPricing, CoachSport } from './[id]/types';
 
@@ -49,48 +49,103 @@ function getCoachDataFromFormData(formData: FormData) {
 }
 
 export async function addCoach(formData: FormData) {
-    const supabase = await createServer();
+    const supabaseAdmin = createServiceRoleServer();
 
     try {
-        const coachData = getCoachDataFromFormData(formData);
-        if (!coachData.user_id || !coachData.organisation_id) {
-            return { error: 'User and Organization are required.' };
+        const name = formData.get('name') as string;
+        const email = formData.get('email') as string;
+        const password = formData.get('password') as string;
+        const organisation_id = Number(formData.get('organisation_id'));
+        const bio = formData.get('bio') as string;
+        const is_independent = formData.get('is_independent') === 'true';
+
+        if (!name || !email || !password || !organisation_id) {
+            return { error: 'Name, email, password and organization are required.' };
         }
 
-        const profileImageFile = formData.get('profile_image_file') as File | null;
-        let profileImageUrl: string | null = null;
-        
-        if (profileImageFile && profileImageFile.size > 0) {
-            profileImageUrl = await handleImageUpload(supabase, profileImageFile, coachData.user_id.toString());
+        // 1. Create the user in Supabase Auth
+        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            password,
+            user_metadata: { name },
+            email_confirm: true, // Auto-confirm the email
+        });
+
+        if (authError) {
+            console.error("Error creating coach auth user:", authError);
+            return { error: `Failed to create user: ${authError.message}` };
         }
+        if (!authUser.user) {
+            return { error: 'Could not create user account.' };
+        }
+        const newUserUuid = authUser.user.id;
         
-        // 1. Insert coach record
-        const { data: newCoach, error: coachError } = await supabase
-            .from('coaches')
-            .insert({ ...coachData, profile_image: profileImageUrl })
-            .select()
+        // 2. Update the auto-created public.user record with user_type 5 (for coach) and link to org
+        const { data: newUserProfile, error: profileError } = await supabaseAdmin
+            .from('user')
+            .update({
+                user_type: 5,
+                organisation_id: organisation_id,
+                name: name
+            })
+            .eq('user_uuid', newUserUuid)
+            .select('id')
             .single();
-            
-        if (coachError) {
-            console.error('Error creating coach:', coachError);
-            if (coachError.code === '23505') return { error: 'This user is already registered as a coach.' };
-            return { error: `Failed to create coach profile: ${coachError.message}` };
+        
+        if (profileError || !newUserProfile) {
+            await supabaseAdmin.auth.admin.deleteUser(newUserUuid); // Clean up auth user
+            console.error('Error updating user profile for coach:', profileError);
+            return { error: `Failed to set user as coach: ${profileError?.message}` };
         }
-        const coachId = newCoach.id;
 
-        // 2. Handle sports and pricing
+        // 3. The trigger `on_user_insert_create_coach` should have fired. Now, find the new coach record.
+        const { data: newCoach, error: findCoachError } = await supabaseAdmin
+            .from('coaches')
+            .select('id, user_id')
+            .eq('user_id', newUserProfile.id)
+            .single();
+
+        if (findCoachError || !newCoach) {
+             await supabaseAdmin.auth.admin.deleteUser(newUserUuid); // Clean up
+             console.error('Could not find coach record after trigger:', findCoachError);
+             return { error: 'System error: Could not link coach profile.' };
+        }
+        
+        const coachId = newCoach.id;
+        const coachUserId = newCoach.user_id.toString();
+
+        const updatePayload: { bio: string, is_independent: boolean, profile_image?: string } = { bio, is_independent };
+
+        // 4. Handle image upload and update coach profile
+        const profileImageFile = formData.get('profile_image_file') as File | null;
+        if (profileImageFile && profileImageFile.size > 0) {
+            const profileImageUrl = await handleImageUpload(supabaseAdmin, profileImageFile, coachUserId);
+            if(profileImageUrl) updatePayload.profile_image = profileImageUrl;
+        }
+
+        const { error: coachUpdateError } = await supabaseAdmin
+            .from('coaches')
+            .update(updatePayload)
+            .eq('id', coachId);
+            
+        if (coachUpdateError) {
+            // This is not a fatal error, so we just log it.
+            console.error('Error updating coach details:', coachUpdateError);
+        }
+
+        // 5. Handle sports and pricing
         const sports = JSON.parse(formData.get('sports') as string) as Partial<CoachSport>[];
         const pricing = JSON.parse(formData.get('pricing') as string) as Partial<CoachPricing>[];
         
         if (sports.length > 0) {
             const sportsToInsert = sports.map(s => ({ coach_id: coachId, sport_id: s.sport_id }));
-            const { error } = await supabase.from('coach_sports').insert(sportsToInsert);
+            const { error } = await supabaseAdmin.from('coach_sports').insert(sportsToInsert);
             if (error) return { error: `Failed to link sports: ${error.message}` };
         }
         
         if (pricing.length > 0) {
             const pricingToInsert = pricing.map(p => ({ ...p, coach_id: coachId, currency: 'INR' }));
-            const { error } = await supabase.from('coach_pricing').insert(pricingToInsert);
+            const { error } = await supabaseAdmin.from('coach_pricing').insert(pricingToInsert);
             if (error) return { error: `Failed to save pricing: ${error.message}` };
         }
 
