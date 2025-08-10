@@ -1,6 +1,6 @@
 
 import { createServer } from '@/lib/supabase/server';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { EditCourtClientPage } from './client';
 import type { Court } from './types';
 
@@ -8,6 +8,22 @@ export default async function EditCourtPage({ params }: { params: { id: string }
   const supabase = await createServer();
   const { id } = params;
   const isAdding = id === 'add';
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return redirect('/login');
+  }
+
+  const { data: userRecord } = await supabase
+    .from('user')
+    .select('id, organisation_id')
+    .eq('user_uuid', user.id)
+    .single();
+
+  if (!userRecord || !userRecord.organisation_id) {
+    return redirect('/login?error=Could not determine your organization.');
+  }
+  const organisationId = userRecord.organisation_id;
 
   let court: Court | null = null;
   if (!isAdding) {
@@ -24,6 +40,7 @@ export default async function EditCourtPage({ params }: { params: { id: string }
         court_gallery(*)
       `)
       .eq('id', id)
+      .eq('organisation_id', organisationId) // Ensure user can only edit courts in their org
       .single();
     
     if (courtError || !courtData) {
@@ -34,7 +51,13 @@ export default async function EditCourtPage({ params }: { params: { id: string }
     court = courtData as Court;
   }
   
-  const { data: organisationsData, error: orgsError } = await supabase.from('organisations').select('id, name, address');
+  // We only need the single organisation for this admin
+  const { data: organisationData, error: orgsError } = await supabase
+    .from('organisations')
+    .select('id, name, address')
+    .eq('id', organisationId)
+    .single();
+
   const { data: sportsData, error: sportsError } = await supabase.from('sports').select('id, name');
 
   if (orgsError || sportsError) {
@@ -44,8 +67,9 @@ export default async function EditCourtPage({ params }: { params: { id: string }
   return (
     <EditCourtClientPage
       court={court}
-      organisations={organisationsData || []}
+      organisation={organisationData || null} // Pass single organisation
       sports={sportsData || []}
+      organisationId={organisationId}
     />
   );
 }

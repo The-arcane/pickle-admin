@@ -52,7 +52,7 @@ function DeleteButton() {
     )
 }
 
-export function EditCourtClientPage({ court, organisations, sports }: { court: Court | null, organisations: Organisation[], sports: Sport[] }) {
+export function EditCourtClientPage({ court, organisation, sports, organisationId }: { court: Court | null, organisation: Organisation | null, sports: Sport[], organisationId: number }) {
     const router = useRouter();
     const { toast } = useToast();
     const isAdding = !court;
@@ -137,6 +137,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         formData.append('contact', JSON.stringify(contact));
         formData.append('availability', JSON.stringify(availability.filter(a => a.date)));
         formData.append('unavailability', JSON.stringify(unavailability.filter(u => u.day_of_week !== undefined && u.start_time && u.end_time)));
+        formData.append('organisation_id', organisationId.toString());
 
         const action = isAdding ? addCourt : updateCourt;
         if (!isAdding && court) {
@@ -260,8 +261,11 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                         <CardContent className="space-y-6">
                             <div className="space-y-2"><Label htmlFor="name">Court Name</Label><Input id="name" name="name" defaultValue={court?.name || ''} placeholder="e.g., Court A" required/></div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2"><Label htmlFor="organisation_id">Venue Name</Label><Select name="organisation_id" defaultValue={court?.organisation_id?.toString() || ''} required><SelectTrigger><SelectValue placeholder="Select venue" /></SelectTrigger><SelectContent>{organisations.map(org => <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>)}</SelectContent></Select></div>
-                                <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" name="address" defaultValue={court?.address || ''} placeholder="Court address" required/></div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="organisation_id">Venue Name</Label>
+                                  <Input id="organisation_id" value={organisation?.name ?? ''} disabled />
+                                </div>
+                                <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" name="address" defaultValue={court?.address || organisation?.address || ''} placeholder="Court address" required/></div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2"><Label htmlFor="lat">Latitude</Label><Input id="lat" name="lat" type="number" step="any" defaultValue={court?.lat ?? ''} placeholder="e.g., 28.6139" required/></div>
