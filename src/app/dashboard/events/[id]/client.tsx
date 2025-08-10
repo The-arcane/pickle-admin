@@ -127,7 +127,10 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         } else {
             toast({ title: "Success", description: "Gallery images uploaded." });
             setGalleryFiles(null);
-            galleryFormRef.current?.reset();
+            if (galleryFormRef.current) {
+                galleryFormRef.current.reset();
+            }
+            router.refresh(); // Refresh to show new images
         }
     };
 
@@ -178,11 +181,11 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         <>
             <div className="space-y-8">
                  <form action={handleFormAction} className="space-y-8">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <h1 className="text-3xl font-bold">{isAdding ? 'Add New Event' : 'Edit Event'}</h1>
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" type="button" asChild><Link href="/dashboard/events">Cancel</Link></Button>
-                            <Button type="submit">Save Changes</Button>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <Button variant="outline" type="button" asChild className="flex-1 sm:flex-initial"><Link href="/dashboard/events">Cancel</Link></Button>
+                            <Button type="submit" className="flex-1 sm:flex-initial">Save Changes</Button>
                         </div>
                     </div>
 
@@ -367,7 +370,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                     <Card>
                         <CardHeader>
                             <CardTitle>Media & Links</CardTitle>
-                            <CardDescription>Upload a cover image and add a video link for your event.</CardDescription>
+                            <CardDescription>Upload a cover image (max 2MB) and add a video link for your event.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="space-y-2">
@@ -435,7 +438,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                 <Label htmlFor="event-gallery-images" className="mb-4 cursor-pointer">
                                     <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
                                     <span className="mt-2 block font-semibold text-primary">Click to upload or drag & drop</span>
-                                    <span className="mt-1 block text-sm text-muted-foreground">PNG, JPG, GIF up to 10MB</span>
+                                    <span className="mt-1 block text-sm text-muted-foreground">PNG, JPG, GIF up to 2MB</span>
                                 </Label>
                                 <Input
                                     id="event-gallery-images"

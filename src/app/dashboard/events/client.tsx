@@ -30,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useRouter } from 'next/navigation';
 
 type Event = {
   id: number;
@@ -48,6 +49,8 @@ export function EventsClientPage({ events }: { events: Event[] }) {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
     const { toast } = useToast();
+    const router = useRouter();
+
 
     useEffect(() => {
         setIsClient(true);
@@ -77,6 +80,7 @@ export function EventsClientPage({ events }: { events: Event[] }) {
         }
         setIsDeleteDialogOpen(false);
         setDeletingEventId(null);
+        router.refresh();
     }
 
   return (
@@ -90,99 +94,90 @@ export function EventsClientPage({ events }: { events: Event[] }) {
                 </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4">
-                <div className="relative flex-grow md:flex-grow-0">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="relative w-full sm:max-w-xs">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
                         placeholder="Search for events..." 
-                        className="pl-10 w-full md:w-80"
+                        className="pl-10 w-full"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <Button asChild>
-                <Link href="/dashboard/events/add">+ Add Event</Link>
+                <Button asChild className="w-full sm:w-auto">
+                    <Link href="/dashboard/events/add">+ Add Event</Link>
                 </Button>
             </div>
             
             <Card>
                 <CardContent className="pt-6">
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Event</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Dates</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Visibility</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {!isClient ? (
-                        Array.from({ length: 5 }).map((_, index) => (
-                            <TableRow key={`skel-${index}`}>
-                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                                <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                                <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
-                                <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                        <TableRow>
+                            <TableHead>Event</TableHead>
+                            <TableHead className="hidden md:table-cell">Dates</TableHead>
+                            <TableHead className="hidden sm:table-cell">Location</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                        {!isClient ? (
+                            Array.from({ length: 5 }).map((_, index) => (
+                                <TableRow key={`skel-${index}`}>
+                                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                                    <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                                </TableRow>
+                            ))
+                        ) : filteredEvents.length > 0 ? (
+                            filteredEvents.map((event) => (
+                            <TableRow key={event.id}>
+                            <TableCell className="font-medium">{event.title}</TableCell>
+                            <TableCell className="hidden md:table-cell">{event.dates}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{event.location}</TableCell>
+                            <TableCell>
+                                <StatusBadge status={event.status} />
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                            <span className="sr-only">More actions</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/dashboard/events/${event.id}`}>
+                                                <Pencil className="mr-2 h-4 w-4" />
+                                                <span>Edit</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => openDeleteDialog(event.id)}>
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            <span>Delete</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </TableCell>
                             </TableRow>
                         ))
-                    ) : filteredEvents.length > 0 ? (
-                        filteredEvents.map((event) => (
-                        <TableRow key={event.id}>
-                        <TableCell className="font-medium">{event.title}</TableCell>
-                        <TableCell>{event.category}</TableCell>
-                        <TableCell>{event.dates}</TableCell>
-                        <TableCell>{event.location}</TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-2">
-                               {event.is_public ? <Globe className="h-4 w-4 text-green-500" /> : <ShieldOff className="h-4 w-4 text-red-500" />}
-                               <span>{event.is_public ? 'Public' : 'Private'}</span>
-                            </div>
-                        </TableCell>
-                        <TableCell>
-                            <StatusBadge status={event.status} />
-                        </TableCell>
-                        <TableCell className="text-right">
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">More actions</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem asChild>
-                                        <Link href={`/dashboard/events/${event.id}`}>
-                                            <Pencil className="mr-2 h-4 w-4" />
-                                            <span>Edit</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem className="text-destructive" onSelect={() => openDeleteDialog(event.id)}>
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        <span>Delete</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </TableCell>
-                        </TableRow>
-                    ))
-                    ) : (
-                        <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground h-24">
-                            No events found matching your criteria.
-                        </TableCell>
-                        </TableRow>
-                    )}
-                    </TableBody>
-                </Table>
+                        ) : (
+                            <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
+                                No events found matching your criteria.
+                            </TableCell>
+                            </TableRow>
+                        )}
+                        </TableBody>
+                    </Table>
+                </div>
                 </CardContent>
             </Card>
         </div>
@@ -205,5 +200,3 @@ export function EventsClientPage({ events }: { events: Event[] }) {
     </>
   );
 }
-
-    
