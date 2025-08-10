@@ -24,44 +24,54 @@ export async function middleware(request: NextRequest) {
       employee: '/employee'
   };
 
-  const isProtectedRoute = Object.values(protectedPaths).some(p => pathname.startsWith(p));
-  
-  if (!user && isProtectedRoute) {
-    let redirectUrl;
-    if (pathname.startsWith(protectedPaths.superAdmin)) {
-      redirectUrl = new URL('/login?type=super-admin', siteUrl);
-    } else if (pathname.startsWith(protectedPaths.employee)) {
-      redirectUrl = new URL('/login?type=employee', siteUrl);
-    } else {
-      redirectUrl = new URL('/login', siteUrl);
-    }
-    return NextResponse.redirect(redirectUrl);
+  const loginPaths = {
+      admin: '/login',
+      superAdmin: '/login?type=super-admin',
+      employee: '/login?type=employee'
   }
 
-  if (user) {
-    const { data: userProfile } = await supabase
-        .from('user')
-        .select('user_type')
-        .eq('user_uuid', user.id)
-        .single();
-    
-    // Redirect logged-in users from login pages to their respective dashboards
-    if (pathname.startsWith('/login')) {
-      if (userProfile?.user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
-      if (userProfile?.user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
-      if (userProfile?.user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
+  // If user is not logged in and is trying to access a protected route, redirect to login
+  if (!user) {
+    if (Object.values(protectedPaths).some(p => pathname.startsWith(p))) {
+        let redirectUrl = loginPaths.admin;
+        if (pathname.startsWith(protectedPaths.superAdmin)) redirectUrl = loginPaths.superAdmin;
+        if (pathname.startsWith(protectedPaths.employee)) redirectUrl = loginPaths.employee;
+        return NextResponse.redirect(new URL(redirectUrl, siteUrl));
     }
+    return response;
+  }
+  
+  // If user is logged in, fetch their profile
+  const { data: userProfile } = await supabase
+    .from('user')
+    .select('user_type')
+    .eq('user_uuid', user.id)
+    .single();
 
-    // Enforce role-based access to protected routes
-    if (pathname.startsWith(protectedPaths.dashboard) && userProfile?.user_type !== 2) {
-      return NextResponse.redirect(new URL('/login?error=Access%20Denied', siteUrl));
-    }
-    if (pathname.startsWith(protectedPaths.superAdmin) && userProfile?.user_type !== 3) {
-      return NextResponse.redirect(new URL('/login?type=super-admin&error=Access%20Denied', siteUrl));
-    }
-    if (pathname.startsWith(protectedPaths.employee) && userProfile?.user_type !== 4) {
-      return NextResponse.redirect(new URL('/login?type=employee&error=Access%20Denied', siteUrl));
-    }
+  if (!userProfile) {
+    // If profile doesn't exist, something is wrong. Sign out and redirect to login.
+    await supabase.auth.signOut();
+    return NextResponse.redirect(new URL('/login?error=User%20profile%20not%20found.', siteUrl));
+  }
+  
+  const { user_type } = userProfile;
+  
+  // If a logged-in user tries to access any login page, redirect them to their dashboard
+  if (pathname === '/login') {
+    if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
+    if (user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
+    if (user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
+  }
+
+  // Enforce role-based access to protected routes
+  if (pathname.startsWith(protectedPaths.dashboard) && user_type !== 2) {
+    return NextResponse.redirect(new URL(loginPaths.admin + '&error=Access%20Denied', siteUrl));
+  }
+  if (pathname.startsWith(protectedPaths.superAdmin) && user_type !== 3) {
+    return NextResponse.redirect(new URL(loginPaths.superAdmin + '&error=Access%20Denied', siteUrl));
+  }
+  if (pathname.startsWith(protectedPaths.employee) && user_type !== 4) {
+    return NextResponse.redirect(new URL(loginPaths.employee + '&error=Access%20Denied', siteUrl));
   }
 
   return response;

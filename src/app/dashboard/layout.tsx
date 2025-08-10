@@ -31,6 +31,7 @@ export default async function DashboardLayout({
     .single();
 
   if (profileError || !userProfile || userProfile.user_type !== 2) {
+    // This check is now primarily handled by middleware, but serves as a final guard.
     await supabase.auth.signOut();
     return redirect('/login?error=Access%20Denied');
   }
