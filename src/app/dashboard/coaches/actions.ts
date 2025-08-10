@@ -102,21 +102,20 @@ export async function addCoach(formData: FormData) {
         }
         console.log(`Successfully updated user profile. User ID: ${newUserProfile.id}`);
 
-        console.log(`3. Finding the new coach record created by trigger for user ID: ${newUserProfile.id}`);
-        // The trigger should have run now. Let's find the coach record.
-        const { data: newCoach, error: findCoachError } = await supabaseAdmin
+        console.log(`3. Manually inserting new coach record for user ID: ${newUserProfile.id}`);
+        const { data: newCoach, error: coachInsertError } = await supabaseAdmin
             .from('coaches')
+            .insert({ user_id: newUserProfile.id, organisation_id: organisation_id })
             .select('id, user_id')
-            .eq('user_id', newUserProfile.id)
             .single();
 
-        if (findCoachError || !newCoach) {
-             console.error('Could not find coach record after trigger:', findCoachError);
+        if (coachInsertError || !newCoach) {
+             console.error('Could not insert coach record:', coachInsertError);
              // Cleanup auth user if coach record wasn't created.
              await supabaseAdmin.auth.admin.deleteUser(newUserUuid);
-             return { error: 'System error: Could not link coach profile. The database trigger might be missing or failing.' };
+             return { error: `System error: Could not create coach profile: ${coachInsertError?.message}` };
         }
-        console.log(`Found new coach record with ID: ${newCoach.id}`);
+        console.log(`Successfully inserted new coach record with ID: ${newCoach.id}`);
         
         const coachId = newCoach.id;
         const coachUserId = newCoach.user_id.toString();
@@ -139,7 +138,6 @@ export async function addCoach(formData: FormData) {
         if (coachUpdateError) {
             console.error('Error updating coach details:', coachUpdateError);
             // This is not a fatal error for the whole process, but we should let the user know.
-            // For now, we continue and link sports/pricing.
         }
 
         console.log("5. Handling sports and pricing...");
