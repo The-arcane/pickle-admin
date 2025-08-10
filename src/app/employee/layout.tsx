@@ -24,13 +24,13 @@ export default async function EmployeeLayout({
   }
 
   // Fetch user profile
-  const { data: userProfile, error: profileError } = await supabase
+  const { data: userProfile } = await supabase
     .from('user')
     .select('id, name, email, profile_image_url, user_type')
     .eq('user_uuid', user.id)
     .single();
 
-  if (profileError || !userProfile || userProfile.user_type !== 4) {
+  if (!userProfile) {
     await supabase.auth.signOut();
     return redirect('/login?type=employee&error=Access%20Denied');
   }

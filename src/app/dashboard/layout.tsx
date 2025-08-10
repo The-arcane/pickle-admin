@@ -23,45 +23,38 @@ export default async function DashboardLayout({
     return redirect('/login');
   }
 
-  // Check 1: Fetch the user's profile and verify they are an admin type
-  const { data: userProfile, error: profileError } = await supabase
+  // Fetch the user's profile. We can trust the middleware has already verified their role.
+  const { data: userProfile } = await supabase
     .from('user')
     .select('id, name, email, profile_image_url, user_type')
     .eq('user_uuid', user.id)
     .single();
 
-  if (profileError || !userProfile || userProfile.user_type !== 2) {
-    // This check is now primarily handled by middleware, but serves as a final guard.
-    await supabase.auth.signOut();
-    return redirect('/login?error=Access%20Denied');
+  if (!userProfile) {
+      // This should not happen if middleware is correct, but as a safeguard:
+      await supabase.auth.signOut();
+      return redirect('/login?error=Could%20not%20find%20user%20profile');
   }
 
-  // Check 2: Verify the admin user is associated with an organization via the join table
-  const { data: orgLink, error: orgLinkError } = await supabase
+  // Fetch the organization link and name
+  const { data: orgLink } = await supabase
     .from('user_organisations')
     .select('organisation_id')
     .eq('user_id', userProfile.id)
     .single();
-
-  if (orgLinkError || !orgLink?.organisation_id) {
-    await supabase.auth.signOut();
-    return redirect(`/login?error=${encodeURIComponent('Admin profile is not correctly associated with any organization.')}`);
+  
+  let organisationName = 'Lumen';
+  if (orgLink?.organisation_id) {
+    const { data: organisation } = await supabase
+      .from('organisations')
+      .select('name')
+      .eq('id', orgLink.organisation_id)
+      .single();
+    if (organisation) {
+        organisationName = organisation.name;
+    }
   }
   
-  const organisationId = orgLink.organisation_id;
-
-  // Fetch the organization's name for display
-  let organisationName = 'Lumen';
-  const { data: organisation } = await supabase
-    .from('organisations')
-    .select('name')
-    .eq('id', organisationId)
-    .single();
-    
-  if (organisation) {
-    organisationName = organisation.name;
-  }
-
   return (
     <div className="flex h-screen w-full bg-muted/40 overflow-hidden">
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-background sm:flex">

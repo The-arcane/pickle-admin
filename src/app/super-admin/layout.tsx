@@ -24,13 +24,13 @@ export default async function SuperAdminLayout({
     return redirect('/login?type=super-admin');
   }
 
-  const { data: userProfile, error } = await supabase
+  const { data: userProfile } = await supabase
     .from('user')
     .select('name, email, profile_image_url, user_type')
     .eq('user_uuid', user.id)
     .single();
 
-  if (error || !userProfile || userProfile.user_type !== 3) {
+  if (!userProfile) {
     await supabase.auth.signOut();
     return redirect('/login?type=super-admin&error=Access%20Denied');
   }
