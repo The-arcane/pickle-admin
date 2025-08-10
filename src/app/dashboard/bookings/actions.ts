@@ -132,10 +132,6 @@ export async function updateBooking(formData: FormData) {
   return { success: true };
 }
 
-function isOverlapping(slotStart: Date, slotEnd: Date, blockStart: Date, blockEnd: Date): boolean {
-    return slotStart < blockEnd && slotEnd > blockStart;
-}
-
 export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number) {
     const supabase = await createServer();
     
@@ -178,8 +174,8 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
     const availableTimeslots = allTimeslots.filter(slot => {
         if (!slot.start_time) return false;
         
-        // The start_time from timeslots table is a full timestamp, format it to HH:mm:ss to match the RPC output
-        const formattedStartTime = format(parseISO(slot.start_time), 'HH:mm:ss');
+        // The start_time from timeslots table is a full timestamp, format it to HH:MI to match the RPC output
+        const formattedStartTime = format(parseISO(slot.start_time), 'HH:mm');
         
         return !bookedStartTimes.has(formattedStartTime);
     });
