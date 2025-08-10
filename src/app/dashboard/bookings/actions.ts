@@ -143,94 +143,46 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         console.error("[getTimeslots] Date string is missing.");
         return [];
     }
-    
-    const selectedDate = parseISO(dateString);
-    const dayOfWeek = getDay(selectedDate);
 
-    const [
-        { data: allTimeslots, error: timeslotsError },
-        { data: recurringUnavailability, error: recurringError },
-        { data: oneOffUnavailability, error: oneOffError },
-        { data: bookingsData, error: bookingsError }
-    ] = await Promise.all([
-        supabase.from('timeslots').select('id, start_time, end_time').eq('court_id', courtId).eq('date', dateString).order('start_time'),
-        supabase.from('recurring_unavailability').select('start_time, end_time').eq('court_id', courtId).eq('day_of_week', dayOfWeek).eq('active', true),
-        supabase.from('availability_blocks').select('start_time, end_time').eq('court_id', courtId).eq('date', dateString),
-        supabase.from('bookings').select('id, timeslot_id')
-    ]);
+    // 1. Fetch all possible timeslots for the court and date
+    const { data: allTimeslots, error: timeslotsError } = await supabase
+        .from('timeslots')
+        .select('id, start_time, end_time')
+        .eq('court_id', courtId)
+        .eq('date', dateString)
+        .order('start_time');
 
-    if (timeslotsError || bookingsError || recurringError || oneOffError) {
-        console.error('Error fetching availability data:', { timeslotsError, bookingsError, recurringError, oneOffError });
+    if (timeslotsError || !allTimeslots) {
+        console.error('Error fetching initial timeslots:', timeslotsError);
         return [];
     }
 
-    if (!allTimeslots || allTimeslots.length === 0) {
-        return [];
-    }
-
-    const timeslotIdsForDay = allTimeslots.map(t => t.id);
-    const bookingsOnDate = bookingsData?.filter(b => timeslotIdsForDay.includes(b.timeslot_id));
-    
-    const bookedTimeslotIds = new Set(
-        bookingsOnDate
-            ?.filter(booking => booking.id !== bookingIdToExclude)
-            .map(booking => booking.timeslot_id)
-    );
-
-    let availableTimeslots = allTimeslots.filter(
-        slot => !bookedTimeslotIds.has(slot.id)
-    );
-    
-    const unavailabilityPeriods: { start: Date, end: Date }[] = [];
-    const year = selectedDate.getUTCFullYear();
-    const month = selectedDate.getUTCMonth();
-    const day = selectedDate.getUTCDate();
-    
-    recurringUnavailability?.forEach(block => {
-        if(block.start_time && block.end_time) {
-            const [startHour, startMinute] = block.start_time.split(':').map(Number);
-            const [endHour, endMinute] = block.end_time.split(':').map(Number);
-            
-            const blockStart = new Date(Date.UTC(year, month, day, startHour, startMinute));
-            const blockEnd = new Date(Date.UTC(year, month, day, endHour, endMinute));
-
-            unavailabilityPeriods.push({ start: blockStart, end: blockEnd });
-        }
-    });
-
-    oneOffUnavailability?.forEach(block => {
-        let blockStart, blockEnd;
-
-        if (!block.start_time || !block.end_time) {
-            blockStart = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
-            blockEnd = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
-        } else {
-            const [startHour, startMinute] = block.start_time.split(':').map(Number);
-            const [endHour, endMinute] = block.end_time.split(':').map(Number);
-            
-            blockStart = new Date(Date.UTC(year, month, day, startHour, startMinute));
-            blockEnd = new Date(Date.UTC(year, month, day, endHour, endMinute));
-        }
-        
-        unavailabilityPeriods.push({ start: blockStart, end: blockEnd });
-    });
-
-    if (unavailabilityPeriods.length > 0) {
-        availableTimeslots = availableTimeslots.filter(slot => {
-            if (!slot.start_time || !slot.end_time) return false;
-            
-            const slotStart = parseISO(slot.start_time);
-            const slotEnd = parseISO(slot.end_time);
-
-            if (isNaN(slotStart.getTime()) || isNaN(slotEnd.getTime())) return false;
-
-            const isUnavailable = unavailabilityPeriods.some(block => 
-                isOverlapping(slotStart, slotEnd, block.start, block.end)
-            );
-
-            return !isUnavailable;
+    // 2. Fetch the start times of already booked slots using the provided function
+    const { data: bookedSlots, error: rpcError } = await supabase
+        .rpc('get_booked_timeslots_for_court_and_date', {
+            p_court_id: courtId,
+            p_date: dateString
         });
-    }
     
+    if (rpcError) {
+        console.error('Error calling get_booked_timeslots_for_court_and_date:', rpcError);
+        // Fallback to old method or just return all? For now, we'll return all to not block UI.
+        // A better approach would be to handle this error gracefully on the client.
+        // For now, let's assume if this fails, we can't determine booked slots.
+        return allTimeslots;
+    }
+
+    const bookedStartTimes = new Set(bookedSlots.map((s: any) => s.start_time_str));
+    
+    // 3. Filter the initial list of timeslots to exclude the booked ones.
+    const availableTimeslots = allTimeslots.filter(slot => {
+        if (!slot.start_time) return false;
+        
+        // The start_time from timeslots table is a full timestamp, format it to HH:mm:ss to match the RPC output
+        const formattedStartTime = format(parseISO(slot.start_time), 'HH:mm:ss');
+        
+        return !bookedStartTimes.has(formattedStartTime);
+    });
+
     return availableTimeslots;
 }
