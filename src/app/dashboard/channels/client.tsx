@@ -54,10 +54,10 @@ export function ChannelsClientPage({ initialChannels }: { initialChannels: Chann
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Channel</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Visibility</TableHead>
-                                <TableHead>Created By</TableHead>
-                                <TableHead>Created At</TableHead>
+                                <TableHead className="hidden sm:table-cell">Type</TableHead>
+                                <TableHead className="hidden md:table-cell">Visibility</TableHead>
+                                <TableHead className="hidden md:table-cell">Created By</TableHead>
+                                <TableHead className="hidden sm:table-cell">Created At</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -67,16 +67,16 @@ export function ChannelsClientPage({ initialChannels }: { initialChannels: Chann
                                     <TableRow key={channel.id}>
                                         <TableCell>
                                             <p className="font-medium">{channel.name}</p>
-                                            <p className="text-sm text-muted-foreground truncate max-w-xs">{channel.description}</p>
+                                            <p className="text-sm text-muted-foreground truncate max-w-[150px] sm:max-w-xs">{channel.description}</p>
                                         </TableCell>
-                                        <TableCell><Badge variant="outline" className="capitalize">{channel.type}</Badge></TableCell>
-                                        <TableCell>
+                                        <TableCell className="hidden sm:table-cell"><Badge variant="outline" className="capitalize">{channel.type}</Badge></TableCell>
+                                        <TableCell className="hidden md:table-cell">
                                             <div className="flex items-center gap-2">
                                                 {channel.visibility === 'public' ? <Globe className="h-4 w-4 text-green-500" /> : <Lock className="h-4 w-4 text-red-500" />}
                                                 <span className="capitalize">{channel.visibility}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className="hidden md:table-cell">
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={channel.created_by?.profile_image_url ?? undefined} alt={channel.created_by?.name ?? ''} />
@@ -85,7 +85,7 @@ export function ChannelsClientPage({ initialChannels }: { initialChannels: Chann
                                                 <p className="font-medium">{channel.created_by?.name}</p>
                                             </div>
                                         </TableCell>
-                                        <TableCell>{format(new Date(channel.created_at), 'PP')}</TableCell>
+                                        <TableCell className="hidden sm:table-cell">{format(new Date(channel.created_at), 'PP')}</TableCell>
                                         <TableCell className="text-right">
                                              <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>

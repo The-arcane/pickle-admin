@@ -186,7 +186,7 @@ export async function addEvent(formData: FormData) {
   }
 
   revalidatePath('/dashboard/events');
-  redirect('/dashboard/events');
+  return { success: true };
 }
 
 export async function updateEvent(formData: FormData) {
@@ -292,6 +292,10 @@ export async function updateEvent(formData: FormData) {
 async function handleEventGalleryImageUpload(supabase: any, file: File, eventId: string): Promise<string | null> {
     if (!file || file.size === 0) {
         return null;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+        throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
     }
 
     const fileExt = file.name.split('.').pop();

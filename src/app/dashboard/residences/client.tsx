@@ -133,12 +133,12 @@ export function ResidencesClientPage({
         <>
             <Card>
                 <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
                             <CardTitle>Resident List</CardTitle>
                             <CardDescription>A list of all invited and joined residents.</CardDescription>
                         </div>
-                         <Button onClick={() => setIsInviteDialogOpen(true)} disabled={!organisationId || loading}>
+                         <Button onClick={() => setIsInviteDialogOpen(true)} disabled={!organisationId || loading} className="w-full sm:w-auto">
                             <PlusCircle className="mr-2 h-4 w-4" /> Invite Residents
                         </Button>
                     </div>
@@ -148,10 +148,9 @@ export function ResidencesClientPage({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>User</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Phone</TableHead>
-                                <TableHead>Invited At</TableHead>
-                                <TableHead>Joined At</TableHead>
+                                <TableHead className="hidden sm:table-cell">Status</TableHead>
+                                <TableHead className="hidden md:table-cell">Phone</TableHead>
+                                <TableHead className="hidden md:table-cell">Joined At</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -160,10 +159,9 @@ export function ResidencesClientPage({
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <TableRow key={`skel-${i}`}>
                                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                        <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                         <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                                     </TableRow>
                                 ))
@@ -178,14 +176,13 @@ export function ResidencesClientPage({
                                                 </Avatar>
                                                 <div>
                                                     <p className="font-medium">{res.Name}</p>
-                                                    <p className="text-sm text-muted-foreground">{res.email}</p>
+                                                    <p className="text-sm text-muted-foreground truncate max-w-[150px]">{res.email}</p>
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell><StatusBadge status={res.status} /></TableCell>
-                                        <TableCell>{res.phone ?? 'N/A'}</TableCell>
-                                        <TableCell>{res.invited_at ? format(new Date(res.invited_at), 'PPp') : 'N/A'}</TableCell>
-                                        <TableCell>{res.joined_at ? format(new Date(res.joined_at), 'PPp') : 'N/A'}</TableCell>
+                                        <TableCell className="hidden sm:table-cell"><StatusBadge status={res.status} /></TableCell>
+                                        <TableCell className="hidden md:table-cell">{res.phone ?? 'N/A'}</TableCell>
+                                        <TableCell className="hidden md:table-cell">{res.joined_at ? format(new Date(res.joined_at), 'PP') : 'N/A'}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(res.id)}>
                                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -196,7 +193,7 @@ export function ResidencesClientPage({
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center h-24">
+                                    <TableCell colSpan={5} className="text-center h-24">
                                         No residents found. Invite some to get started!
                                     </TableCell>
                                 </TableRow>
