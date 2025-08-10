@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Home, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSheetContext } from '@/hooks/use-sheet-context';
 
 const navItems = [
   { href: '/super-admin/dashboard', label: 'Dashboard', icon: BarChart },
@@ -21,6 +22,7 @@ const navItems = [
 
 export function SuperAdminNav() {
   const pathname = usePathname();
+  const { setOpen } = useSheetContext();
 
   return (
     <nav className="grid items-start gap-1 px-4 text-sm font-medium">
@@ -28,6 +30,7 @@ export function SuperAdminNav() {
         <Link
           key={item.href}
           href={item.href}
+          onClick={() => setOpen && setOpen(false)}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
             pathname.startsWith(item.href) && item.href !== '/super-admin/dashboard' && 'bg-muted text-primary',
