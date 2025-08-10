@@ -152,7 +152,7 @@ export async function addCoach(formData: FormData) {
         }
         
         if (pricing.length > 0) {
-            const pricingToInsert = pricing.map(p => ({ ...p, coach_id: coachId, currency: 'INR', id: undefined }));
+            const pricingToInsert = pricing.map(({ id, ...p }) => ({ ...p, coach_id: coachId, currency: 'INR' }));
             console.log("Inserting pricing:", pricingToInsert);
             const { error } = await supabaseAdmin.from('coach_pricing').insert(pricingToInsert);
             if (error) { console.error("Error inserting pricing:", error); return { error: `Failed to save pricing: ${error.message}` }; }
@@ -206,7 +206,7 @@ export async function updateCoach(formData: FormData) {
         const pricing = JSON.parse(formData.get('pricing') as string) as Partial<CoachPricing>[];
         await supabase.from('coach_pricing').delete().eq('coach_id', id);
         if (pricing.length > 0) {
-            const pricingToInsert = pricing.map(p => ({ ...p, coach_id: id, currency: 'INR', id: undefined }));
+            const pricingToInsert = pricing.map(({ id: pricingId, ...p }) => ({ ...p, coach_id: id, currency: 'INR' }));
             console.log("Inserting pricing:", pricingToInsert);
             const { error } = await supabase.from('coach_pricing').insert(pricingToInsert);
             if (error) { console.error("Error updating pricing:", error); return { error: `Failed to update pricing: ${error.message}` }; }
