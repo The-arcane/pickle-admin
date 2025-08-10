@@ -87,7 +87,7 @@ export async function addCoach(formData: FormData) {
         const { data: newUserProfile, error: profileError } = await supabaseAdmin
             .from('user')
             .update({
-                user_type: 5,
+                user_type: 5, // 5 for Coach
                 organisation_id: organisation_id,
                 name: name
             })
@@ -103,6 +103,7 @@ export async function addCoach(formData: FormData) {
         console.log(`Successfully updated user profile. User ID: ${newUserProfile.id}`);
 
         console.log(`3. Finding the new coach record created by trigger for user ID: ${newUserProfile.id}`);
+        // The trigger should have run now. Let's find the coach record.
         const { data: newCoach, error: findCoachError } = await supabaseAdmin
             .from('coaches')
             .select('id, user_id')
@@ -111,8 +112,9 @@ export async function addCoach(formData: FormData) {
 
         if (findCoachError || !newCoach) {
              console.error('Could not find coach record after trigger:', findCoachError);
+             // Cleanup auth user if coach record wasn't created.
              await supabaseAdmin.auth.admin.deleteUser(newUserUuid);
-             return { error: 'System error: Could not link coach profile.' };
+             return { error: 'System error: Could not link coach profile. The database trigger might be missing or failing.' };
         }
         console.log(`Found new coach record with ID: ${newCoach.id}`);
         
@@ -136,6 +138,8 @@ export async function addCoach(formData: FormData) {
             
         if (coachUpdateError) {
             console.error('Error updating coach details:', coachUpdateError);
+            // This is not a fatal error for the whole process, but we should let the user know.
+            // For now, we continue and link sports/pricing.
         }
 
         console.log("5. Handling sports and pricing...");
