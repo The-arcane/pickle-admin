@@ -11,6 +11,7 @@ import { SuperAdminNav } from '@/components/super-admin-nav';
 import { OrganizationProvider } from '@/hooks/use-organization';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SheetContext } from '@/hooks/use-sheet-context';
 
 type UserProfile = {
   name: string;
