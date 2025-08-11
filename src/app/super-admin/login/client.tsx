@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { superAdminLogin } from './actions';
+import { login } from '../../login/actions';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function SubmitButton() {
@@ -82,7 +82,8 @@ export function SuperAdminLoginForm() {
                 <AlertDescription>{error}</AlertDescription>
                 </Alert>
             )}
-            <form action={superAdminLogin} className="space-y-4">
+            <form action={login} className="space-y-4">
+                <input type="hidden" name="userType" value="super-admin" />
                 <div className="space-y-2">
                     <Label htmlFor="super-admin-email">Email</Label>
                     <Input id="super-admin-email" name="email" type="email" placeholder="superadmin@example.com" required />
