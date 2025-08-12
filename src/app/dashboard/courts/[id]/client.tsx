@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { addCourt, updateCourt, addCourtGalleryImages, deleteCourtGalleryImage } from './actions';
+import { addCourt, updateCourt, addCourtGalleryImages, deleteCourtGalleryImage } from '@/app/super-admin/courts/[id]/actions';
 import type { Court, Organisation, Sport, CourtRule, CourtContact, AvailabilityBlock, RecurringUnavailability, CourtGalleryImage } from './types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
