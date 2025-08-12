@@ -16,14 +16,24 @@ export default async function EditCourtPage({ params }: { params: { id: string }
 
   const { data: userRecord } = await supabase
     .from('user')
-    .select('id, organisation_id')
+    .select('id')
     .eq('user_uuid', user.id)
     .single();
 
-  if (!userRecord || !userRecord.organisation_id) {
-    return redirect('/login?error=Could not determine your organization.');
+  if (!userRecord) {
+      return redirect('/login?error=Could not determine your organization.');
   }
-  const organisationId = userRecord.organisation_id;
+
+  const { data: orgLink } = await supabase
+    .from('user_organisations')
+    .select('organisation_id')
+    .eq('user_id', userRecord.id)
+    .single();
+  
+  if (!orgLink?.organisation_id) {
+    return redirect('/dashboard?error=Your%20account%20is%20not%20associated%20with%20an%20organization.');
+  }
+  const organisationId = orgLink.organisation_id;
 
   let court: Court | null = null;
   if (!isAdding) {
