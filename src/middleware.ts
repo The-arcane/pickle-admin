@@ -66,7 +66,7 @@ export async function middleware(request: NextRequest) {
   // If user is logged in, fetch their profile
   const { data: userProfile } = await supabase
     .from('user')
-    .select('user_type')
+    .select('id, user_type')
     .eq('user_uuid', user.id)
     .single();
 
@@ -76,8 +76,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=User%20profile%20not%20found.', siteUrl));
   }
   
-  const { user_type } = userProfile;
+  const { user_type, id: userId } = userProfile;
   
+  // Check for organization link for admin and employee roles
+  if (user_type === 2 || user_type === 4) {
+      const { data: orgLink } = await supabase
+        .from('user_organisations')
+        .select('organisation_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (!orgLink) {
+           await supabase.auth.signOut();
+           let errorUrl = loginPaths.admin;
+           if(user_type === 4) errorUrl = loginPaths.employee;
+           return NextResponse.redirect(new URL(`${errorUrl}?error=Your%20account%20is%20not%20associated%20with%20an%20organization.`, siteUrl));
+      }
+  }
+
   // If a logged-in user tries to access any login page, redirect them to their dashboard
   if (pathname === '/login') {
     if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
@@ -87,13 +103,13 @@ export async function middleware(request: NextRequest) {
 
   // Enforce role-based access to protected routes
   if (pathname.startsWith(protectedPaths.dashboard) && user_type !== 2) {
-    return NextResponse.redirect(new URL(loginPaths.admin + '&error=Access%20Denied', siteUrl));
+    return NextResponse.redirect(new URL(loginPaths.admin + '?error=Access%20Denied', siteUrl));
   }
   if (pathname.startsWith(protectedPaths.superAdmin) && user_type !== 3) {
-    return NextResponse.redirect(new URL(loginPaths.superAdmin + '&error=Access%20Denied', siteUrl));
+    return NextResponse.redirect(new URL(loginPaths.superAdmin + '?error=Access%20Denied', siteUrl));
   }
   if (pathname.startsWith(protectedPaths.employee) && user_type !== 4) {
-    return NextResponse.redirect(new URL(loginPaths.employee + '&error=Access%20Denied', siteUrl));
+    return NextResponse.redirect(new URL(loginPaths.employee + '?error=Access%20Denied', siteUrl));
   }
 
   return response;
