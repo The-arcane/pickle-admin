@@ -13,20 +13,29 @@ export default async function CourtListPage() {
 
   const { data: userRecord } = await supabase
     .from('user')
-    .select('id, organisation_id')
+    .select('id')
     .eq('user_uuid', user.id)
     .single();
 
-  if (!userRecord || !userRecord.organisation_id) {
-    return redirect('/login?error=Your%20account%20is%20not%20associated%20with%20an%20organization.');
+  if (!userRecord) {
+    return redirect('/login?error=Your%20account%20is%20not%20found.');
   }
 
-  const organisationId = userRecord.organisation_id;
+  const { data: orgLink } = await supabase
+    .from('user_organisations')
+    .select('organisation_id')
+    .eq('user_id', userRecord.id)
+    .maybeSingle();
+
+  if (!orgLink?.organisation_id) {
+    return redirect('/login?error=Your%20account%20is%20not%20associated%20with%20an%20organization.');
+  }
+  const organisationId = orgLink.organisation_id;
 
   // Fetch all data needed for the courts page, including relations for editing.
   const { data: courtsData, error: courtsError } = await supabase
     .from('courts')
-    .select('*, organisations!inner(name), sports(name, max_players)')
+    .select('*, organisations(name), sports(name)')
     .eq('organisation_id', organisationId);
 
   // For the dropdown filter, we only need the names of the organizations.
@@ -43,9 +52,9 @@ export default async function CourtListPage() {
   const courts = courtsData?.map((c, index) => ({
       id: c.id,
       name: c.name,
-      venue: c.organisations?.name || 'N/A',
-      type: c.sports?.name || 'N/A',
-      max_players: c.sports?.max_players || 'N/A',
+      venue: c.organisations?.name ?? 'N/A',
+      type: c.sports?.name ?? 'N/A',
+      max_players: c.max_players,
       organisation_id: c.organisation_id,
       sport_id: c.sport_id,
       status: statuses[index % statuses.length], // Assign a status cyclically for demo
