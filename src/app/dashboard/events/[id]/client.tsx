@@ -104,6 +104,10 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         formData.append('is_public', String(isPublic));
         formData.append('sub_events', JSON.stringify(subEvents.filter(s => s.title)));
         formData.append('what_to_bring', JSON.stringify(whatToBring.filter(s => s.item)));
+        
+        // Based on the toggle, set the access_type
+        formData.append('access_type', isPublic ? 'public' : 'private');
+
 
         const action = isAdding ? addEvent : updateEvent;
         if (!isAdding && event) {
@@ -299,22 +303,9 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                 <div className="space-y-2"><Label htmlFor="organiser_user_id">Organiser User</Label><Select name="organiser_user_id" defaultValue={event?.organiser_user_id?.toString() || ''}><SelectTrigger><SelectValue placeholder="Select a user" /></SelectTrigger><SelectContent>{users.map(user => <SelectItem key={user.id} value={user.id.toString()}>{user.name}</SelectItem>)}</SelectContent></Select></div>
                             )}
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="access_type">Access Type</Label>
-                                    <Select name="access_type" defaultValue={event?.access_type || 'public'}>
-                                        <SelectTrigger><SelectValue placeholder="Select access type" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="public">Public</SelectItem>
-                                            <SelectItem value="private">Private</SelectItem>
-                                            <SelectItem value="invite-only">Invite Only</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="timezone">Timezone</Label>
-                                    <Input id="timezone" name="timezone" defaultValue={event?.timezone || 'Asia/Kolkata'} placeholder="e.g., Asia/Kolkata" />
-                                </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="timezone">Timezone</Label>
+                                <Input id="timezone" name="timezone" defaultValue={event?.timezone || 'Asia/Kolkata'} placeholder="e.g., Asia/Kolkata" />
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
