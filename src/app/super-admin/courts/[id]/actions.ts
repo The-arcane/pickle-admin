@@ -62,7 +62,6 @@ function getCourtFields(formData: FormData) {
         badge_type: formData.get('badge_type') as string,
         c_start_time: formData.get('c_start_time') || null,
         c_end_time: formData.get('c_end_time') || null,
-        is_public: formData.get('is_public') === 'true',
     };
 }
 
@@ -81,9 +80,10 @@ export async function addCourt(formData: FormData) {
     }
     
     // --- 1. Insert the main court record (without images first) ---
+    const isPublic = formData.get('is_public') === 'true';
     const { data: newCourt, error: courtError } = await supabase
       .from('courts')
-      .insert(courtFields)
+      .insert({...courtFields, is_public: isPublic})
       .select()
       .single();
 
@@ -125,21 +125,27 @@ export async function addCourt(formData: FormData) {
     const unavailability = JSON.parse(formData.get('unavailability') as string) as Partial<RecurringUnavailability>[];
 
     if (rules.length > 0) {
-      const rulesToInsert = rules.map(r => ({ rule: r.rule, court_id: courtId }));
-      const { error } = await supabase.from('court_rules').insert(rulesToInsert);
-      if(error) { console.error('Error adding rules:', error); return { error: `Failed to save rules: ${error.message}` }; }
+      const rulesToInsert = rules.filter(r => r.rule && r.rule.trim() !== '').map(r => ({ rule: r.rule, court_id: courtId }));
+      if (rulesToInsert.length > 0) {
+        const { error } = await supabase.from('court_rules').insert(rulesToInsert);
+        if(error) { console.error('Error adding rules:', error); return { error: `Failed to save rules: ${error.message}` }; }
+      }
     }
     if (contact.phone || contact.email) {
       const { error } = await supabase.from('court_contacts').insert({ ...contact, court_id: courtId });
       if(error) { console.error('Error adding contact:', error); return { error: `Failed to save contact info: ${error.message}` };}
     }
-    if (availability.length > 0) {
-      const availabilityToInsert = availability.map(a => ({ ...a, court_id: courtId }));
+    
+    const validAvailability = availability.filter(a => a.date);
+    if (validAvailability.length > 0) {
+      const availabilityToInsert = validAvailability.map(a => ({ ...a, court_id: courtId }));
       const { error } = await supabase.from('availability_blocks').insert(availabilityToInsert);
       if(error) { console.error('Error adding availability:', error); return { error: `Failed to save availability: ${error.message}` };}
     }
-    if (unavailability.length > 0) {
-      const unavailabilityToInsert = unavailability.map(u => ({ ...u, court_id: courtId }));
+    
+    const validUnavailability = unavailability.filter(u => u.day_of_week !== undefined && u.start_time && u.end_time);
+    if (validUnavailability.length > 0) {
+      const unavailabilityToInsert = validUnavailability.map(u => ({ ...u, court_id: courtId }));
       const { error } = await supabase.from('recurring_unavailability').insert(unavailabilityToInsert);
       if(error) { console.error('Error adding unavailability:', error); return { error: `Failed to save recurring unavailability: ${error.message}` };}
     }
@@ -150,6 +156,7 @@ export async function addCourt(formData: FormData) {
   }
 
   revalidatePath('/super-admin/courts');
+  revalidatePath('/dashboard/courts');
   return { success: true };
 }
 
@@ -166,7 +173,8 @@ export async function updateCourt(formData: FormData) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
     }
     
-    const courtUpdateData: any = { ...courtFields };
+    const isPublic = formData.get('is_public') === 'true';
+    const courtUpdateData: any = { ...courtFields, is_public: isPublic };
     
     // --- Handle Image Uploads ---
     const mainImageFile = formData.get('main_image_file') as File | null;
@@ -179,10 +187,10 @@ export async function updateCourt(formData: FormData) {
     if (coverImageUrl) courtUpdateData.cover_image = coverImageUrl;
 
     // --- 1. Update main court table ---
-    const { error: courtError } = await supabase.from('courts').update(courtUpdateData).eq('id', id);
+    const { data, error: courtError } = await supabase.from('courts').update(courtUpdateData).eq('id', id).select().single();
     if (courtError) { console.error('Error updating court:', courtError); return { error: `Failed to update court. ${courtError.message}` };}
+    if (!data) { return { error: 'Failed to update court. No data was returned after update.' }; }
     
-
     // --- 2. Sync Existing Rules (Delete removed, then upsert all) ---
     const rules = JSON.parse(formData.get('rules') as string) as Partial<CourtRule>[];
     const { data: existingRules } = await supabase.from('court_rules').select('id').eq('court_id', id);
@@ -195,12 +203,12 @@ export async function updateCourt(formData: FormData) {
         const { error } = await supabase.from('court_rules').delete().in('id', rulesToDelete);
         if (error) { console.error('Error deleting rules:', error); return { error: `Failed to delete old rules: ${error.message}` }; }
     }
-    if(rules.length > 0) {
-      const rulesToUpsert = rules.map(r => {
+    const rulesToUpsert = rules.filter(r => r.rule && r.rule.trim() !== '').map(r => {
         const record: any = { rule: r.rule, court_id: id };
         if (r.id) record.id = r.id;
         return record;
-      });
+    });
+    if(rulesToUpsert.length > 0) {
       const { error } = await supabase.from('court_rules').upsert(rulesToUpsert);
       if (error) { console.error('Error upserting rules:', error); return { error: `Failed to save rules: ${error.message}` }; }
     }
@@ -234,12 +242,12 @@ export async function updateCourt(formData: FormData) {
         const { error } = await supabase.from('availability_blocks').delete().in('id', availabilityToDelete);
         if (error) { console.error('Error deleting availability:', error); return { error: `Failed to delete old availability blocks: ${error.message}` }; }
     }
-    if(availability.length > 0) {
-      const availabilityToUpsert = availability.map(a => {
+    const availabilityToUpsert = availability.filter(a => a.date).map(a => {
         const record: any = { court_id: id, date: a.date, start_time: a.start_time, end_time: a.end_time, reason: a.reason };
         if (a.id) record.id = a.id;
         return record;
       });
+    if(availabilityToUpsert.length > 0) {
       const { error } = await supabase.from('availability_blocks').upsert(availabilityToUpsert);
       if (error) { console.error('Error upserting availability:', error); return { error: `Failed to save availability: ${error.message}` }; }
     }
@@ -256,12 +264,12 @@ export async function updateCourt(formData: FormData) {
         const { error } = await supabase.from('recurring_unavailability').delete().in('id', unavailabilityToDelete);
         if (error) { console.error('Error deleting recurring unavailability:', error); return { error: `Failed to delete old recurring unavailability: ${error.message}` }; }
     }
-    if(unavailability.length > 0) {
-      const unavailabilityToUpsert = unavailability.map(u => {
+    const unavailabilityToUpsert = unavailability.filter(u => u.day_of_week !== undefined && u.start_time && u.end_time).map(u => {
         const record: any = { court_id: id, day_of_week: u.day_of_week, start_time: u.start_time, end_time: u.end_time, reason: u.reason, active: u.active ?? true };
         if (u.id) record.id = u.id;
         return record;
       });
+    if(unavailabilityToUpsert.length > 0) {
       const { error } = await supabase.from('recurring_unavailability').upsert(unavailabilityToUpsert);
       if (error) { console.error('Error upserting recurring unavailability:', error); return { error: `Failed to save recurring unavailability: ${error.message}` }; }
     }
@@ -273,7 +281,9 @@ export async function updateCourt(formData: FormData) {
   }
 
   revalidatePath('/super-admin/courts');
+  revalidatePath('/dashboard/courts');
   revalidatePath(`/super-admin/courts/${id}`);
+  revalidatePath(`/dashboard/courts/${id}`);
   return { success: true };
 }
 
@@ -348,6 +358,7 @@ export async function addCourtGalleryImages(formData: FormData) {
     }
 
     revalidatePath(`/super-admin/courts/${courtId}`);
+    revalidatePath(`/dashboard/courts/${courtId}`);
     return { success: true };
 }
 
@@ -370,14 +381,14 @@ export async function deleteCourtGalleryImage(formData: FormData) {
         const { error: storageError } = await supabase.storage.from('court-images').remove([filePath]);
         if (storageError) {
             console.error("Error deleting from storage:", storageError);
-            return { error: `Failed to delete image from storage: ${storageError.message}`};
+            // Non-fatal error, we can still proceed to delete from DB
         }
 
         // 2. Delete from database
         const { error: dbError } = await supabase.from('court_gallery').delete().eq('id', imageId);
         if (dbError) {
             console.error("Error deleting from db:", dbError);
-            return { error: `Image deleted from storage, but failed to remove from gallery: ${dbError.message}`};
+            return { error: `Failed to remove image from gallery: ${dbError.message}`};
         }
 
     } catch (e: any) {
@@ -385,5 +396,6 @@ export async function deleteCourtGalleryImage(formData: FormData) {
     }
 
     revalidatePath(`/super-admin/courts/${courtId}`);
+    revalidatePath(`/dashboard/courts/${courtId}`);
     return { success: true };
 }
