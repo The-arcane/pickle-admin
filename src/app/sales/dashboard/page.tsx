@@ -9,7 +9,7 @@ import { Building, Users } from 'lucide-react';
 import { format } from 'date-fns';
 
 type SalesDashboardData = {
-    totalOrganisations: number;
+    inactiveOrganisations: number;
     totalUsers: number;
 };
 
@@ -39,7 +39,7 @@ export default function SalesDashboardPage() {
           orgsRes,
           usersRes,
       ] = await Promise.all([
-          supabase.from('organisations').select('id', { count: 'exact', head: true }),
+          supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('is_active', false),
           supabase.from('user').select('id', { count: 'exact', head: true }),
       ]);
 
@@ -47,7 +47,7 @@ export default function SalesDashboardPage() {
       if(usersRes.error) console.error("Error fetching users count", usersRes.error);
 
       setData({
-          totalOrganisations: orgsRes.count ?? 0,
+          inactiveOrganisations: orgsRes.count ?? 0,
           totalUsers: usersRes.count ?? 0,
       });
       setLoading(false);
@@ -57,7 +57,7 @@ export default function SalesDashboardPage() {
   }, [supabase, router]);
   
   const statCards = data ? [
-      { label: 'Total Organizations', value: data.totalOrganisations, icon: Building },
+      { label: 'Inactive Organizations', value: data.inactiveOrganisations, icon: Building },
       { label: 'Total Users', value: data.totalUsers, icon: Users },
   ] : [];
 
