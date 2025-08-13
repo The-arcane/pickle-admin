@@ -60,6 +60,7 @@ export async function login(formData: FormData) {
             }
             return redirect('/dashboard');
         case 3: // Super Admin
+        case 5: // Sales People (part of Super Admin)
              if (userTypeTarget !== 'super-admin') {
                 await supabase.auth.signOut();
                 return redirect(`${loginUrl}?error=${encodeURIComponent('Access Denied. Please use the Super Admin login form.')}`);

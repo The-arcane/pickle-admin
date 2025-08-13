@@ -97,7 +97,7 @@ export async function middleware(request: NextRequest) {
   // If a logged-in user tries to access any login page, redirect them to their dashboard
   if (pathname === '/login') {
     if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
-    if (user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
+    if (user_type === 3 || user_type === 5) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
     if (user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
   }
 
@@ -105,7 +105,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith(protectedPaths.dashboard) && user_type !== 2) {
     return NextResponse.redirect(new URL(loginPaths.admin + '?error=Access%20Denied', siteUrl));
   }
-  if (pathname.startsWith(protectedPaths.superAdmin) && user_type !== 3) {
+  if (pathname.startsWith(protectedPaths.superAdmin) && ![3, 5].includes(user_type)) {
     return NextResponse.redirect(new URL(loginPaths.superAdmin + '?error=Access%20Denied', siteUrl));
   }
   if (pathname.startsWith(protectedPaths.employee) && user_type !== 4) {
