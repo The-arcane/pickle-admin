@@ -13,9 +13,10 @@ export default async function ApprovalsPage() {
         return redirect('/login');
     }
 
+    // Get the admin's own user record to find their organization
     const { data: userRecord } = await supabase
         .from('user')
-        .select('id')
+        .select('organisation_id')
         .eq('user_uuid', user.id)
         .single();
     
@@ -23,21 +24,16 @@ export default async function ApprovalsPage() {
         return redirect('/login');
     }
 
-    const { data: orgLink } = await supabase
-        .from('user_organisations')
-        .select('organisation_id')
-        .eq('user_id', userRecord.id)
-        .maybeSingle();
-
-    const organisationId = orgLink?.organisation_id;
+    const organisationId = userRecord.organisation_id;
     if (!organisationId) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
-                <p className="text-muted-foreground">You are not associated with an organization.</p>
+                <p className="text-muted-foreground">Your admin account is not associated with an organization.</p>
             </div>
         );
     }
     
+    // Fetch pending approvals for the admin's organization
     const { data: approvals, error } = await supabase
         .from('approvals')
         .select(`
