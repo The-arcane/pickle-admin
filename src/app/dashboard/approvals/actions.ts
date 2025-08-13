@@ -14,16 +14,28 @@ export async function approveRequest(formData: FormData) {
         return { error: 'Missing required IDs for approval.' };
     }
 
-    // Use a transaction to update both tables
-    const { data, error } = await supabase.rpc('approve_user_for_organisation', {
-        p_approval_id: approvalId,
-        p_user_id: userId,
-        p_organisation_id: organisationId,
-    });
-   
-    if (error) {
-        console.error('Error approving request:', error);
-        return { error: `Failed to approve request: ${error.message}` };
+    // Step 1: Update the user's organisation_id in the user table
+    const { error: userUpdateError } = await supabase
+        .from('user')
+        .update({ organisation_id: organisationId })
+        .eq('id', userId);
+
+    if (userUpdateError) {
+        console.error('Error updating user organization:', userUpdateError);
+        return { error: `Failed to update user profile: ${userUpdateError.message}` };
+    }
+
+    // Step 2: Mark the approval request as approved
+    const { error: approvalUpdateError } = await supabase
+        .from('approvals')
+        .update({ is_approved: true })
+        .eq('id', approvalId);
+
+    if (approvalUpdateError) {
+        console.error('Error updating approval status:', approvalUpdateError);
+        // If this fails, we should ideally roll back the user update.
+        // For now, we'll return an error message indicating a partial failure.
+        return { error: `User profile updated, but failed to update approval status: ${approvalUpdateError.message}` };
     }
     
     revalidatePath('/dashboard/approvals');
