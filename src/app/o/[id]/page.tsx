@@ -15,7 +15,6 @@ export default async function OrganizationPublicPage({ params }: { params: { id:
         .from('organisations')
         .select('name')
         .eq('id', id)
-        .eq('is_active', true) // Only show active organizations publicly
         .single();
     
     if (orgError || !org) {
