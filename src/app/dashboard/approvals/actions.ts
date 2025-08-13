@@ -67,3 +67,65 @@ export async function rejectRequest(formData: FormData) {
 
     return { success: true, message: 'Request rejected.' };
 }
+
+
+// --- Bulk Actions ---
+
+export async function approveMultipleRequests(approvals: { approvalId: number, userId: number, organisationId: number }[]) {
+    const supabase = await createServer();
+
+    if (!approvals || approvals.length === 0) {
+        return { error: 'No approvals selected.' };
+    }
+
+    for (const approval of approvals) {
+        // Step 1: Update the user's organisation_id in the user table
+        const { error: userUpdateError } = await supabase
+            .from('user')
+            .update({ organisation_id: approval.organisationId })
+            .eq('id', approval.userId);
+        
+        if (userUpdateError) {
+            console.error(`Bulk approve: Error updating user ${approval.userId}`, userUpdateError);
+            // Continue to next approval, but maybe log this failure
+            continue;
+        }
+
+        // Step 2: Mark the approval request as approved
+        const { error: approvalUpdateError } = await supabase
+            .from('approvals')
+            .update({ is_approved: true })
+            .eq('id', approval.approvalId);
+        
+        if (approvalUpdateError) {
+             console.error(`Bulk approve: Error updating approval ${approval.approvalId}`, approvalUpdateError);
+             // Continue even if this part fails
+        }
+    }
+    
+    revalidatePath('/dashboard/approvals');
+    revalidatePath('/dashboard/users');
+
+    return { success: true, message: `${approvals.length} request(s) approved.` };
+}
+
+export async function rejectMultipleRequests(approvalIds: number[]) {
+    const supabase = await createServer();
+
+    if (!approvalIds || approvalIds.length === 0) {
+        return { error: 'No approvals selected.' };
+    }
+
+    const { error } = await supabase
+        .from('approvals')
+        .delete()
+        .in('id', approvalIds);
+
+    if (error) {
+        console.error('Error rejecting multiple requests:', error);
+        return { error: `Failed to reject requests: ${error.message}` };
+    }
+
+    revalidatePath('/dashboard/approvals');
+    return { success: true, message: `${approvalIds.length} request(s) rejected.` };
+}

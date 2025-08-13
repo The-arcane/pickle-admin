@@ -3,9 +3,9 @@
 
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { approveRequest, rejectRequest } from './actions';
+import { approveRequest, rejectRequest, approveMultipleRequests, rejectMultipleRequests } from './actions';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Check, UserCheck, X } from 'lucide-react';
@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type Approval = {
     id: number;
@@ -47,35 +48,73 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
     const { toast } = useToast();
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);
-    const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
+    const [actionType, setActionType] = useState<'approve' | 'reject' | 'bulk_approve' | 'bulk_reject' | null>(null);
+    const [selectedApprovals, setSelectedApprovals] = useState<number[]>([]);
 
     const openConfirmation = (approval: Approval, type: 'approve' | 'reject') => {
         setSelectedApproval(approval);
         setActionType(type);
         setIsAlertOpen(true);
     }
+
+    const openBulkConfirmation = (type: 'bulk_approve' | 'bulk_reject') => {
+        setActionType(type);
+        setIsAlertOpen(true);
+    }
     
     const handleAction = async () => {
-        if (!selectedApproval || !actionType) return;
-
-        const formData = new FormData();
-        formData.append('approval_id', selectedApproval.id.toString());
-        formData.append('user_id', selectedApproval.user_id.toString());
-        formData.append('organisation_id', selectedApproval.organisation_id.toString());
-
-        const action = actionType === 'approve' ? approveRequest : rejectRequest;
-        const result = await action(formData);
-
-        if (result.error) {
-            toast({ variant: 'destructive', title: 'Error', description: result.error });
-        } else {
-            toast({ title: 'Success', description: result.message });
+        if (!actionType) return;
+    
+        let result: { success?: boolean; message?: string; error?: string; } | undefined;
+    
+        if (actionType === 'approve' && selectedApproval) {
+            const formData = new FormData();
+            formData.append('approval_id', selectedApproval.id.toString());
+            formData.append('user_id', selectedApproval.user_id.toString());
+            formData.append('organisation_id', selectedApproval.organisation_id.toString());
+            result = await approveRequest(formData);
+        } else if (actionType === 'reject' && selectedApproval) {
+            const formData = new FormData();
+            formData.append('approval_id', selectedApproval.id.toString());
+            result = await rejectRequest(formData);
+        } else if (actionType === 'bulk_approve') {
+            const approvalsToProcess = selectedApprovals.map(id => {
+                const approval = approvals.find(a => a.id === id);
+                return approval ? { approvalId: approval.id, userId: approval.user_id, organisationId: approval.organisation_id } : null;
+            }).filter(Boolean) as { approvalId: number, userId: number, organisationId: number }[];
+            result = await approveMultipleRequests(approvalsToProcess);
+        } else if (actionType === 'bulk_reject') {
+            result = await rejectMultipleRequests(selectedApprovals);
         }
-
+    
+        if (result?.error) {
+            toast({ variant: 'destructive', title: 'Error', description: result.error });
+        } else if (result?.success) {
+            toast({ title: 'Success', description: result.message });
+            setSelectedApprovals([]); // Clear selections on success
+        }
+    
         setIsAlertOpen(false);
         setSelectedApproval(null);
         setActionType(null);
-    }
+    };
+
+    const handleSelectAll = (checked: boolean | 'indeterminate') => {
+        if (checked === true) {
+            setSelectedApprovals(approvals.map(a => a.id));
+        } else {
+            setSelectedApprovals([]);
+        }
+    };
+
+    const handleSelectOne = (id: number, checked: boolean) => {
+        setSelectedApprovals(prev =>
+            checked ? [...prev, id] : prev.filter(selId => selId !== id)
+        );
+    };
+
+    const isAllSelected = selectedApprovals.length > 0 && selectedApprovals.length === approvals.length;
+    const isSomeSelected = selectedApprovals.length > 0 && selectedApprovals.length < approvals.length;
 
     return (
         <>
@@ -87,10 +126,32 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
                 </div>
             </div>
             <Card>
-                <CardContent className="pt-6">
+                <CardHeader>
+                    {selectedApprovals.length > 0 && (
+                        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                            <span className="text-sm font-medium">{selectedApprovals.length} selected</span>
+                            <div className="flex gap-2">
+                                <Button size="sm" variant="outline" onClick={() => openBulkConfirmation('bulk_reject')}>
+                                    <X className="mr-2 h-4 w-4" /> Reject Selected
+                                </Button>
+                                <Button size="sm" onClick={() => openBulkConfirmation('bulk_approve')}>
+                                    <Check className="mr-2 h-4 w-4" /> Approve Selected
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </CardHeader>
+                <CardContent className="pt-0">
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-[50px]">
+                                    <Checkbox
+                                        checked={isAllSelected || (isSomeSelected ? "indeterminate" : false)}
+                                        onCheckedChange={handleSelectAll}
+                                        aria-label="Select all"
+                                    />
+                                </TableHead>
                                 <TableHead>User</TableHead>
                                 <TableHead>Request Date</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
@@ -99,7 +160,14 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
                         <TableBody>
                             {approvals.length > 0 ? (
                                 approvals.map((approval) => (
-                                    <TableRow key={approval.id}>
+                                    <TableRow key={approval.id} data-state={selectedApprovals.includes(approval.id) && "selected"}>
+                                        <TableCell>
+                                            <Checkbox
+                                                checked={selectedApprovals.includes(approval.id)}
+                                                onCheckedChange={(checked) => handleSelectOne(approval.id, !!checked)}
+                                                aria-label={`Select approval from ${approval.user?.name}`}
+                                            />
+                                        </TableCell>
                                         <TableCell>
                                              <div className="flex items-center gap-3">
                                                 <Avatar>
@@ -127,7 +195,7 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center h-24">
+                                    <TableCell colSpan={4} className="text-center h-24">
                                         No pending approvals.
                                     </TableCell>
                                 </TableRow>
@@ -142,17 +210,20 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            You are about to {actionType} the request for <span className="font-semibold">{selectedApproval?.user?.name}</span>.
-                            {actionType === 'reject' && " This action cannot be undone."}
+                            {actionType?.startsWith('bulk') 
+                             ? `You are about to ${actionType === 'bulk_approve' ? 'approve' : 'reject'} ${selectedApprovals.length} request(s).`
+                             : `You are about to ${actionType} the request for ${selectedApproval?.user?.name}.`
+                            }
+                            {(actionType === 'reject' || actionType === 'bulk_reject') && " This action cannot be undone."}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction 
                           onClick={handleAction} 
-                          className={actionType === 'reject' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+                          className={(actionType === 'reject' || actionType === 'bulk_reject') ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
                         >
-                            {actionType === 'approve' ? 'Approve' : 'Reject'}
+                            {actionType?.includes('approve') ? 'Approve' : 'Reject'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
