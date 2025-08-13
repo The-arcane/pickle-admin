@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Calendar, List, Settings, User, Users, PartyPopper, Home, Briefcase, Contact2, Radio } from 'lucide-react';
+import { BarChart, Calendar, List, Settings, User, Users, PartyPopper, Home, Briefcase, Contact2, Radio, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 
@@ -11,6 +11,7 @@ import { useSheetContext } from '@/hooks/use-sheet-context';
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart, color: 'text-sky-500' },
   { href: '/dashboard/bookings', label: 'Bookings', icon: Calendar, color: 'text-green-500' },
+  { href: '/dashboard/approvals', label: 'Approvals', icon: UserCheck, color: 'text-cyan-500' },
   { href: '/dashboard/users', label: 'Users', icon: Users, color: 'text-violet-500' },
   { href: '/dashboard/employees', label: 'Employees', icon: Briefcase, color: 'text-orange-500' },
   { href: '/dashboard/residences', label: 'Residences', icon: Home, color: 'text-teal-500' },
