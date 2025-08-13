@@ -102,7 +102,7 @@ export async function middleware(request: NextRequest) {
     if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
     if (user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
     if (user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
-    if (user_type === 5) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
+    if (user_type === 6) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
   }
 
   // Enforce role-based access to protected routes
@@ -115,7 +115,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith(protectedPaths.employee) && user_type !== 4) {
     return NextResponse.redirect(new URL(loginPaths.employee + '&error=Access%20Denied', siteUrl));
   }
-  if (pathname.startsWith(protectedPaths.sales) && user_type !== 5) {
+  if (pathname.startsWith(protectedPaths.sales) && user_type !== 6) {
     return NextResponse.redirect(new URL(loginPaths.sales + '&error=Access%20Denied', siteUrl));
   }
 
