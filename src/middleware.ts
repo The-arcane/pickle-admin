@@ -105,7 +105,6 @@ export async function middleware(request: NextRequest) {
     if (user_type === 6) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
   }
   
-  // Enforce role-based access to protected routes
   if (user_type === 2 && !pathname.startsWith(protectedPaths.dashboard)) {
       return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
   }
