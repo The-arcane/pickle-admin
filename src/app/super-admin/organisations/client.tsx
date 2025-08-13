@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MoreHorizontal, PlusCircle, Edit, ToggleRight, ToggleLeft, Globe } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Edit, ToggleRight, ToggleLeft, Globe, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
@@ -123,6 +123,11 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem onSelect={() => openEditDialog(org)}><Edit className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/o/${org.id}`} target="_blank">
+                           <Eye className="mr-2 h-4 w-4" />Preview
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href={`/super-admin/organisations/${org.id}/website`}>
                           <Globe className="mr-2 h-4 w-4" />
