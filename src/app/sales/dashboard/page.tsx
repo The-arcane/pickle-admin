@@ -1,66 +1,101 @@
 
-import { createServer } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building, Users } from 'lucide-react';
+import { format } from 'date-fns';
 
-async function getSalesDashboardData() {
-    const supabase = await createServer();
+type SalesDashboardData = {
+    totalOrganisations: number;
+    totalUsers: number;
+};
 
-    const [
-        orgsRes,
-        usersRes,
-    ] = await Promise.all([
-        supabase.from('organisations').select('id', { count: 'exact', head: true }),
-        supabase.from('user').select('id', { count: 'exact', head: true }),
-    ]);
+export default function SalesDashboardPage() {
+  const [data, setData] = useState<SalesDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const supabase = createClient();
+  const router = useRouter();
 
-    if(orgsRes.error) console.error("Error fetching orgs count", orgsRes.error);
-    if(usersRes.error) console.error("Error fetching users count", usersRes.error);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-    return {
-        totalOrganisations: orgsRes.count ?? 0,
-        totalUsers: usersRes.count ?? 0,
+  useEffect(() => {
+    async function getSalesDashboardData() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login?type=sales');
+        return;
+      }
+
+      const [
+          orgsRes,
+          usersRes,
+      ] = await Promise.all([
+          supabase.from('organisations').select('id', { count: 'exact', head: true }),
+          supabase.from('user').select('id', { count: 'exact', head: true }),
+      ]);
+
+      if(orgsRes.error) console.error("Error fetching orgs count", orgsRes.error);
+      if(usersRes.error) console.error("Error fetching users count", usersRes.error);
+
+      setData({
+          totalOrganisations: orgsRes.count ?? 0,
+          totalUsers: usersRes.count ?? 0,
+      });
+      setLoading(false);
     }
-}
 
-
-export default async function SalesDashboardPage() {
-  const supabase = await createServer();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return redirect('/login?type=sales');
-  }
-
-  const { 
-      totalOrganisations, 
-      totalUsers, 
-    } = await getSalesDashboardData();
+    getSalesDashboardData();
+  }, [supabase, router]);
   
-  const statCards = [
-      { label: 'Total Organizations', value: totalOrganisations, icon: Building },
-      { label: 'Total Users', value: totalUsers, icon: Users },
-  ];
+  const statCards = data ? [
+      { label: 'Total Organizations', value: data.totalOrganisations, icon: Building },
+      { label: 'Total Users', value: data.totalUsers, icon: Users },
+  ] : [];
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Sales Dashboard</h1>
         <p className="text-muted-foreground">A high-level overview of platform-wide activity.</p>
+        <p className="text-sm text-muted-foreground mt-2">
+            {format(currentDateTime, 'eeee, MMMM d, yyyy, hh:mm:ss a')}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-              </CardContent>
-            </Card>
-        ))}
+        {loading ? (
+            Array.from({length: 2}).map((_, i) => (
+                <Card key={i}>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Loading...</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">...</div>
+                    </CardContent>
+                </Card>
+            ))
+        ) : (
+            statCards.map((stat, i) => (
+                <Card key={i}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
+                    <stat.icon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                  </CardContent>
+                </Card>
+            ))
+        )}
       </div>
     </div>
   );
