@@ -48,8 +48,8 @@ export async function middleware(request: NextRequest) {
   };
 
   const loginPaths = {
-      admin: '/login?type=admin',
-      superAdmin: '/login?type=super-admin',
+      admin: '/login',
+      superAdmin: '/super-admin/login',
       employee: '/login?type=employee',
       sales: '/login?type=sales'
   }
@@ -98,25 +98,25 @@ export async function middleware(request: NextRequest) {
   }
 
   // If a logged-in user tries to access any login page, redirect them to their dashboard
-  if (pathname === '/login') {
+  if (pathname.startsWith('/login') || pathname.startsWith('/super-admin/login')) {
     if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
     if (user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
     if (user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
     if (user_type === 6) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
   }
-
+  
   // Enforce role-based access to protected routes
-  if (pathname.startsWith(protectedPaths.dashboard) && user_type !== 2) {
-    return NextResponse.redirect(new URL(loginPaths.admin + '&error=Access%20Denied', siteUrl));
+  if (user_type === 2 && !pathname.startsWith(protectedPaths.dashboard)) {
+      return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
   }
-  if (pathname.startsWith(protectedPaths.superAdmin) && user_type !== 3) {
-    return NextResponse.redirect(new URL(loginPaths.superAdmin + '&error=Access%20Denied', siteUrl));
+  if (user_type === 3 && !pathname.startsWith(protectedPaths.superAdmin)) {
+      return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
   }
-  if (pathname.startsWith(protectedPaths.employee) && user_type !== 4) {
-    return NextResponse.redirect(new URL(loginPaths.employee + '&error=Access%20Denied', siteUrl));
+  if (user_type === 4 && !pathname.startsWith(protectedPaths.employee)) {
+      return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
   }
-  if (pathname.startsWith(protectedPaths.sales) && user_type !== 6) {
-    return NextResponse.redirect(new URL(loginPaths.sales + '&error=Access%20Denied', siteUrl));
+  if (user_type === 6 && !pathname.startsWith(protectedPaths.sales)) {
+      return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
   }
 
   return response;
