@@ -43,21 +43,24 @@ export async function middleware(request: NextRequest) {
   const protectedPaths = {
       dashboard: '/dashboard',
       superAdmin: '/super-admin',
-      employee: '/employee'
+      employee: '/employee',
+      sales: '/sales'
   };
 
   const loginPaths = {
-      admin: '/login',
+      admin: '/login?type=admin',
       superAdmin: '/login?type=super-admin',
-      employee: '/login?type=employee'
+      employee: '/login?type=employee',
+      sales: '/login?type=sales'
   }
 
   // If user is not logged in and is trying to access a protected route, redirect to login
   if (!user) {
     if (Object.values(protectedPaths).some(p => pathname.startsWith(p))) {
-        let redirectUrl = loginPaths.admin;
+        let redirectUrl = loginPaths.admin; // Default login
         if (pathname.startsWith(protectedPaths.superAdmin)) redirectUrl = loginPaths.superAdmin;
         if (pathname.startsWith(protectedPaths.employee)) redirectUrl = loginPaths.employee;
+        if (pathname.startsWith(protectedPaths.sales)) redirectUrl = loginPaths.sales;
         return NextResponse.redirect(new URL(redirectUrl, siteUrl));
     }
     return response;
@@ -97,19 +100,23 @@ export async function middleware(request: NextRequest) {
   // If a logged-in user tries to access any login page, redirect them to their dashboard
   if (pathname === '/login') {
     if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
-    if (user_type === 3 || user_type === 5) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
+    if (user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
     if (user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
+    if (user_type === 5) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
   }
 
   // Enforce role-based access to protected routes
   if (pathname.startsWith(protectedPaths.dashboard) && user_type !== 2) {
-    return NextResponse.redirect(new URL(loginPaths.admin + '?error=Access%20Denied', siteUrl));
+    return NextResponse.redirect(new URL(loginPaths.admin + '&error=Access%20Denied', siteUrl));
   }
-  if (pathname.startsWith(protectedPaths.superAdmin) && ![3, 5].includes(user_type)) {
-    return NextResponse.redirect(new URL(loginPaths.superAdmin + '?error=Access%20Denied', siteUrl));
+  if (pathname.startsWith(protectedPaths.superAdmin) && user_type !== 3) {
+    return NextResponse.redirect(new URL(loginPaths.superAdmin + '&error=Access%20Denied', siteUrl));
   }
   if (pathname.startsWith(protectedPaths.employee) && user_type !== 4) {
-    return NextResponse.redirect(new URL(loginPaths.employee + '?error=Access%20Denied', siteUrl));
+    return NextResponse.redirect(new URL(loginPaths.employee + '&error=Access%20Denied', siteUrl));
+  }
+  if (pathname.startsWith(protectedPaths.sales) && user_type !== 5) {
+    return NextResponse.redirect(new URL(loginPaths.sales + '&error=Access%20Denied', siteUrl));
   }
 
   return response;

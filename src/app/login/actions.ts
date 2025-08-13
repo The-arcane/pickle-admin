@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 export async function login(formData: FormData) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    const userTypeTarget = formData.get('userType') as 'admin' | 'super-admin' | 'employee';
+    const userTypeTarget = formData.get('userType') as 'admin' | 'super-admin' | 'employee' | 'sales';
     const supabase = await createServer();
 
     const { data: { user }, error } = await supabase.auth.signInWithPassword({
@@ -20,7 +20,10 @@ export async function login(formData: FormData) {
         loginUrl = '/login?type=employee';
     } else if (userTypeTarget === 'super-admin') {
         loginUrl = '/login?type=super-admin';
+    } else if (userTypeTarget === 'sales') {
+        loginUrl = '/login?type=sales';
     }
+
 
     if (error || !user) {
         return redirect(`${loginUrl}?error=${encodeURIComponent(error?.message || 'Invalid login credentials.')}`);
@@ -60,7 +63,6 @@ export async function login(formData: FormData) {
             }
             return redirect('/dashboard');
         case 3: // Super Admin
-        case 5: // Sales People (part of Super Admin)
              if (userTypeTarget !== 'super-admin') {
                 await supabase.auth.signOut();
                 return redirect(`${loginUrl}?error=${encodeURIComponent('Access Denied. Please use the Super Admin login form.')}`);
@@ -76,6 +78,12 @@ export async function login(formData: FormData) {
                  return redirect(`/login?type=employee&error=${encodeURIComponent('Employee profile is not associated with any organization.')}`);
             }
             return redirect('/employee/dashboard');
+        case 5: // Sales People
+             if (userTypeTarget !== 'sales') {
+                await supabase.auth.signOut();
+                return redirect(`${loginUrl}?error=${encodeURIComponent('Access Denied. Please use the Sales login form.')}`);
+            }
+            return redirect('/sales/dashboard');
         default:
              await supabase.auth.signOut();
              return redirect(`${loginUrl}?error=${encodeURIComponent('Invalid user role.')}`);
