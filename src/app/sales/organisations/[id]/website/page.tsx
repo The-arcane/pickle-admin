@@ -10,13 +10,14 @@ export default async function EditOrganizationWebsitePage({ params }: { params: 
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-        return redirect('/login?type=super-admin');
+        return redirect('/login?type=sales');
     }
 
     const { data: organization, error: orgError } = await supabase
         .from('organisations')
         .select('*')
         .eq('id', id)
+        .eq('is_active', false) // Sales can only edit inactive orgs
         .single();
     
     if (orgError || !organization) {
