@@ -2,7 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { AlertCircle, Eye, EyeOff, Shield, UserSquare } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Shield, UserSquare, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -70,16 +70,47 @@ export function LoginForm() {
   const error = searchParams.get('error');
   const typeParam = searchParams.get('type') || 'employee';
   
-  // Default to 'employee' if the current tab is 'sales' which is being removed
-  const activeTab = typeParam === 'sales' ? 'employee' : typeParam;
-
   const handleTabChange = (value: string) => {
     router.push(`/login?type=${value}`);
   };
 
+  if (typeParam === 'sales') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-sm">
+            <CardHeader>
+                <CardTitle className="text-2xl flex items-center gap-2">
+                    <TrendingUp className="h-6 w-6"/>
+                    Sales Login
+                </CardTitle>
+                <CardDescription>Enter your sales credentials to access the sales dashboard.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {error && (
+                    <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Login Failed</AlertTitle>
+                    <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
+                    </Alert>
+                )}
+                <form action={login} className="space-y-6" suppressHydrationWarning>
+                    <input type="hidden" name="userType" value="sales" />
+                    <LoginFormFields userType="sales" />
+                    <SubmitButton userType="Sales" />
+                </form>
+                 <p className="mt-4 text-center text-xs text-muted-foreground">
+                    Not a sales person? <a href="/login?type=employee" className="underline">Login here</a>.
+                </p>
+                <p className="mt-1 text-center text-xs text-muted-foreground">Version 9.9.0(D)</p>
+            </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full max-w-sm">
+      <Tabs value={typeParam} onValueChange={handleTabChange} className="w-full max-w-sm">
         <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="employee">Employee</TabsTrigger>
             <TabsTrigger value="admin">Admin</TabsTrigger>
@@ -95,7 +126,7 @@ export function LoginForm() {
                     <CardDescription>Scan QR codes and manage today's bookings.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     {error && activeTab === 'employee' && (
+                     {error && typeParam === 'employee' && (
                         <Alert variant="destructive" className="mb-4">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Login Failed</AlertTitle>
@@ -122,7 +153,7 @@ export function LoginForm() {
                     <CardDescription>Enter your admin credentials to access the main dashboard.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {error && activeTab === 'admin' && (
+                    {error && typeParam === 'admin' && (
                         <Alert variant="destructive" className="mb-4">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Login Failed</AlertTitle>
@@ -149,7 +180,7 @@ export function LoginForm() {
                     <CardDescription>Enter your credentials for elevated access.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     {error && activeTab === 'super-admin' && (
+                     {error && typeParam === 'super-admin' && (
                         <Alert variant="destructive" className="mb-4">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Login Failed</AlertTitle>
