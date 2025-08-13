@@ -78,7 +78,7 @@ export async function login(formData: FormData) {
                  return redirect(`/login?type=employee&error=${encodeURIComponent('Employee profile is not associated with any organization.')}`);
             }
             return redirect('/employee/dashboard');
-        case 5: // Sales People
+        case 6: // Sales People
              if (userTypeTarget !== 'sales') {
                 await supabase.auth.signOut();
                 return redirect(`${loginUrl}?error=${encodeURIComponent('Access Denied. Please use the Sales login form.')}`);
@@ -89,3 +89,4 @@ export async function login(formData: FormData) {
              return redirect(`${loginUrl}?error=${encodeURIComponent('Invalid user role.')}`);
     }
 }
+

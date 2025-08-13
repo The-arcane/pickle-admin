@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { createServiceRoleServer } from '@/lib/supabase/server';
 
-// This action creates a user with user_type = 5 (Sales)
+// This action creates a user with user_type = 6 (Sales)
 export async function addSalesPerson(formData: FormData) {
   const supabaseAdmin = createServiceRoleServer();
 
@@ -35,7 +35,7 @@ export async function addSalesPerson(formData: FormData) {
   const { error: profileError } = await supabaseAdmin
     .from('user')
     .update({
-        user_type: 5, // Set user_type to 5 for Sales
+        user_type: 6, // Set user_type to 6 for Sales
         name: name,
         phone: phone || null
     })

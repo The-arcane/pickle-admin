@@ -15,7 +15,7 @@ export default async function SalesPage() {
   const { data: salesData, error: salesError } = await supabase
     .from('user')
     .select('id, name, email, phone, profile_image_url, is_deleted, created_at')
-    .eq('user_type', 5);
+    .eq('user_type', 6);
 
   if (salesError) {
     console.error('Error fetching sales people:', salesError);
