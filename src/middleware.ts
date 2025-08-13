@@ -49,7 +49,7 @@ export async function middleware(request: NextRequest) {
 
   const loginPaths = {
       admin: '/login',
-      superAdmin: '/super-admin/login',
+      superAdmin: '/login?type=super-admin',
       employee: '/login?type=employee',
       sales: '/login?type=sales'
   }
@@ -105,6 +105,8 @@ export async function middleware(request: NextRequest) {
     if (user_type === 6) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
   }
   
+  // If a logged-in user is not on their designated dashboard, redirect them.
+  // This logic is now simplified.
   if (user_type === 2 && !pathname.startsWith(protectedPaths.dashboard)) {
       return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
   }
@@ -129,8 +131,9 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - api/ (API routes)
+     * - o/ (Public organization pages)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|o/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
