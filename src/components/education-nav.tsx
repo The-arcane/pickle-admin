@@ -17,7 +17,7 @@ const navItems = [
   { href: '/education/reports', label: 'Reports', icon: LineChart },
   { href: '/education/season', label: 'Season', icon: Trophy },
   { href: '/education/media', label: 'Media', icon: ImageIcon },
-  { href: '/education/admin-users', label: 'Admin Users', icon: Users },
+  { href: '/education/users', label: 'Admin Users', icon: Users },
   { href: '/education/calendar', label: 'Calendar', icon: CalendarIcon },
   { href: '/education/alerts', label: 'Emergency Alerts', icon: ShieldAlert },
   { href: '/education/settings', label: 'Settings', icon: Settings },

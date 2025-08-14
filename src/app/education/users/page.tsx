@@ -1,48 +1,31 @@
 
+'use client';
+// Renaming this file to admin-users/page.tsx would be better, but for now we'll call it users
+// to avoid breaking existing navigation logic until all modules are created.
+
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { UsersClientPage } from './client';
 import type { UserWithRole, Role } from './types';
 
-export default async function EducationUsersPage() {
-  const supabase = await createServer();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  if (!authUser) {
-    return redirect('/login?type=education');
-  }
 
-  const { data: userProfile } = await supabase.from('user').select('id').eq('user_uuid', authUser.id).single();
-  if (!userProfile) {
-    return redirect('/login?type=education&error=User profile not found.');
-  }
+// Mock Data
+const mockAdminUsers = [
+    { user: { id: 1, name: 'Amit Sharma', email: 'amit@example.com', profile_image_url: null }, role: { id: 1, name: 'PE Teacher' } },
+    { user: { id: 2, name: 'Neha Kapoor', email: 'neha@example.com', profile_image_url: null }, role: { id: 2, name: 'Event Manager' } },
+    { user: { id: 3, name: 'School Principal', email: 'principal@example.com', profile_image_url: null }, role: { id: 3, name: 'Admin' } },
+];
 
-  const { data: orgLink } = await supabase.from('user_organisations').select('organisation_id').eq('user_id', userProfile.id).single();
-  if (!orgLink) {
-    return <p>You are not associated with any school.</p>;
-  }
+const mockRoles = [
+    { id: 1, name: 'PE Teacher' },
+    { id: 2, name: 'Event Manager' },
+    { id: 3, name: 'Admin' },
+];
 
-  const [usersRes, rolesRes] = await Promise.all([
-    supabase
-        .from('user_organisations')
-        .select(`
-            user:user_id!inner(*),
-            role:organisation_roles!inner(name)
-        `)
-        .eq('organisation_id', orgLink.organisation_id),
-    supabase
-        .from('organisation_roles')
-        .select('id, name')
-  ]);
+export default function EducationUsersPage() {
 
-  if (usersRes.error) {
-      console.error("Error fetching users for school:", usersRes.error);
-  }
-  if (rolesRes.error) {
-      console.error("Error fetching roles:", rolesRes.error);
-  }
-  
-  const users = (usersRes.data as UserWithRole[]) || [];
-  const roles = (rolesRes.data as Role[]) || [];
+  const users = mockAdminUsers as UserWithRole[];
+  const roles = mockRoles as Role[];
 
   return <UsersClientPage users={users} roles={roles} />;
 }
