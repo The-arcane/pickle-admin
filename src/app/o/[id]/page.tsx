@@ -25,7 +25,7 @@ export default async function OrganizationPublicPage({ params }: { params: { id:
         .from('organisations_website')
         .select('*')
         .eq('org_id', id)
-        .single();
+        .maybeSingle();
     
     if(websiteError && websiteError.code !== 'PGRST116') { // Ignore "no rows found" error
          console.error("Error fetching website details:", websiteError);
