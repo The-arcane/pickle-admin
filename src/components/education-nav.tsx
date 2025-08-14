@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, User, School, Users, PartyPopper, CalendarCheck, BookCopy, Home, Megaphone, MessageSquare, LineChart, Trophy, FileText, Image as ImageIcon, Calendar as CalendarIcon, ShieldAlert } from 'lucide-react';
+import { BarChart, Settings, User, School, Users, PartyPopper, CalendarCheck, BookCopy, Home, Megaphone, MessageSquare, LineChart, Trophy, FileText, Image as ImageIcon, Calendar as CalendarIcon, ShieldAlert, Box, Handshake, HeartPulse } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 
@@ -20,6 +20,11 @@ const navItems = [
   { href: '/education/users', label: 'Admin Users', icon: Users },
   { href: '/education/calendar', label: 'Calendar', icon: CalendarIcon },
   { href: '/education/alerts', label: 'Emergency Alerts', icon: ShieldAlert },
+  { href: '/education/skills', label: 'Skills', icon: Trophy },
+  { href: '/education/inventory', label: 'Inventory', icon: Box },
+  { href: '/education/resources', label: 'Resources', icon: BookCopy },
+  { href: '/education/sponsors', label: 'Sponsors', icon: Handshake },
+  { href: '/education/health', label: 'Health & Safety', icon: HeartPulse },
   { href: '/education/settings', label: 'Settings', icon: Settings },
 ];
 
