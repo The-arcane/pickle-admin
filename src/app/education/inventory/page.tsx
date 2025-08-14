@@ -95,7 +95,7 @@ export default function InventoryPage() {
                 <div className="flex items-center gap-3">
                     <Box className="h-8 w-8 text-indigo-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Equipment & Inventory</h1>
+                        <h1 className="text-3xl font-bold">Equipment &amp; Inventory</h1>
                         <p className="text-muted-foreground">Track and manage all school equipment.</p>
                     </div>
                 </div>
