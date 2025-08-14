@@ -3,7 +3,7 @@ import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Activity, ArrowRight, CalendarCheck, PartyPopper, Trophy, LineChart, AlertTriangle, Box, HeartPulse } from 'lucide-react';
+import { Users, Activity, ArrowRight, CalendarCheck, PartyPopper, Briefcase, Box } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function EducationDashboardPage() {
@@ -18,8 +18,8 @@ export default async function EducationDashboardPage() {
   // Mock data for the dashboard summary
   const stats = [
     { title: 'Attendance Today', value: '92%', icon: CalendarCheck, color: 'text-green-500', href: '/education/attendance' },
-    { title: 'Upcoming Events', value: '3', icon: PartyPopper, color: 'text-pink-500', href: '/education/events' },
-    { title: 'Active Injuries', value: '1', icon: HeartPulse, color: 'text-red-500', href: '/education/health' },
+    { title: 'Total Students', value: '152', icon: Users, color: 'text-blue-500', href: '/education/users' },
+    { title: 'Faculty on Staff', value: '14', icon: Briefcase, color: 'text-indigo-500', href: '/education/communication' },
     { title: 'Low Stock Items', value: '2', icon: Box, color: 'text-yellow-500', href: '/education/inventory' },
   ];
 
@@ -33,7 +33,12 @@ export default async function EducationDashboardPage() {
   const announcements = [
       { title: 'Annual Sports Day', description: 'The annual sports day will be held on December 15th. All students are requested to participate.' },
       { title: 'Mid-term Exams', description: 'The mid-term exams will commence from November 20th. The schedule has been shared via email.' },
-  ]
+  ];
+  
+  const upcomingEvents = [
+      { id: 'event_001', name: 'Annual Pickleball Championship', date: 'in 10 days' },
+      { id: 'event_003', name: 'Intra-School League - Week 2', date: 'today' },
+  ];
 
   return (
     <div className="space-y-8">
@@ -42,6 +47,7 @@ export default async function EducationDashboardPage() {
         <p className="text-muted-foreground">Here’s a snapshot of what’s happening at your school today.</p>
       </div>
       
+      {/* Academic & Administrative Stats */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => (
           <Link href={stat.href} key={index}>
@@ -59,7 +65,8 @@ export default async function EducationDashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Activities & Announcements */}
+      <div className="grid gap-6 lg:grid-cols-2">
          <Card>
           <CardHeader>
             <CardTitle>Announcements</CardTitle>
@@ -81,23 +88,29 @@ export default async function EducationDashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>A log of the latest actions and events.</CardDescription>
+            <CardTitle>Upcoming Events</CardTitle>
+            <CardDescription>A quick look at scheduled events.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivity.map((item, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
-                    <Activity className="h-3 w-3 text-primary" />
+              {upcomingEvents.map((item, index) => (
+                <div key={index} className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                    <PartyPopper className="h-4 w-4 text-primary" />
                   </div>
-                  <p className="text-sm text-muted-foreground">{item.text}</p>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">{item.date}</p>
+                  </div>
+                   <Button asChild variant="secondary" size="sm">
+                    <Link href={`/education/events/${item.id}`}>View</Link>
+                  </Button>
                 </div>
               ))}
             </div>
              <Button asChild variant="outline" size="sm" className="mt-4">
-              <Link href="/education/reports">
-                <LineChart className="mr-2 h-4 w-4" /> View Full Report
+              <Link href="/education/events">
+                View All Events <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </CardContent>
