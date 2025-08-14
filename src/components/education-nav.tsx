@@ -55,7 +55,7 @@ const bottomItems = [
 export function EducationNav() {
   const pathname = usePathname();
   const { setOpen } = useSheetContext();
-  const [openSections, setOpenSections] = useState<string[]>(['Academics', 'Activities', 'Administration']);
+  const [openSections, setOpenSections] = useState<string[]>([]);
 
   const isActive = (href: string) => {
     return pathname === href || (href !== '/education/dashboard' && pathname.startsWith(href));
