@@ -5,6 +5,40 @@ import { revalidatePath } from 'next/cache';
 import { createServiceRoleServer } from '@/lib/supabase/server';
 import Papa from 'papaparse';
 
+const MAX_FILE_SIZE_MB = 2;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+// Helper for logo upload
+async function handleLogoUpload(supabase: any, file: File | null, orgId: string): Promise<string | null> {
+    if (!file || file.size === 0) {
+        return null;
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+        throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `logo-${Date.now()}.${fileExt}`;
+    // Store logos in a public folder, organized by organization ID
+    const filePath = `public/${orgId}/${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage
+        .from('school_logos')
+        .upload(filePath, file);
+
+    if (uploadError) {
+        console.error(`Error uploading logo:`, uploadError);
+        throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
+    }
+
+    const { data: publicUrlData } = supabase.storage
+        .from('school_logos')
+        .getPublicUrl(filePath);
+    
+    return publicUrlData.publicUrl;
+}
+
+
 export async function addSchool(formData: FormData) {
   const supabaseAdmin = createServiceRoleServer();
 
@@ -16,11 +50,22 @@ export async function addSchool(formData: FormData) {
   // --- Organization Data ---
   const orgName = formData.get('org_name') as string;
   const orgAddress = formData.get('org_address') as string;
-  const orgTypeId = formData.get('org_type_id') as string;
+  const logoFile = formData.get('logo') as File | null;
   
   // Validation
-  if (!adminName || !adminEmail || !adminPassword || !orgName || !orgAddress || !orgTypeId) {
+  if (!adminName || !adminEmail || !adminPassword || !orgName || !orgAddress) {
     return { error: "All fields are required to create a new school and its admin." };
+  }
+  
+  // Get the ID for the 'education' organization type
+  const { data: educationType, error: typeError } = await supabaseAdmin
+    .from('organisation_types')
+    .select('id')
+    .eq('type_name', 'education')
+    .single();
+
+  if (typeError || !educationType) {
+      return { error: "System error: Could not find the 'education' organization type." };
   }
 
   // 1. Create the admin user in Supabase Auth first.
@@ -54,22 +99,43 @@ export async function addSchool(formData: FormData) {
   }
   const newAdminId = adminProfile.id;
 
-  // 3. Create the organization and link the new admin user.
-  const { error: orgInsertError } = await supabaseAdmin
+  // 3. Create the organization (without logo first)
+  const { data: newOrg, error: orgInsertError } = await supabaseAdmin
     .from('organisations')
     .insert({
         name: orgName,
         address: orgAddress,
         user_id: newAdminId,
-        "type": Number(orgTypeId),
+        type: educationType.id,
         is_active: true, // Schools are active by default
-    });
+    })
+    .select('id')
+    .single();
     
-  if (orgInsertError) {
+  if (orgInsertError || !newOrg) {
       console.error('Error creating school organization:', orgInsertError);
-      // Clean up the created auth user and profile if org creation fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id); 
-      return { error: `Failed to create school organization: ${orgInsertError.message}` };
+      return { error: `Failed to create school organization: ${orgInsertError?.message}` };
+  }
+  
+  // 4. Upload logo and update the new organization record
+  if (logoFile && logoFile.size > 0) {
+      try {
+          const logoUrl = await handleLogoUpload(supabaseAdmin, logoFile, newOrg.id.toString());
+          if(logoUrl) {
+              const { error: logoUpdateError } = await supabaseAdmin
+                .from('organisations')
+                .update({ logo: logoUrl })
+                .eq('id', newOrg.id);
+            
+              if (logoUpdateError) {
+                  // Non-fatal, let the user know but the org is still created
+                  return { success: true, message: `School and admin created, but failed to save logo: ${logoUpdateError.message}` };
+              }
+          }
+      } catch (e: any) {
+           return { success: true, message: `School and admin created, but failed to upload logo: ${e.message}` };
+      }
   }
   
   revalidatePath('/super-admin/schools');

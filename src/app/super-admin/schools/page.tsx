@@ -38,13 +38,5 @@ export default async function SchoolsPage() {
     console.error("Could not find 'education' in organisation_types table.");
   }
   
-  const { data: orgTypesData, error: orgTypesError } = await supabase
-    .from('organisation_types')
-    .select('id, type_name');
-    
-  if (orgTypesError) {
-      console.error("Error fetching org types", orgTypesError)
-  }
-
-  return <SchoolsClientPage schools={schoolsData} orgTypes={orgTypesData || []} />;
+  return <SchoolsClientPage schools={schoolsData} />;
 }

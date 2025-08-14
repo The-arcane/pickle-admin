@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Image from 'next/image';
 
 type School = {
     id: number;
@@ -35,11 +35,6 @@ type School = {
         name: string | null;
         email: string | null;
     } | null;
-};
-
-type OrganisationType = {
-    id: number;
-    type_name: string;
 };
 
 function SubmitButton() {
@@ -70,7 +65,7 @@ function getInitials(name: string | undefined | null) {
 };
 
 
-export function SchoolsClientPage({ schools, orgTypes }: { schools: School[], orgTypes: OrganisationType[] }) {
+export function SchoolsClientPage({ schools }: { schools: School[] }) {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -80,6 +75,7 @@ export function SchoolsClientPage({ schools, orgTypes }: { schools: School[], or
     const formRef = useRef<HTMLFormElement>(null);
     const csvFormRef = useRef<HTMLFormElement>(null);
     const router = useRouter();
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
     const handleAddFormAction = async (formData: FormData) => {
         if (formData.get('admin_password') !== formData.get('confirm_password')) {
@@ -94,6 +90,7 @@ export function SchoolsClientPage({ schools, orgTypes }: { schools: School[], or
             toast({ title: "Success", description: result.message });
             setIsAddDialogOpen(false);
             formRef.current?.reset();
+            setLogoPreview(null);
             router.refresh();
         }
     }
@@ -142,6 +139,22 @@ export function SchoolsClientPage({ schools, orgTypes }: { schools: School[], or
         link.click();
         document.body.removeChild(link);
     };
+
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+             if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                toast({
+                    variant: 'destructive',
+                    title: 'File Too Large',
+                    description: 'The logo image cannot exceed 2MB.',
+                });
+                e.target.value = '';
+                return;
+            }
+            setLogoPreview(URL.createObjectURL(file));
+        }
+    }
 
 
     return (
@@ -244,15 +257,9 @@ export function SchoolsClientPage({ schools, orgTypes }: { schools: School[], or
                                     <Input id="org_address" name="org_address" required />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="org_type_id">Organization Type</Label>
-                                    <Select name="org_type_id" required>
-                                        <SelectTrigger><SelectValue placeholder="Select type"/></SelectTrigger>
-                                        <SelectContent>
-                                            {orgTypes.map(type => (
-                                                <SelectItem key={type.id} value={type.id.toString()}>{type.type_name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Label htmlFor="logo">Logo (Max 2MB)</Label>
+                                    <Input id="logo" name="logo" type="file" accept="image/*" onChange={handleLogoChange} />
+                                    {logoPreview && <Image src={logoPreview} alt="Logo preview" width={80} height={80} className="mt-2 rounded-md object-cover" />}
                                 </div>
                             </div>
                             <div className="space-y-4 p-4 border rounded-lg">
