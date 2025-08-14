@@ -4,18 +4,24 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { CalendarCheck, Clock, MapPin, User, ArrowRight, PlusCircle } from 'lucide-react';
+import { BookCopy, Edit, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
-export default async function AttendanceSessionsPage() {
+export default async function AttendanceSessionsListPage() {
   const supabase = await createServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return redirect('/login?type=education');
   }
 
-  // For now, we will fetch all sessions. In a real app, this would be scoped to the user's school.
+  const { data: userProfile } = await supabase.from('user').select('id, user_organisations(organisation_id)').eq('user_uuid', user.id).single();
+  const organisationId = userProfile?.user_organisations[0]?.organisation_id;
+
+  if (!organisationId) {
+      return <p>You are not associated with any organization.</p>;
+  }
+
   const { data: sessions, error } = await supabase
     .from('attendance_sessions')
     .select(`
@@ -27,6 +33,7 @@ export default async function AttendanceSessionsPage() {
         location,
         coach:coach_id(name)
     `)
+    .eq('organisation_id', organisationId)
     .order('date', { ascending: false });
 
   if (error) {
@@ -35,12 +42,12 @@ export default async function AttendanceSessionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-            <CalendarCheck className="h-8 w-8 text-primary" />
+            <BookCopy className="h-8 w-8 text-primary" />
             <div>
-            <h1 className="text-3xl font-bold">Attendance</h1>
-            <p className="text-muted-foreground">Select a session to mark attendance.</p>
+            <h1 className="text-3xl font-bold">Manage Sessions</h1>
+            <p className="text-muted-foreground">Create, view, and edit class and practice sessions.</p>
             </div>
         </div>
         <Button asChild>
@@ -52,17 +59,17 @@ export default async function AttendanceSessionsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Sessions</CardTitle>
-          <CardDescription>A list of all scheduled classes and practices.</CardDescription>
+          <CardTitle>All Scheduled Sessions</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Session</TableHead>
-                <TableHead className="hidden md:table-cell">Date</TableHead>
-                <TableHead className="hidden sm:table-cell">Time</TableHead>
-                <TableHead className="hidden md:table-cell">Coach</TableHead>
+                <TableHead>Session Name</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Coach</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -70,22 +77,18 @@ export default async function AttendanceSessionsPage() {
               {sessions && sessions.length > 0 ? (
                 sessions.map((session) => (
                   <TableRow key={session.id}>
+                    <TableCell className="font-medium">{session.name}</TableCell>
+                    <TableCell>{format(new Date(session.date), 'PPP')}</TableCell>
                     <TableCell>
-                        <p className="font-medium">{session.name}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                            <MapPin className="h-3 w-3" />
-                            {session.location}
-                        </p>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{format(new Date(session.date), 'PPP')}</TableCell>
-                    <TableCell className="hidden sm:table-cell">
                         {format(new Date(session.start_time), 'p')} - {format(new Date(session.end_time), 'p')}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{session.coach?.name ?? 'N/A'}</TableCell>
+                    <TableCell>{session.location}</TableCell>
+                    <TableCell>{session.coach?.name ?? 'N/A'}</TableCell>
                     <TableCell className="text-right">
-                      <Button asChild variant="outline">
-                        <Link href={`/education/attendance/${session.id}`}>
-                          Mark Attendance <ArrowRight className="ml-2 h-4 w-4" />
+                      <Button asChild variant="outline" size="icon">
+                        <Link href={`/education/attendance/sessions/${session.id}`}>
+                          <Edit className="h-4 w-4" />
+                           <span className="sr-only">Edit Session</span>
                         </Link>
                       </Button>
                     </TableCell>
@@ -93,8 +96,8 @@ export default async function AttendanceSessionsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    No sessions found.
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    No sessions have been created yet.
                   </TableCell>
                 </TableRow>
               )}

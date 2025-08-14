@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, User, School, Users, PartyPopper, CalendarCheck } from 'lucide-react';
+import { BarChart, Settings, User, School, Users, PartyPopper, CalendarCheck, BookCopy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 
@@ -13,6 +13,7 @@ const navItems = [
   { href: '/education/school', label: 'School Profile', icon: School },
   { href: '/education/users', label: 'Users', icon: Users },
   { href: '/education/attendance', label: 'Attendance', icon: CalendarCheck },
+  { href: '/education/attendance/sessions', label: 'Sessions', icon: BookCopy },
   { href: '/education/events', label: 'Events', icon: PartyPopper },
   { href: '/education/settings', label: 'Settings', icon: Settings },
 ];
