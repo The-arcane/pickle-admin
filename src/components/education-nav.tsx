@@ -3,14 +3,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, User } from 'lucide-react';
+import { BarChart, Settings, User, School, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 
 
 const navItems = [
   { href: '/education/dashboard', label: 'Dashboard', icon: BarChart },
-  // Add more education-specific navigation items here
+  { href: '/education/school', label: 'School Profile', icon: School },
+  { href: '/education/users', label: 'Users', icon: Users },
   { href: '/education/settings', label: 'Settings', icon: Settings },
 ];
 
