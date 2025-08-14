@@ -12,7 +12,7 @@ const navItems = [
   { href: '/education/dashboard', label: 'Dashboard', icon: BarChart },
   { href: '/education/school', label: 'School Profile', icon: School },
   { href: '/education/users', label: 'Users', icon: Users },
-  { href: '/education/residences', label: 'Residences', icon: Home },
+  { href: '/education/residences', label: 'Parents', icon: Home },
   { href: '/education/attendance', label: 'Attendance', icon: CalendarCheck },
   { href: '/education/attendance/sessions', label: 'Sessions', icon: BookCopy },
   { href: '/education/events', label: 'Events', icon: PartyPopper },

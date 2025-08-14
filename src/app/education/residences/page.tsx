@@ -6,7 +6,7 @@ import { Home } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ResidencesPage() {
+export default async function ParentsPage() {
     const supabase = await createServer();
     
     const { data: { user } } = await supabase.auth.getUser();
@@ -67,8 +67,8 @@ export default async function ResidencesPage() {
                 <div className="flex items-center gap-3">
                     <Home className="h-8 w-8 text-teal-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Residences</h1>
-                        <p className="text-muted-foreground">Manage and invite residents (parents) to your school.</p>
+                        <h1 className="text-3xl font-bold">Parents</h1>
+                        <p className="text-muted-foreground">Manage and invite parents to your school.</p>
                     </div>
                 </div>
             </div>
