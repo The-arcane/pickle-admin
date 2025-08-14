@@ -166,6 +166,7 @@ export async function removeSchool(formData: FormData) {
 
 export async function importSchoolsFromCSV(formData: FormData) {
   const supabase = createServiceRoleServer();
+  const assignedUserId = 86; // The hardcoded user ID
 
   const csvFile = formData.get('csv_file') as File | null;
   if (!csvFile || csvFile.size === 0) {
@@ -183,7 +184,7 @@ export async function importSchoolsFromCSV(formData: FormData) {
       return { error: "Could not find 'education' organization type in the database." };
   }
 
-  let schoolsToInsert: { name: string; address: string; type: number; is_active: boolean; user_id: null; }[] = [];
+  let schoolsToInsert: { name: string; address: string; type: number; is_active: boolean; user_id: number; }[] = [];
   try {
     const fileContent = await csvFile.text();
     const parsed = Papa.parse(fileContent, { header: true, skipEmptyLines: true });
@@ -204,7 +205,7 @@ export async function importSchoolsFromCSV(formData: FormData) {
             address: row[addressHeader]?.trim(),
             type: educationType.id,
             is_active: true,
-            user_id: null,
+            user_id: assignedUserId, // Assign the hardcoded user ID here
         }))
         .filter(s => s.name && s.address);
 
