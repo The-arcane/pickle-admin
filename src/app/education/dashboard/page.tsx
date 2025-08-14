@@ -3,7 +3,7 @@ import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Megaphone, Activity, ArrowRight, CalendarCheck, PartyPopper, Trophy, LineChart } from 'lucide-react';
+import { Users, Activity, ArrowRight, CalendarCheck, PartyPopper, Trophy, LineChart, AlertTriangle, Box, HeartPulse } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function EducationDashboardPage() {
@@ -15,11 +15,12 @@ export default async function EducationDashboardPage() {
 
   const { data: userProfile } = await supabase.from('user').select('name').eq('user_uuid', user.id).single();
 
+  // Mock data for the dashboard summary
   const stats = [
-    { title: 'Total Students', value: '245', icon: Users, color: 'text-blue-500', href: '/education/residences' },
-    { title: 'Upcoming Events', value: '3', icon: PartyPopper, color: 'text-pink-500', href: '/education/events' },
-    { title: 'Active Season', value: '2025', icon: Trophy, color: 'text-yellow-500', href: '/education/season' },
     { title: 'Attendance Today', value: '92%', icon: CalendarCheck, color: 'text-green-500', href: '/education/attendance' },
+    { title: 'Upcoming Events', value: '3', icon: PartyPopper, color: 'text-pink-500', href: '/education/events' },
+    { title: 'Active Injuries', value: '1', icon: HeartPulse, color: 'text-red-500', href: '/education/health' },
+    { title: 'Low Stock Items', value: '2', icon: Box, color: 'text-yellow-500', href: '/education/inventory' },
   ];
 
   const recentActivity = [
