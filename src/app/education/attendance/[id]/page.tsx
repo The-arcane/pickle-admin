@@ -39,9 +39,18 @@ export default async function MarkAttendancePage({ params }: { params: { id: str
   if (statusesRes.error) console.error('Error fetching statuses:', statusesRes.error);
   if (recordsRes.error) console.error('Error fetching records:', recordsRes.error);
   
-  const students = studentsRes.data?.map(e => e.student).filter(Boolean) || [];
+  let students = studentsRes.data?.map(e => e.student).filter(Boolean) || [];
   const statuses = statusesRes.data || [];
   const records = recordsRes.data || [];
+
+  // Add mock data if no students are found
+  if (students.length === 0) {
+      students = [
+          { id: 101, name: 'Alice Johnson', profile_image_url: null },
+          { id: 102, name: 'Bob Williams', profile_image_url: null },
+          { id: 103, name: 'Charlie Brown', profile_image_url: null },
+      ];
+  }
 
   return (
     <MarkAttendanceClientPage 

@@ -39,6 +39,19 @@ export default async function AttendanceSessionsListPage() {
   if (error) {
     console.error('Error fetching attendance sessions:', error);
   }
+  
+  let displaySessions = sessions;
+  // Add mock data if no sessions are found
+  if (!displaySessions || displaySessions.length === 0) {
+      const today = new Date();
+      const startTime = new Date(today.setHours(9, 0, 0, 0)).toISOString();
+      const endTime = new Date(today.setHours(11, 0, 0, 0)).toISOString();
+      displaySessions = [
+          { id: 1, name: 'Morning Pickleball Drills', date: today.toISOString(), start_time: startTime, end_time: endTime, location: 'Main Court', coach: { name: 'Coach John' } },
+          { id: 2, name: 'Afternoon Practice Match', date: today.toISOString(), start_time: new Date(today.setHours(14, 0, 0, 0)).toISOString(), end_time: new Date(today.setHours(16, 0, 0, 0)).toISOString(), location: 'Court 2', coach: { name: 'Coach Sarah' } },
+      ];
+  }
+
 
   return (
     <div className="space-y-6">
@@ -74,8 +87,8 @@ export default async function AttendanceSessionsListPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sessions && sessions.length > 0 ? (
-                sessions.map((session) => (
+              {displaySessions && displaySessions.length > 0 ? (
+                displaySessions.map((session) => (
                   <TableRow key={session.id}>
                     <TableCell className="font-medium">{session.name}</TableCell>
                     <TableCell>{format(new Date(session.date), 'PPP')}</TableCell>
