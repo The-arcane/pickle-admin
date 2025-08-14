@@ -11,9 +11,9 @@ import type { UserWithRole, Role } from './types';
 
 // Mock Data
 const mockAdminUsers = [
-    { user: { id: 1, name: 'Amit Sharma', email: 'amit@example.com', profile_image_url: null }, role: { id: 1, name: 'PE Teacher' } },
-    { user: { id: 2, name: 'Neha Kapoor', email: 'neha@example.com', profile_image_url: null }, role: { id: 2, name: 'Event Manager' } },
-    { user: { id: 3, name: 'School Principal', email: 'principal@example.com', profile_image_url: null }, role: { id: 3, name: 'Admin' } },
+    { user: { id: 1, name: 'Amit Sharma', email: 'amit@example.com', profile_image_url: null, created_at: new Date().toISOString(), is_deleted: false, phone: '123-456-7890' }, role: { id: 1, name: 'PE Teacher' } },
+    { user: { id: 2, name: 'Neha Kapoor', email: 'neha@example.com', profile_image_url: null, created_at: new Date().toISOString(), is_deleted: false, phone: '123-456-7890' }, role: { id: 2, name: 'Event Manager' } },
+    { user: { id: 3, name: 'School Principal', email: 'principal@example.com', profile_image_url: null, created_at: new Date().toISOString(), is_deleted: false, phone: '123-456-7890' }, role: { id: 3, name: 'Admin' } },
 ];
 
 const mockRoles = [

@@ -3,6 +3,9 @@ export type User = {
     id: number;
     name: string | null;
     email: string | null;
+    phone: string | null;
+    is_deleted: boolean;
+    created_at: string;
     profile_image_url: string | null;
 };
 
