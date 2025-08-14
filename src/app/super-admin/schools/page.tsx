@@ -32,7 +32,7 @@ export default async function SchoolsPage() {
     if (error) {
       console.error('Error fetching schools:', error);
     } else {
-      schoolsData = data;
+      schoolsData = data || [];
     }
   } else {
     console.error("Could not find 'education' in organisation_types table.");
