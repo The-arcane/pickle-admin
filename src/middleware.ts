@@ -58,7 +58,7 @@ export async function middleware(request: NextRequest) {
 
   // If user is not logged in and is trying to access a protected route, redirect to login
   if (!user) {
-    if (Object.values(protectedPaths).some(p => pathname.startsWith(p))) {
+    if (Object.values(protectedPaths).some(p => pathname.startsWith(p) && p !== '/')) {
         let redirectUrl = loginPaths.admin; // Default login
         if (pathname.startsWith(protectedPaths.superAdmin)) redirectUrl = loginPaths.superAdmin;
         if (pathname.startsWith(protectedPaths.employee)) redirectUrl = loginPaths.employee;
@@ -82,24 +82,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=User%20profile%20not%20found.', siteUrl));
   }
   
-  const { user_type, id: userId } = userProfile;
+  const { user_type } = userProfile;
   
-  // Check for organization link for admin and employee roles
-  if (user_type === 2 || user_type === 4) {
-      const { data: orgLink } = await supabase
-        .from('user_organisations')
-        .select('organisation_id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (!orgLink) {
-           await supabase.auth.signOut();
-           let errorUrl = loginPaths.admin;
-           if(user_type === 4) errorUrl = loginPaths.employee;
-           return NextResponse.redirect(new URL(`${errorUrl}?error=Your%20account%20is%20not%20associated%20with%20an%20organization.`, siteUrl));
-      }
-  }
-
   // If a logged-in user tries to access any login page, redirect them to their dashboard
   if (pathname.startsWith('/login')) {
     if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
@@ -109,7 +93,7 @@ export async function middleware(request: NextRequest) {
     if (user_type === 7) return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
   }
   
-  // Role-based access control
+  // Role-based access control - redirect if they are in the wrong panel
   if (user_type === 2 && !pathname.startsWith(protectedPaths.dashboard)) {
       return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
   }

@@ -44,54 +44,68 @@ export async function login(formData: FormData) {
 
     const { id: userId, user_type } = userProfile;
     
-    const { data: orgLink } = await supabase
-        .from('user_organisations')
-        .select('organisation_id')
-        .eq('user_id', userId)
-        .maybeSingle();
+    // Check for organization link for admin and employee roles
+    if (user_type === 2 || user_type === 4 || user_type === 7) {
+        const { data: orgLink } = await supabase
+            .from('user_organisations')
+            .select('organisation_id')
+            .eq('user_id', userId)
+            .maybeSingle();
 
-    const organisationId = orgLink?.organisation_id;
+        if (!orgLink?.organisation_id) {
+             await supabase.auth.signOut();
+             let errorUrl = loginUrl;
+             if(user_type === 4) errorUrl = '/login?type=employee';
+             if(user_type === 7) errorUrl = '/login?type=education';
+             return redirect(`${errorUrl}?error=${encodeURIComponent('Your account is not associated with an organization.')}`);
+        }
+        
+        // For education users, verify the organization type
+        if (user_type === 7) {
+            const { data: orgType } = await supabase
+                .from('organisations')
+                .select('type')
+                .eq('id', orgLink.organisation_id)
+                .single();
+            
+            // Assuming '2' is the ID for 'education' in organisation_types
+            if (orgType?.type !== 2) {
+                 await supabase.auth.signOut();
+                 return redirect(`${loginUrl}?error=${encodeURIComponent('Your organization is not configured for the Education panel.')}`);
+            }
+        }
+    }
 
-    // Check if the user's role matches the login form they used and redirect
+    // If a logged-in user tries to access any login page, redirect them to their dashboard
+    if (userTypeTarget === 'admin' && user_type !== 2) {
+        await supabase.auth.signOut();
+        return redirect(`/login?error=${encodeURIComponent('Access Denied. Please use the correct login form.')}`);
+    }
+    if (userTypeTarget === 'super-admin' && user_type !== 3) {
+         await supabase.auth.signOut();
+        return redirect(`/login?type=super-admin&error=${encodeURIComponent('Access Denied. Please use the correct login form.')}`);
+    }
+    if (userTypeTarget === 'employee' && user_type !== 4) {
+         await supabase.auth.signOut();
+        return redirect(`/login?type=employee&error=${encodeURIComponent('Access Denied. Please use the correct login form.')}`);
+    }
+    if (userTypeTarget === 'sales' && user_type !== 6) {
+         await supabase.auth.signOut();
+        return redirect(`/login?type=sales&error=${encodeURIComponent('Access Denied. Please use the correct login form.')}`);
+    }
+    if (userTypeTarget === 'education' && user_type !== 7) {
+        await supabase.auth.signOut();
+        return redirect(`/login?type=education&error=${encodeURIComponent('Access Denied. This account is not configured for the Education panel.')}`);
+    }
+
+
+    // Redirect based on the verified user_type
     switch (user_type) {
-        case 2: // Admin
-            if (userTypeTarget !== 'admin') {
-                await supabase.auth.signOut();
-                return redirect(`${loginUrl}?error=${encodeURIComponent('Access Denied. Please use the Admin login form.')}`);
-            }
-            if (!organisationId) {
-                 await supabase.auth.signOut();
-                 return redirect(`/login?error=${encodeURIComponent('Your account is not associated with an organization.')}`);
-            }
-            return redirect('/dashboard');
-        case 3: // Super Admin
-             if (userTypeTarget !== 'super-admin') {
-                await supabase.auth.signOut();
-                return redirect(`${loginUrl}?error=${encodeURIComponent('Access Denied. Please use the Super Admin login form.')}`);
-            }
-            return redirect('/super-admin/dashboard');
-        case 4: // Employee
-             if (userTypeTarget !== 'employee') {
-                await supabase.auth.signOut();
-                return redirect(`${loginUrl}?error=${encodeURIComponent('Access Denied. Please use the Employee login form.')}`);
-            }
-             if (!organisationId) {
-                 await supabase.auth.signOut();
-                 return redirect(`/login?type=employee&error=${encodeURIComponent('Employee profile is not associated with any organization.')}`);
-            }
-            return redirect('/employee/dashboard');
-        case 6: // Sales People
-             if (userTypeTarget !== 'sales') {
-                await supabase.auth.signOut();
-                return redirect(`${loginUrl}?error=${encodeURIComponent('Access Denied. Please use the Sales login form.')}`);
-            }
-            return redirect('/sales/dashboard');
-        case 7: // Education
-             if (userTypeTarget !== 'education') {
-                await supabase.auth.signOut();
-                return redirect(`${loginUrl}?error=${encodeURIComponent('Access Denied. Please use the Education login form.')}`);
-            }
-            return redirect('/education/dashboard');
+        case 2: return redirect('/dashboard');
+        case 3: return redirect('/super-admin/dashboard');
+        case 4: return redirect('/employee/dashboard');
+        case 6: return redirect('/sales/dashboard');
+        case 7: return redirect('/education/dashboard');
         default:
              await supabase.auth.signOut();
              return redirect(`${loginUrl}?error=${encodeURIComponent('Invalid user role.')}`);
