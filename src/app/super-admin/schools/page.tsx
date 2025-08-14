@@ -27,7 +27,7 @@ export default async function SchoolsPage() {
           id, name, address, logo, is_active,
           user:user_id ( name, email )
       `)
-      .eq('Type', educationType.id);
+      .eq('"Type"', educationType.id);
 
     if (error) {
       console.error('Error fetching schools:', error);
