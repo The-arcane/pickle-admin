@@ -2,7 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { AlertCircle, Eye, EyeOff, Shield, UserSquare, TrendingUp } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Shield, UserSquare, TrendingUp, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -111,9 +111,10 @@ export function LoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Tabs value={typeParam} onValueChange={handleTabChange} className="w-full max-w-sm">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="employee">Employee</TabsTrigger>
             <TabsTrigger value="admin">Admin</TabsTrigger>
+            <TabsTrigger value="education">Education</TabsTrigger>
         </TabsList>
 
         <TabsContent value="employee">
@@ -164,6 +165,33 @@ export function LoginForm() {
                         <input type="hidden" name="userType" value="admin" />
                         <LoginFormFields userType="admin" />
                         <SubmitButton userType="Admin" />
+                    </form>
+                    <p className="mt-4 text-center text-xs text-muted-foreground">Version 9.9.0(D)</p>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
+        <TabsContent value="education">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                        <BookOpen className="h-6 w-6"/>
+                        Education Login
+                    </CardTitle>
+                    <CardDescription>Enter your credentials to access the education panel.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {error && typeParam === 'education' && (
+                        <Alert variant="destructive" className="mb-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Login Failed</AlertTitle>
+                        <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
+                        </Alert>
+                    )}
+                    <form action={login} className="space-y-6" suppressHydrationWarning>
+                        <input type="hidden" name="userType" value="education" />
+                        <LoginFormFields userType="education" />
+                        <SubmitButton userType="Education" />
                     </form>
                     <p className="mt-4 text-center text-xs text-muted-foreground">Version 9.9.0(D)</p>
                 </CardContent>

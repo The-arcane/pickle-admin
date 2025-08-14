@@ -44,14 +44,16 @@ export async function middleware(request: NextRequest) {
       dashboard: '/dashboard',
       superAdmin: '/super-admin',
       employee: '/employee',
-      sales: '/sales'
+      sales: '/sales',
+      education: '/education',
   };
 
   const loginPaths = {
       admin: '/login',
       superAdmin: '/login?type=super-admin',
       employee: '/login?type=employee',
-      sales: '/login?type=sales'
+      sales: '/login?type=sales',
+      education: '/login?type=education',
   }
 
   // If user is not logged in and is trying to access a protected route, redirect to login
@@ -61,6 +63,7 @@ export async function middleware(request: NextRequest) {
         if (pathname.startsWith(protectedPaths.superAdmin)) redirectUrl = loginPaths.superAdmin;
         if (pathname.startsWith(protectedPaths.employee)) redirectUrl = loginPaths.employee;
         if (pathname.startsWith(protectedPaths.sales)) redirectUrl = loginPaths.sales;
+        if (pathname.startsWith(protectedPaths.education)) redirectUrl = loginPaths.education;
         return NextResponse.redirect(new URL(redirectUrl, siteUrl));
     }
     return response;
@@ -98,15 +101,15 @@ export async function middleware(request: NextRequest) {
   }
 
   // If a logged-in user tries to access any login page, redirect them to their dashboard
-  if (pathname.startsWith('/login') || pathname.startsWith('/super-admin/login')) {
+  if (pathname.startsWith('/login')) {
     if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
     if (user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
     if (user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
     if (user_type === 6) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
+    if (user_type === 7) return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
   }
   
-  // If a logged-in user is not on their designated dashboard, redirect them.
-  // This logic is now simplified.
+  // Role-based access control
   if (user_type === 2 && !pathname.startsWith(protectedPaths.dashboard)) {
       return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
   }
@@ -118,6 +121,9 @@ export async function middleware(request: NextRequest) {
   }
   if (user_type === 6 && !pathname.startsWith(protectedPaths.sales)) {
       return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
+  }
+  if (user_type === 7 && !pathname.startsWith(protectedPaths.education)) {
+      return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
   }
 
   return response;

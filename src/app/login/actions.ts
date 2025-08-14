@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 export async function login(formData: FormData) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    const userTypeTarget = formData.get('userType') as 'admin' | 'super-admin' | 'employee' | 'sales';
+    const userTypeTarget = formData.get('userType') as 'admin' | 'super-admin' | 'employee' | 'sales' | 'education';
     const supabase = await createServer();
 
     const { data: { user }, error } = await supabase.auth.signInWithPassword({
@@ -22,6 +22,8 @@ export async function login(formData: FormData) {
         loginUrl = '/login?type=super-admin';
     } else if (userTypeTarget === 'sales') {
         loginUrl = '/login?type=sales';
+    } else if (userTypeTarget === 'education') {
+        loginUrl = '/login?type=education';
     }
 
 
@@ -84,9 +86,14 @@ export async function login(formData: FormData) {
                 return redirect(`${loginUrl}?error=${encodeURIComponent('Access Denied. Please use the Sales login form.')}`);
             }
             return redirect('/sales/dashboard');
+        case 7: // Education
+             if (userTypeTarget !== 'education') {
+                await supabase.auth.signOut();
+                return redirect(`${loginUrl}?error=${encodeURIComponent('Access Denied. Please use the Education login form.')}`);
+            }
+            return redirect('/education/dashboard');
         default:
              await supabase.auth.signOut();
              return redirect(`${loginUrl}?error=${encodeURIComponent('Invalid user role.')}`);
     }
 }
-
