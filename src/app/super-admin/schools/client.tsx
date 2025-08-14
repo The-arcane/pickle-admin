@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useToast } from "@/hooks/use-toast";
-import { addSchool, removeSchool } from './actions';
+import { addSchool, removeSchool, importSchoolsFromCSV } from './actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatusBadge } from '@/components/status-badge';
-import { Trash2, PlusCircle, MoreHorizontal, School } from 'lucide-react';
+import { Trash2, PlusCircle, MoreHorizontal, School, FileUp, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -51,6 +51,15 @@ function SubmitButton() {
     )
 }
 
+function CsvSubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? 'Importing...' : 'Import CSV'}
+        </Button>
+    )
+}
+
 function getInitials(name: string | undefined | null) {
   if (!name) return '';
   const names = name.split(' ').filter(Boolean);
@@ -64,9 +73,12 @@ function getInitials(name: string | undefined | null) {
 export function SchoolsClientPage({ schools, orgTypes }: { schools: School[], orgTypes: OrganisationType[] }) {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
     const [deletingSchool, setDeletingSchool] = useState<School | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
+    const csvFormRef = useRef<HTMLFormElement>(null);
     const router = useRouter();
 
     const handleAddFormAction = async (formData: FormData) => {
@@ -106,6 +118,31 @@ export function SchoolsClientPage({ schools, orgTypes }: { schools: School[], or
         setIsDeleteDialogOpen(false);
         router.refresh();
     }
+    
+    const handleCsvImportAction = async (formData: FormData) => {
+        const result = await importSchoolsFromCSV(formData);
+        if (result.error) {
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        } else {
+            toast({ title: "Success", description: result.message });
+            setIsImportDialogOpen(false);
+            csvFormRef.current?.reset();
+            setSelectedFile(null);
+            router.refresh();
+        }
+    }
+
+    const handleDownloadTemplate = () => {
+        const csvContent = "data:text/csv;charset=utf-8," + "name,address\n";
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "schools_template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
 
     return (
         <div className="space-y-6">
@@ -117,9 +154,14 @@ export function SchoolsClientPage({ schools, orgTypes }: { schools: School[], or
                         <p className="text-muted-foreground">Manage school-type organizations.</p>
                     </div>
                 </div>
-                <Button onClick={() => setIsAddDialogOpen(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add School
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button onClick={() => setIsImportDialogOpen(true)} variant="outline">
+                        <FileUp className="mr-2 h-4 w-4" /> Import via CSV
+                    </Button>
+                    <Button onClick={() => setIsAddDialogOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add School
+                    </Button>
+                </div>
             </div>
             <Card>
                 <CardContent className="pt-6">
@@ -150,7 +192,7 @@ export function SchoolsClientPage({ schools, orgTypes }: { schools: School[], or
                                         </TableCell>
                                         <TableCell>
                                             <div>
-                                                <p className="font-medium">{school.user?.name}</p>
+                                                <p className="font-medium">{school.user?.name ?? 'Unassigned'}</p>
                                                 <p className="text-sm text-muted-foreground">{school.user?.email}</p>
                                             </div>
                                         </TableCell>
@@ -236,6 +278,54 @@ export function SchoolsClientPage({ schools, orgTypes }: { schools: School[], or
                         <DialogFooter>
                             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
                             <SubmitButton />
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+            
+             <Dialog open={isImportDialogOpen} onOpenChange={(isOpen) => {
+                setIsImportDialogOpen(isOpen);
+                if (!isOpen) {
+                    setSelectedFile(null);
+                }
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Import Schools via CSV</DialogTitle>
+                        <DialogDescription>
+                            Upload a CSV file with 'name' and 'address' columns to bulk create schools.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form ref={csvFormRef} action={handleCsvImportAction} className="space-y-4 py-4">
+                        <div className="space-y-2">
+                             <Label htmlFor="csv_file" className="sr-only">CSV File</Label>
+                             <Input
+                                id="csv_file"
+                                name="csv_file"
+                                type="file"
+                                accept=".csv"
+                                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                required
+                                className="hidden"
+                            />
+                            <Button type="button" variant="outline" className="w-full" onClick={() => document.getElementById('csv_file')?.click()}>
+                                <FileUp className="mr-2 h-4 w-4" />
+                                {selectedFile ? selectedFile.name : "Select a CSV file"}
+                            </Button>
+                             <Button
+                                type="button"
+                                variant="link"
+                                size="sm"
+                                className="h-auto p-0 justify-start"
+                                onClick={handleDownloadTemplate}
+                            >
+                                <Download className="mr-2 h-3 w-3" />
+                                Download CSV Template
+                            </Button>
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                            <CsvSubmitButton />
                         </DialogFooter>
                     </form>
                 </DialogContent>
