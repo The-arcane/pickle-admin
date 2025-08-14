@@ -3,21 +3,23 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, User, School, Users, PartyPopper, CalendarCheck, BookCopy, Home, Megaphone, MessageSquare } from 'lucide-react';
+import { BarChart, Settings, User, School, Users, PartyPopper, CalendarCheck, BookCopy, Home, Megaphone, MessageSquare, LineChart, Trophy, FileText, Image as ImageIcon, Calendar as CalendarIcon, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 
 
 const navItems = [
   { href: '/education/dashboard', label: 'Dashboard', icon: BarChart },
-  { href: '/education/school', label: 'School Profile', icon: School },
-  { href: '/education/users', label: 'Users', icon: Users },
-  { href: '/education/residences', label: 'Parents', icon: Home },
   { href: '/education/attendance', label: 'Attendance', icon: CalendarCheck },
-  { href: '/education/attendance/sessions', label: 'Sessions', icon: BookCopy },
   { href: '/education/events', label: 'Events', icon: PartyPopper },
   { href: '/education/notifications', label: 'Notifications', icon: Megaphone },
   { href: '/education/communication', label: 'Communication', icon: MessageSquare },
+  { href: '/education/reports', label: 'Reports', icon: LineChart },
+  { href: '/education/season', label: 'Season', icon: Trophy },
+  { href: '/education/media', label: 'Media', icon: ImageIcon },
+  { href: '/education/admin-users', label: 'Admin Users', icon: Users },
+  { href: '/education/calendar', label: 'Calendar', icon: CalendarIcon },
+  { href: '/education/alerts', label: 'Emergency Alerts', icon: ShieldAlert },
   { href: '/education/settings', label: 'Settings', icon: Settings },
 ];
 
