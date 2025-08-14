@@ -1,28 +1,27 @@
 
-import { createServer } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+'use client'
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { CalendarCheck, Clock, MapPin, User, ArrowRight, PlusCircle } from 'lucide-react';
+import { CalendarCheck, ArrowRight, PlusCircle, Edit } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
-export default async function AttendanceSessionsPage() {
-  const supabase = await createServer();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return redirect('/login?type=education');
-  }
+// Mock Data
+const mockSessions = [
+    { id: 1, name: 'Morning Pickleball Drills', date: new Date(), location: 'Main Court', roster: ['student_001', 'student_002'] },
+    { id: 2, name: 'Afternoon Practice Match', date: new Date(new Date().setDate(new Date().getDate() + 1)), location: 'Court 2', roster: ['student_003', 'student_004'] },
+];
 
-  // MOCK DATA: Using mock data directly as requested.
-  const today = new Date();
-  const startTime = new Date(today.setHours(9, 0, 0, 0)).toISOString();
-  const endTime = new Date(today.setHours(11, 0, 0, 0)).toISOString();
-  const displaySessions = [
-      { id: 1, name: 'Morning Pickleball Drills', date: today.toISOString(), start_time: startTime, end_time: endTime, location: 'Main Court', coach: { name: 'Coach John' } },
-      { id: 2, name: 'Afternoon Practice Match', date: today.toISOString(), start_time: new Date(today.setHours(14, 0, 0, 0)).toISOString(), end_time: new Date(today.setHours(16, 0, 0, 0)).toISOString(), location: 'Court 2', coach: { name: 'Coach Sarah' } },
-  ];
+export default function AttendanceSessionsPage() {
+  const [sessions, setSessions] = useState<any[]>([]);
+
+  useEffect(() => {
+      // In a real app, you'd fetch this. Here we just set the mock data.
+      setSessions(mockSessions);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -43,38 +42,35 @@ export default async function AttendanceSessionsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Sessions</CardTitle>
-          <CardDescription>A list of all scheduled classes and practices.</CardDescription>
+          <CardTitle>Today's Sessions</CardTitle>
+          <CardDescription>Select a session below to start marking attendance.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Session</TableHead>
-                <TableHead className="hidden md:table-cell">Date</TableHead>
-                <TableHead className="hidden sm:table-cell">Time</TableHead>
-                <TableHead className="hidden md:table-cell">Coach</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead className="hidden md:table-cell">Time</TableHead>
+                <TableHead className="hidden sm:table-cell">Location</TableHead>
+                <TableHead>Enrolled</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displaySessions && displaySessions.length > 0 ? (
-                displaySessions.map((session) => (
+              {sessions.length > 0 ? (
+                sessions.map((session) => (
                   <TableRow key={session.id}>
-                    <TableCell>
-                        <p className="font-medium">{session.name}</p>
-                        <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                            <MapPin className="h-3 w-3" />
-                            {session.location}
-                        </p>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{format(new Date(session.date), 'PPP')}</TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                        {format(new Date(session.start_time), 'p')} - {format(new Date(session.end_time), 'p')}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{session.coach?.name ?? 'N/A'}</TableCell>
-                    <TableCell className="text-right">
-                      <Button asChild variant="outline">
+                    <TableCell className="font-medium">{session.name}</TableCell>
+                    <TableCell className="hidden md:table-cell">{format(new Date(session.date), 'p')}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{session.location}</TableCell>
+                    <TableCell>{session.roster.length} Students</TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/education/attendance/sessions/${session.id}`}>
+                          <Edit className="mr-2 h-4 w-4" /> Edit
+                        </Link>
+                      </Button>
+                      <Button asChild size="sm">
                         <Link href={`/education/attendance/${session.id}`}>
                           Mark Attendance <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
@@ -85,7 +81,7 @@ export default async function AttendanceSessionsPage() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    No sessions found.
+                    No sessions scheduled.
                   </TableCell>
                 </TableRow>
               )}
