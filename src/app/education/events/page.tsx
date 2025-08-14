@@ -1,15 +1,15 @@
 
 import { createServer } from '@/lib/supabase/server';
-import { EventsClientPage } from './client';
+import { EventsClientPage } from '@/app/dashboard/events/client';
 import { format } from 'date-fns';
 import { redirect } from 'next/navigation';
 
-export default async function EventsPage() {
+export default async function EducationEventsPage() {
   const supabase = await createServer();
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return redirect('/login');
+    return redirect('/login?type=education');
   }
 
   const { data: userRecord } = await supabase
@@ -19,7 +19,7 @@ export default async function EventsPage() {
     .single();
 
   if (!userRecord) {
-    return redirect('/login');
+    return redirect('/login?type=education');
   }
   
   const { data: orgLink } = await supabase
