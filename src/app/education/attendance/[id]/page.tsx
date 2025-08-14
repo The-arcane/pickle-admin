@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,6 +23,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 // --- Mock Data ---
 const mockStudents = [
@@ -115,6 +123,10 @@ export default function MarkAttendancePage() {
     });
     
     const participationRate = (roster.filter(s => attendance[s.id]?.status === 'present').length / roster.length) * 100;
+    
+    const qrCodeData = `session_id:${sessionId}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeData)}&size=200x200`;
+
 
     return (
         <div className="space-y-6">
@@ -128,7 +140,20 @@ export default function MarkAttendancePage() {
                         <p className="text-muted-foreground">Mark attendance for each student below.</p>
                     </div>
                 </div>
-                 <Button onClick={() => alert("Mock QR Code Generated!")} variant="outline"><QrCode className="mr-2 h-4 w-4"/> Generate Session QR Code</Button>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="outline"><QrCode className="mr-2 h-4 w-4"/> Generate Session QR Code</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Session QR Code</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex flex-col items-center justify-center py-4">
+                            <Image src={qrCodeUrl} alt="Session QR Code" width={200} height={200} data-ai-hint="qr code" />
+                             <p className="mt-4 text-sm text-muted-foreground">Students can scan this to mark their presence.</p>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             {isLocked && (
@@ -228,4 +253,5 @@ export default function MarkAttendancePage() {
             </div>
         </div>
     );
-}
+
+    
