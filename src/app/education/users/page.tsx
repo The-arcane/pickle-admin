@@ -2,7 +2,7 @@
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { UsersClientPage } from './client';
-import type { UserWithRole } from './types';
+import type { UserWithRole, Role } from './types';
 
 export default async function EducationUsersPage() {
   const supabase = await createServer();
@@ -21,19 +21,28 @@ export default async function EducationUsersPage() {
     return <p>You are not associated with any school.</p>;
   }
 
-  const { data: usersData, error } = await supabase
-    .from('user_organisations')
-    .select(`
-        user:user_id!inner(*),
-        role:organisation_roles!inner(name)
-    `)
-    .eq('organisation_id', orgLink.organisation_id);
+  const [usersRes, rolesRes] = await Promise.all([
+    supabase
+        .from('user_organisations')
+        .select(`
+            user:user_id!inner(*),
+            role:organisation_roles!inner(name)
+        `)
+        .eq('organisation_id', orgLink.organisation_id),
+    supabase
+        .from('organisation_roles')
+        .select('id, name')
+  ]);
 
-  if (error) {
-      console.error("Error fetching users for school:", error);
+  if (usersRes.error) {
+      console.error("Error fetching users for school:", usersRes.error);
+  }
+  if (rolesRes.error) {
+      console.error("Error fetching roles:", rolesRes.error);
   }
   
-  const users = (usersData as UserWithRole[]) || [];
+  const users = (usersRes.data as UserWithRole[]) || [];
+  const roles = (rolesRes.data as Role[]) || [];
 
-  return <UsersClientPage users={users} />;
+  return <UsersClientPage users={users} roles={roles} />;
 }

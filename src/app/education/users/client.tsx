@@ -1,13 +1,14 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Users } from 'lucide-react';
-import type { UserWithRole } from './types';
+import { Users, Search } from 'lucide-react';
+import type { UserWithRole, Role } from './types';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const getInitials = (name: string | undefined | null) => {
   if (!name) return '';
@@ -19,7 +20,25 @@ const getInitials = (name: string | undefined | null) => {
 };
 
 
-export function UsersClientPage({ users }: { users: UserWithRole[] }) {
+export function UsersClientPage({ users, roles }: { users: UserWithRole[], roles: Role[] }) {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [roleFilter, setRoleFilter] = useState('all');
+
+    const filteredUsers = useMemo(() => {
+        return users.filter(({ user, role }) => {
+            if (!user) return false;
+
+            const searchMatch = !searchQuery ||
+                user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                user.email?.toLowerCase().includes(searchQuery.toLowerCase());
+            
+            const roleMatch = roleFilter === 'all' || role.name.toLowerCase() === roleFilter;
+
+            return searchMatch && roleMatch;
+        });
+    }, [users, searchQuery, roleFilter]);
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -35,6 +54,28 @@ export function UsersClientPage({ users }: { users: UserWithRole[] }) {
             <CardDescription>A list of all students, faculty, coaches, and parents.</CardDescription>
         </CardHeader>
         <CardContent>
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <div className="relative flex-grow">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                        placeholder="Search by name or email..." 
+                        className="pl-10 w-full"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue placeholder="Filter by role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        {roles.map(role => (
+                            <SelectItem key={role.id} value={role.name.toLowerCase()}>{role.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -44,8 +85,8 @@ export function UsersClientPage({ users }: { users: UserWithRole[] }) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {users.length > 0 ? (
-                        users.map(({ user, role }) => user && (
+                    {filteredUsers.length > 0 ? (
+                        filteredUsers.map(({ user, role }) => user && (
                             <TableRow key={user.id}>
                                 <TableCell>
                                     <div className="flex items-center gap-3">
@@ -65,7 +106,7 @@ export function UsersClientPage({ users }: { users: UserWithRole[] }) {
                     ) : (
                         <TableRow>
                             <TableCell colSpan={3} className="h-24 text-center">
-                                No users found for this school.
+                                No users found matching your criteria.
                             </TableCell>
                         </TableRow>
                     )}

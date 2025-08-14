@@ -7,6 +7,7 @@ export type User = {
 };
 
 export type Role = {
+    id: number;
     name: string;
 };
 
