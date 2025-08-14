@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { ChevronLeft, QrCode } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { BarChart, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import {
   Table,
   TableBody,
@@ -214,7 +214,7 @@ export default function MarkAttendancePage() {
                                     <CartesianGrid strokeDasharray="3 3" />
                                     <XAxis dataKey="name" />
                                     <YAxis domain={[0, 100]} unit="%" />
-                                    <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                                    <Tooltip formatter={(value) => `${(value as number).toFixed(1)}%`} />
                                     <Bar dataKey="rate" fill="#8884d8" name="Participation Rate" />
                                 </BarChart>
                             </ResponsiveContainer>
