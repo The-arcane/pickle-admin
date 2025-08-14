@@ -39,7 +39,7 @@ const navGroups = [
       { href: '/education/inventory', label: 'Inventory', icon: Box },
       { href: '/education/resources', label: 'Resources', icon: BookCopy },
       { href: '/education/sponsors', label: 'Sponsors', icon: Handshake },
-      // { href: '/education/health', label: 'Health & Safety', icon: HeartPulse },
+      { href: '/education/health', label: 'Health & Safety', icon: HeartPulse },
     ]
   }
 ];
