@@ -15,42 +15,14 @@ export default async function AttendanceSessionsListPage() {
     return redirect('/login?type=education');
   }
 
-  const { data: userProfile } = await supabase.from('user').select('id, user_organisations(organisation_id)').eq('user_uuid', user.id).single();
-  const organisationId = userProfile?.user_organisations[0]?.organisation_id;
-
-  if (!organisationId) {
-      return <p>You are not associated with any organization.</p>;
-  }
-
-  const { data: sessions, error } = await supabase
-    .from('attendance_sessions')
-    .select(`
-        id,
-        name,
-        date,
-        start_time,
-        end_time,
-        location,
-        coach:coach_id(name)
-    `)
-    .eq('organisation_id', organisationId)
-    .order('date', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching attendance sessions:', error);
-  }
-  
-  let displaySessions = sessions;
-  // Add mock data if no sessions are found
-  if (!displaySessions || displaySessions.length === 0) {
-      const today = new Date();
-      const startTime = new Date(today.setHours(9, 0, 0, 0)).toISOString();
-      const endTime = new Date(today.setHours(11, 0, 0, 0)).toISOString();
-      displaySessions = [
-          { id: 1, name: 'Morning Pickleball Drills', date: today.toISOString(), start_time: startTime, end_time: endTime, location: 'Main Court', coach: { name: 'Coach John' } },
-          { id: 2, name: 'Afternoon Practice Match', date: today.toISOString(), start_time: new Date(today.setHours(14, 0, 0, 0)).toISOString(), end_time: new Date(today.setHours(16, 0, 0, 0)).toISOString(), location: 'Court 2', coach: { name: 'Coach Sarah' } },
-      ];
-  }
+  // MOCK DATA: Using mock data directly as requested.
+  const today = new Date();
+  const startTime = new Date(today.setHours(9, 0, 0, 0)).toISOString();
+  const endTime = new Date(today.setHours(11, 0, 0, 0)).toISOString();
+  const displaySessions = [
+      { id: 1, name: 'Morning Pickleball Drills', date: today.toISOString(), start_time: startTime, end_time: endTime, location: 'Main Court', coach: { name: 'Coach John' } },
+      { id: 2, name: 'Afternoon Practice Match', date: today.toISOString(), start_time: new Date(today.setHours(14, 0, 0, 0)).toISOString(), end_time: new Date(today.setHours(16, 0, 0, 0)).toISOString(), location: 'Court 2', coach: { name: 'Coach Sarah' } },
+  ];
 
 
   return (

@@ -5,56 +5,35 @@ import { MarkAttendanceClientPage } from './client';
 
 export default async function MarkAttendancePage({ params }: { params: { id: string } }) {
   const supabase = await createServer();
-  const { id: sessionId } = params;
-
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return redirect('/login?type=education');
   }
 
-  const [sessionRes, studentsRes, statusesRes, recordsRes] = await Promise.all([
-    supabase
-        .from('attendance_sessions')
-        .select('id, name')
-        .eq('id', sessionId)
-        .single(),
-    supabase
-        .from('student_enrollments')
-        .select('student:student_id(id, name, profile_image_url)')
-        .eq('session_id', sessionId),
-    supabase
-        .from('attendance_status')
-        .select('id, name'),
-    supabase
-        .from('attendance_records')
-        .select('student_id, status_id, notes')
-        .eq('session_id', sessionId),
-  ]);
+  // MOCK DATA for the page
+  const session = { id: parseInt(params.id), name: 'Morning Pickleball Drills' };
   
-  if (sessionRes.error || !sessionRes.data) {
-    console.error('Error fetching session:', sessionRes.error);
-    notFound();
-  }
-  if (studentsRes.error) console.error('Error fetching students:', studentsRes.error);
-  if (statusesRes.error) console.error('Error fetching statuses:', statusesRes.error);
-  if (recordsRes.error) console.error('Error fetching records:', recordsRes.error);
-  
-  let students = studentsRes.data?.map(e => e.student).filter(Boolean) || [];
-  const statuses = statusesRes.data || [];
-  const records = recordsRes.data || [];
+  const students = [
+      { id: 101, name: 'Alice Johnson', profile_image_url: null },
+      { id: 102, name: 'Bob Williams', profile_image_url: null },
+      { id: 103, name: 'Charlie Brown', profile_image_url: null },
+      { id: 104, name: 'Diana Prince', profile_image_url: 'https://placehold.co/40x40.png' },
+      { id: 105, name: 'Ethan Hunt', profile_image_url: null },
+  ];
 
-  // Add mock data if no students are found
-  if (students.length === 0) {
-      students = [
-          { id: 101, name: 'Alice Johnson', profile_image_url: null },
-          { id: 102, name: 'Bob Williams', profile_image_url: null },
-          { id: 103, name: 'Charlie Brown', profile_image_url: null },
-      ];
-  }
+  const statuses = [
+      { id: 1, name: 'Present' },
+      { id: 2, name: 'Absent' },
+      { id: 3, name: 'Late' },
+      { id: 4, name: 'Excused' },
+  ];
+  
+  // No initial records for a fresh attendance sheet
+  const records: any[] = [];
 
   return (
     <MarkAttendanceClientPage 
-        session={sessionRes.data}
+        session={session}
         students={students}
         statuses={statuses}
         initialRecords={records}
