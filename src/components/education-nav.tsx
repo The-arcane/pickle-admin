@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, User, School, Users, PartyPopper, CalendarCheck, BookCopy, Home } from 'lucide-react';
+import { BarChart, Settings, User, School, Users, PartyPopper, CalendarCheck, BookCopy, Home, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 
@@ -15,6 +16,7 @@ const navItems = [
   { href: '/education/attendance', label: 'Attendance', icon: CalendarCheck },
   { href: '/education/attendance/sessions', label: 'Sessions', icon: BookCopy },
   { href: '/education/events', label: 'Events', icon: PartyPopper },
+  { href: '/education/notifications', label: 'Notifications', icon: Megaphone },
   { href: '/education/settings', label: 'Settings', icon: Settings },
 ];
 
