@@ -11,11 +11,11 @@ export default async function SchoolsPage() {
     return redirect('/login?type=super-admin');
   }
 
-  // Find the ID for the 'Education' organization type
+  // Find the ID for the 'education' organization type
   const { data: educationType } = await supabase
     .from('organisation_types')
     .select('id')
-    .eq('name', 'Education')
+    .eq('type_name', 'education')
     .single();
 
   let schoolsData: any[] = [];
@@ -35,12 +35,12 @@ export default async function SchoolsPage() {
       schoolsData = data;
     }
   } else {
-    console.error("Could not find 'Education' in organisation_types table.");
+    console.error("Could not find 'education' in organisation_types table.");
   }
   
   const { data: orgTypesData, error: orgTypesError } = await supabase
     .from('organisation_types')
-    .select('id, name');
+    .select('id, type_name');
     
   if (orgTypesError) {
       console.error("Error fetching org types", orgTypesError)

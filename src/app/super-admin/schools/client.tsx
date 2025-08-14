@@ -39,7 +39,7 @@ type School = {
 
 type OrganisationType = {
     id: number;
-    name: string;
+    type_name: string;
 };
 
 function SubmitButton() {
@@ -207,7 +207,7 @@ export function SchoolsClientPage({ schools, orgTypes }: { schools: School[], or
                                         <SelectTrigger><SelectValue placeholder="Select type"/></SelectTrigger>
                                         <SelectContent>
                                             {orgTypes.map(type => (
-                                                <SelectItem key={type.id} value={type.id.toString()}>{type.name}</SelectItem>
+                                                <SelectItem key={type.id} value={type.id.toString()}>{type.type_name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
