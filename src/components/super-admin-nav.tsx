@@ -3,13 +3,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Home, ShieldCheck, TrendingUp } from 'lucide-react';
+import { BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Home, ShieldCheck, TrendingUp, School } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 
 const navItems = [
   { href: '/super-admin/dashboard', label: 'Dashboard', icon: BarChart },
   { href: '/super-admin/organisations', label: 'Organizations', icon: Building },
+  { href: '/super-admin/schools', label: 'Schools', icon: School },
   { href: '/super-admin/users', label: 'Users', icon: Users },
   { href: '/super-admin/admins', label: 'Admins', icon: ShieldCheck },
   { href: '/super-admin/sales', label: 'Sales', icon: TrendingUp },
