@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useState } from 'react';
+import { Separator } from './ui/separator';
 
 const navGroups = [
   {
@@ -36,22 +37,25 @@ const navGroups = [
       { href: '/education/reports', label: 'Reports', icon: LineChart },
       { href: '/education/alerts', label: 'Emergency Alerts', icon: ShieldAlert },
       { href: '/education/inventory', label: 'Inventory', icon: Box },
-      { href: '/education/resources', label: 'Resources', icon: BookCopy },
-      { href: '/education/sponsors', label: 'Sponsors', icon: Handshake },
-      { href: '/education/health', label: 'Health & Safety', icon: HeartPulse },
+      // { href: '/education/resources', label: 'Resources', icon: BookCopy },
+      // { href: '/education/sponsors', label: 'Sponsors', icon: Handshake },
+      // { href: '/education/health', label: 'Health & Safety', icon: HeartPulse },
     ]
   }
 ];
 
-const standaloneItems = [
+const topItems = [
     { href: '/education/dashboard', label: 'Dashboard', icon: BarChart },
+];
+
+const bottomItems = [
     { href: '/education/settings', label: 'Settings', icon: Settings },
 ];
 
 export function EducationNav() {
   const pathname = usePathname();
   const { setOpen } = useSheetContext();
-  const [openSections, setOpenSections] = useState<string[]>([]);
+  const [openSections, setOpenSections] = useState<string[]>(['Academics', 'Activities', 'Administration']);
 
   const isActive = (href: string) => {
     return pathname === href || (href !== '/education/dashboard' && pathname.startsWith(href));
@@ -64,50 +68,70 @@ export function EducationNav() {
   };
 
   return (
-    <nav className="flex flex-col gap-1 px-2 text-sm font-medium">
-      {standaloneItems.map((item) => (
-         <Link
-          key={item.href}
-          href={item.href}
-          onClick={() => setOpen && setOpen(false)}
-          className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-            isActive(item.href) && 'bg-muted text-primary'
-          )}
-        >
-          <item.icon className="h-4 w-4" />
-          {item.label}
-        </Link>
-      ))}
+    <nav className="flex flex-col h-full gap-1 px-2 text-sm font-medium">
+      <div className="flex-1 overflow-y-auto">
+        {topItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={() => setOpen && setOpen(false)}
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+              isActive(item.href) && 'bg-muted text-primary'
+            )}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </Link>
+        ))}
 
-      {navGroups.map((group) => (
-        <Collapsible key={group.title} open={openSections.includes(group.title)} onOpenChange={() => toggleSection(group.title)}>
-            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary [&[data-state=open]>div>svg]:rotate-180">
-              <div className="flex items-center gap-3">
-                 <span>{group.title}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
-              </div>
-            </CollapsibleTrigger>
-          <CollapsibleContent className="pl-4 border-l ml-5 space-y-1">
-            {group.items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen && setOpen(false)}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                  isActive(item.href) && 'bg-muted text-primary'
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
-      ))}
+        {navGroups.map((group) => (
+          <Collapsible key={group.title} open={openSections.includes(group.title)} onOpenChange={() => toggleSection(group.title)} className="mt-1">
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary [&[data-state=open]>div>svg]:rotate-180">
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold">{group.title}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                </div>
+              </CollapsibleTrigger>
+            <CollapsibleContent className="pl-4 border-l ml-5 space-y-1 py-1">
+              {group.items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen && setOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                    isActive(item.href) && 'bg-muted text-primary'
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        ))}
+      </div>
+      
+      <div className="mt-auto">
+        <Separator className="my-2" />
+        {bottomItems.map((item) => (
+           <Link
+            key={item.href}
+            href={item.href}
+            onClick={() => setOpen && setOpen(false)}
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+              isActive(item.href) && 'bg-muted text-primary'
+            )}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </Link>
+        ))}
+      </div>
     </nav>
   );
 }
