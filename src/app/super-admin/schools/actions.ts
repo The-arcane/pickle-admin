@@ -129,7 +129,6 @@ export async function addSchool(formData: FormData) {
                 .eq('id', newOrg.id);
             
               if (logoUpdateError) {
-                  // Non-fatal, let the user know but the org is still created
                   return { success: true, message: `School and admin created, but failed to save logo: ${logoUpdateError.message}` };
               }
           }
