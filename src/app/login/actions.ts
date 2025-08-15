@@ -7,7 +7,6 @@ import { redirect } from 'next/navigation';
 export async function login(formData: FormData) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    const userTypeTarget = formData.get('userType') as 'admin' | 'super-admin' | 'employee' | 'sales' | 'education';
     const supabase = await createServer();
 
     const { data: { user }, error } = await supabase.auth.signInWithPassword({
@@ -15,17 +14,7 @@ export async function login(formData: FormData) {
         password,
     });
     
-    let loginUrl = '/login';
-    if (userTypeTarget === 'employee') {
-        loginUrl = '/login?type=employee';
-    } else if (userTypeTarget === 'super-admin') {
-        loginUrl = '/login?type=super-admin';
-    } else if (userTypeTarget === 'sales') {
-        loginUrl = '/login?type=sales';
-    } else if (userTypeTarget === 'education') {
-        loginUrl = '/login?type=education';
-    }
-
+    const loginUrl = '/login';
 
     if (error || !user) {
         return redirect(`${loginUrl}?error=${encodeURIComponent(error?.message || 'Invalid login credentials.')}`);
@@ -45,7 +34,8 @@ export async function login(formData: FormData) {
     const { id: userId, user_type } = userProfile;
     
     // Check for organization link for admin and employee roles
-    if (user_type === 2 || user_type === 4 || user_type === 7) {
+    // Super Admins (3), Sales (6) are exempt from this check.
+    if (user_type === 2 || user_type === 4 || user_type === 7) { 
         const { data: orgLink } = await supabase
             .from('user_organisations')
             .select('organisation_id')
@@ -54,10 +44,7 @@ export async function login(formData: FormData) {
 
         if (!orgLink?.organisation_id) {
              await supabase.auth.signOut();
-             let errorUrl = loginUrl;
-             if(user_type === 4) errorUrl = '/login?type=employee';
-             if(user_type === 7) errorUrl = '/login?type=education';
-             return redirect(`${errorUrl}?error=${encodeURIComponent('Your account is not associated with an organization.')}`);
+             return redirect(`${loginUrl}?error=${encodeURIComponent('Your account is not associated with an organization.')}`);
         }
         
         // For education users, verify the organization type
@@ -75,29 +62,6 @@ export async function login(formData: FormData) {
             }
         }
     }
-
-    // If a logged-in user tries to access any login page, redirect them to their dashboard
-    if (userTypeTarget === 'admin' && user_type !== 2) {
-        await supabase.auth.signOut();
-        return redirect(`/login?error=${encodeURIComponent('Access Denied. Please use the correct login form.')}`);
-    }
-    if (userTypeTarget === 'super-admin' && user_type !== 3) {
-         await supabase.auth.signOut();
-        return redirect(`/login?type=super-admin&error=${encodeURIComponent('Access Denied. Please use the correct login form.')}`);
-    }
-    if (userTypeTarget === 'employee' && user_type !== 4) {
-         await supabase.auth.signOut();
-        return redirect(`/login?type=employee&error=${encodeURIComponent('Access Denied. Please use the correct login form.')}`);
-    }
-    if (userTypeTarget === 'sales' && user_type !== 6) {
-         await supabase.auth.signOut();
-        return redirect(`/login?type=sales&error=${encodeURIComponent('Access Denied. Please use the correct login form.')}`);
-    }
-    if (userTypeTarget === 'education' && user_type !== 7) {
-        await supabase.auth.signOut();
-        return redirect(`/login?type=education&error=${encodeURIComponent('Access Denied. This account is not configured for the Education panel.')}`);
-    }
-
 
     // Redirect based on the verified user_type
     switch (user_type) {

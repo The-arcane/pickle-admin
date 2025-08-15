@@ -39,6 +39,7 @@ export async function middleware(request: NextRequest) {
 
   const user = session?.user;
   const siteUrl = request.nextUrl.origin;
+  const loginUrl = '/login';
 
   const protectedPaths = {
       dashboard: '/dashboard',
@@ -48,23 +49,10 @@ export async function middleware(request: NextRequest) {
       education: '/education',
   };
 
-  const loginPaths = {
-      admin: '/login',
-      superAdmin: '/login?type=super-admin',
-      employee: '/login?type=employee',
-      sales: '/login?type=sales',
-      education: '/login?type=education',
-  }
-
-  // If user is not logged in and is trying to access a protected route, redirect to login
+  // If user is not logged in and is trying to access a protected route, redirect to the single login page
   if (!user) {
     if (Object.values(protectedPaths).some(p => pathname.startsWith(p) && p !== '/')) {
-        let redirectUrl = loginPaths.admin; // Default login
-        if (pathname.startsWith(protectedPaths.superAdmin)) redirectUrl = loginPaths.superAdmin;
-        if (pathname.startsWith(protectedPaths.employee)) redirectUrl = loginPaths.employee;
-        if (pathname.startsWith(protectedPaths.sales)) redirectUrl = loginPaths.sales;
-        if (pathname.startsWith(protectedPaths.education)) redirectUrl = loginPaths.education;
-        return NextResponse.redirect(new URL(redirectUrl, siteUrl));
+        return NextResponse.redirect(new URL(loginUrl, siteUrl));
     }
     return response;
   }
@@ -94,19 +82,19 @@ export async function middleware(request: NextRequest) {
   }
   
   // Role-based access control - redirect if they are in the wrong panel
-  if (user_type === 2 && !pathname.startsWith(protectedPaths.dashboard)) {
+  if (user_type === 2 && !pathname.startsWith(protectedPaths.dashboard) && !pathname.startsWith('/o/')) {
       return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
   }
-  if (user_type === 3 && !pathname.startsWith(protectedPaths.superAdmin)) {
+  if (user_type === 3 && !pathname.startsWith(protectedPaths.superAdmin) && !pathname.startsWith('/o/')) {
       return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
   }
-  if (user_type === 4 && !pathname.startsWith(protectedPaths.employee)) {
+  if (user_type === 4 && !pathname.startsWith(protectedPaths.employee) && !pathname.startsWith('/o/')) {
       return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
   }
-  if (user_type === 6 && !pathname.startsWith(protectedPaths.sales)) {
+  if (user_type === 6 && !pathname.startsWith(protectedPaths.sales) && !pathname.startsWith('/o/')) {
       return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
   }
-  if (user_type === 7 && !pathname.startsWith(protectedPaths.education)) {
+  if (user_type === 7 && !pathname.startsWith(protectedPaths.education) && !pathname.startsWith('/o/')) {
       return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
   }
 
@@ -124,6 +112,6 @@ export const config = {
      * - o/ (Public organization pages)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/|o/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
