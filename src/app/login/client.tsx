@@ -78,7 +78,7 @@ export function LoginForm() {
             </div>
             <SubmitButton />
           </form>
-          <p className="mt-4 text-center text-xs text-muted-foreground">Version 12.9.0</p>
+          <p className="mt-4 text-center text-xs text-muted-foreground">Version 13.3.0</p>
         </CardContent>
       </Card>
     </div>
