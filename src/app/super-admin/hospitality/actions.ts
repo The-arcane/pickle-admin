@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -30,7 +31,7 @@ async function handleLogoUpload(supabase: any, file: File | null, orgId: string)
         throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
     }
 
-    const { data: publicUrlData } = supabase.storage
+    const { data: publicUrlData } = await supabase.storage
         .from('school_logos')
         .getPublicUrl(filePath);
     
@@ -105,7 +106,7 @@ export async function addHospitalityOrg(formData: FormData) {
         name: orgName,
         address: orgAddress,
         user_id: newAdminId,
-        type: hospitalityType.id, // Use type 3
+        type: hospitalityType.id,
         is_active: true, // Active by default
     })
     .select('id')

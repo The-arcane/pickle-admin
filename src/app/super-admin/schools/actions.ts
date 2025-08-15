@@ -31,7 +31,7 @@ async function handleLogoUpload(supabase: any, file: File | null, orgId: string)
         throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
     }
 
-    const { data: publicUrlData } = supabase.storage
+    const { data: publicUrlData } = await supabase.storage
         .from('school_logos')
         .getPublicUrl(filePath);
     
@@ -85,7 +85,7 @@ export async function addSchool(formData: FormData) {
   const { data: adminProfile, error: profileError } = await supabaseAdmin
     .from('user')
     .update({
-        user_type: 2, // Set user_type to 2 for Admin
+        user_type: 7, // Set user_type to 7 for Education Admin
         name: adminName,
     })
     .eq('user_uuid', authData.user.id)
