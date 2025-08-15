@@ -14,7 +14,7 @@ export async function login(formData: FormData) {
         password,
     });
     
-    const loginUrl = '/login';
+    const loginUrl = '/';
 
     if (error || !user) {
         return redirect(`${loginUrl}?error=${encodeURIComponent(error?.message || 'Invalid login credentials.')}`);
@@ -34,7 +34,7 @@ export async function login(formData: FormData) {
     const { id: userId, user_type } = userProfile;
     
     // Check for organization link for admin and employee roles
-    // Super Admins (3), Sales (6) are exempt from this check.
+    // Super Admins (3), Sales (6), and Hospitality (8) are exempt from this check for now
     if (user_type === 2 || user_type === 4 || user_type === 7) { 
         const { data: orgLink } = await supabase
             .from('user_organisations')
@@ -70,6 +70,7 @@ export async function login(formData: FormData) {
         case 4: return redirect('/employee/dashboard');
         case 6: return redirect('/sales/dashboard');
         case 7: return redirect('/education/dashboard');
+        case 8: return redirect('/hospitality/dashboard');
         default:
              await supabase.auth.signOut();
              return redirect(`${loginUrl}?error=${encodeURIComponent('Invalid user role.')}`);

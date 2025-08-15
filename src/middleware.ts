@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
 
   const user = session?.user;
   const siteUrl = request.nextUrl.origin;
-  const loginUrl = '/'; // The root is now the login page
+  const loginUrl = '/';
 
   const protectedPaths = {
       dashboard: '/dashboard',
@@ -46,6 +46,7 @@ export async function middleware(request: NextRequest) {
       employee: '/employee',
       sales: '/sales',
       education: '/education',
+      hospitality: '/hospitality',
   };
 
   // If user is not logged in and is trying to access a protected route, redirect to login page at root
@@ -75,6 +76,7 @@ export async function middleware(request: NextRequest) {
       if (user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
       if (user_type === 6) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
       if (user_type === 7) return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
+      if (user_type === 8) return NextResponse.redirect(new URL(protectedPaths.hospitality, siteUrl));
     }
     
     // Role-based access control - redirect if they are in the wrong panel
@@ -92,6 +94,9 @@ export async function middleware(request: NextRequest) {
     }
     if (user_type === 7 && !pathname.startsWith(protectedPaths.education) && !pathname.startsWith('/o/')) {
         return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
+    }
+    if (user_type === 8 && !pathname.startsWith(protectedPaths.hospitality) && !pathname.startsWith('/o/')) {
+        return NextResponse.redirect(new URL(protectedPaths.hospitality, siteUrl));
     }
   }
 
