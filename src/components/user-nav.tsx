@@ -29,18 +29,8 @@ export function UserNav({ user, basePath = '/dashboard' }: { user: UserProfile, 
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-
-    // Determine the correct login URL
-    let loginUrl = '/login';
-    if (basePath.startsWith('/super-admin')) {
-      loginUrl = '/login?type=super-admin';
-    } else if (basePath.startsWith('/employee')) {
-      loginUrl = '/login?type=employee';
-    }
-    
-    // Redirect first, then refresh the page to ensure all state is cleared.
-    router.push(loginUrl);
-    router.refresh();
+    router.push('/'); // Redirect to the root login page
+    router.refresh(); // Force a refresh to clear all client-side state
   };
 
   const getInitials = (name: string) => {

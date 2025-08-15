@@ -1,13 +1,14 @@
 
-import { Suspense } from 'react';
-import { LoginForm } from './client';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import { redirect } from 'next/navigation';
+import { useEffect } from 'react';
 
+// This page is now redundant. Redirect any traffic to the root login page.
 export default function LoginPage() {
-    return (
-        <Suspense>
-            <LoginForm />
-        </Suspense>
-    );
+  useEffect(() => {
+    redirect('/');
+  }, []);
+
+  return null;
 }

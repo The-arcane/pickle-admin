@@ -23,12 +23,11 @@ export async function middleware(request: NextRequest) {
       },
       remove(name: string, options) {
         request.cookies.set({ name, value: '', ...options });
-        response.cookies.set({ name, value: '', ...options });
+        response.cookies.set({ name, value, ...options });
       },
     },
   });
   
-  // Add cache-control headers to prevent browser caching of redirects
   response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   response.headers.set('Pragma', 'no-cache');
   response.headers.set('Expires', '0');
@@ -39,7 +38,7 @@ export async function middleware(request: NextRequest) {
 
   const user = session?.user;
   const siteUrl = request.nextUrl.origin;
-  const loginUrl = '/login';
+  const loginUrl = '/'; // The root is now the login page
 
   const protectedPaths = {
       dashboard: '/dashboard',
@@ -49,53 +48,51 @@ export async function middleware(request: NextRequest) {
       education: '/education',
   };
 
-  // If user is not logged in and is trying to access a protected route, redirect to the single login page
-  if (!user) {
-    if (Object.values(protectedPaths).some(p => pathname.startsWith(p) && p !== '/')) {
-        return NextResponse.redirect(new URL(loginUrl, siteUrl));
-    }
-    return response;
+  // If user is not logged in and is trying to access a protected route, redirect to login page at root
+  if (!user && Object.values(protectedPaths).some(p => pathname.startsWith(p))) {
+      return NextResponse.redirect(new URL(loginUrl, siteUrl));
   }
   
   // If user is logged in, fetch their profile
-  const { data: userProfile } = await supabase
-    .from('user')
-    .select('id, user_type')
-    .eq('user_uuid', user.id)
-    .single();
+  if (user) {
+    const { data: userProfile } = await supabase
+      .from('user')
+      .select('id, user_type')
+      .eq('user_uuid', user.id)
+      .single();
 
-  if (!userProfile) {
-    // If profile doesn't exist, something is wrong. Sign out and redirect to login.
-    await supabase.auth.signOut();
-    return NextResponse.redirect(new URL('/login?error=User%20profile%20not%20found.', siteUrl));
-  }
-  
-  const { user_type } = userProfile;
-  
-  // If a logged-in user tries to access any login page, redirect them to their dashboard
-  if (pathname.startsWith('/login')) {
-    if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
-    if (user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
-    if (user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
-    if (user_type === 6) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
-    if (user_type === 7) return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
-  }
-  
-  // Role-based access control - redirect if they are in the wrong panel
-  if (user_type === 2 && !pathname.startsWith(protectedPaths.dashboard) && !pathname.startsWith('/o/')) {
-      return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
-  }
-  if (user_type === 3 && !pathname.startsWith(protectedPaths.superAdmin) && !pathname.startsWith('/o/')) {
-      return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
-  }
-  if (user_type === 4 && !pathname.startsWith(protectedPaths.employee) && !pathname.startsWith('/o/')) {
-      return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
-  }
-  if (user_type === 6 && !pathname.startsWith(protectedPaths.sales) && !pathname.startsWith('/o/')) {
-      return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
-  }
-  if (user_type === 7 && !pathname.startsWith(protectedPaths.education) && !pathname.startsWith('/o/')) {
-      return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
+    if (!userProfile) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(new URL('/?error=User%20profile%20not%20found.', siteUrl));
+    }
+    
+    const { user_type } = userProfile;
+    
+    // If a logged-in user tries to access the root (login page), redirect them to their dashboard
+    if (pathname === '/') {
+      if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
+      if (user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
+      if (user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
+      if (user_type === 6) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
+      if (user_type === 7) return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
+    }
+    
+    // Role-based access control - redirect if they are in the wrong panel
+    if (user_type === 2 && !pathname.startsWith(protectedPaths.dashboard) && !pathname.startsWith('/o/')) {
+        return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
+    }
+    if (user_type === 3 && !pathname.startsWith(protectedPaths.superAdmin) && !pathname.startsWith('/o/')) {
+        return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
+    }
+    if (user_type === 4 && !pathname.startsWith(protectedPaths.employee) && !pathname.startsWith('/o/')) {
+        return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
+    }
+    if (user_type === 6 && !pathname.startsWith(protectedPaths.sales) && !pathname.startsWith('/o/')) {
+        return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
+    }
+    if (user_type === 7 && !pathname.startsWith(protectedPaths.education) && !pathname.startsWith('/o/')) {
+        return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
+    }
   }
 
   return response;
