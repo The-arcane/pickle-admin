@@ -7,6 +7,7 @@ import { ResidencesClientPage as DashboardResidencesClientPage } from '@/app/das
 import { PageHeader } from '@/components/page-header';
 import type { Organization } from '@/types';
 import { useOrganization } from '@/hooks/use-organization';
+import { Home } from 'lucide-react';
 
 export function SuperAdminResidencesClient({ initialOrganizations }: { initialOrganizations: Organization[] }) {
     const supabase = createClient();

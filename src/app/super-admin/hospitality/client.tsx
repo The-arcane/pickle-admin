@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -123,7 +124,7 @@ export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <Hotel className="h-8 w-8 text-blue-500" />
+                    <Hotel className="h-8 w-8 text-purple-500" />
                     <div>
                         <h1 className="text-3xl font-bold">Hospitality</h1>
                         <p className="text-muted-foreground">Manage hospitality-type organizations.</p>

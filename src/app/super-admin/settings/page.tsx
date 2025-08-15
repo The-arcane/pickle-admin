@@ -2,15 +2,19 @@ import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { ThemeSelect } from '@/components/theme-select';
 import { LogoutButton } from '@/components/logout-button';
+import { Settings } from 'lucide-react';
 
 export default function SuperAdminSettingsPage() {
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your application preferences.
-        </p>
+      <div className="flex items-center gap-3">
+        <Settings className="h-8 w-8 text-gray-500" />
+        <div>
+            <h1 className="text-3xl font-bold">Settings</h1>
+            <p className="text-muted-foreground">
+            Manage your application preferences.
+            </p>
+        </div>
       </div>
 
       <Separator />
@@ -35,7 +39,7 @@ export default function SuperAdminSettingsPage() {
         
         <div className="space-y-2">
             <Label className="text-base font-medium">Log Out</Label>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Sign out from your current session.
             </p>
             <LogoutButton />

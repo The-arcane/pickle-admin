@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createServer } from '@/lib/supabase/server';
+import { User } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { updateSuperAdminProfile } from './actions';
 
@@ -26,9 +27,12 @@ export default async function SuperAdminProfilePage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Super Admin Profile</h1>
-        <p className="text-muted-foreground">Manage your profile information.</p>
+      <div className="flex items-center gap-3">
+        <User className="h-8 w-8 text-slate-500" />
+        <div>
+            <h1 className="text-3xl font-bold">Super Admin Profile</h1>
+            <p className="text-muted-foreground">Manage your profile information.</p>
+        </div>
       </div>
       
       <form action={updateSuperAdminProfile} className="space-y-6 max-w-lg">

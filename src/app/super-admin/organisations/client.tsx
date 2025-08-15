@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MoreHorizontal, PlusCircle, Edit, ToggleRight, ToggleLeft, Globe, Eye } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Edit, ToggleRight, ToggleLeft, Globe, Eye, Building } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
@@ -86,9 +86,12 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
   return (
     <>
       <div className="flex items-center justify-between">
-        <div>
-            <h1 className="text-2xl font-bold tracking-tight">Organizations</h1>
-            <p className="text-muted-foreground">View and manage all organizations in the system.</p>
+        <div className="flex items-center gap-3">
+            <Building className="h-8 w-8 text-orange-500" />
+            <div>
+                <h1 className="text-2xl font-bold tracking-tight">Organizations</h1>
+                <p className="text-muted-foreground">View and manage all organizations in the system.</p>
+            </div>
         </div>
         <Button size="sm" className="gap-1" onClick={openAddDialog}><PlusCircle className="h-4 w-4" /> Add Organization</Button>
       </div>
@@ -123,7 +126,7 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem onSelect={() => openEditDialog(org)}><Edit className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
-                      <DropdownMenuItem asChild>
+                       <DropdownMenuItem asChild>
                         <Link href={`/o/${org.id}`} target="_blank">
                            <Eye className="mr-2 h-4 w-4" />Preview
                         </Link>
