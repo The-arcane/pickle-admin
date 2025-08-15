@@ -51,10 +51,11 @@ export async function addOrganization(formData: FormData) {
   }
   
   try {
-    const insertData: { name: string; address: string; user_id: number; logo?: string } = {
+    const insertData: { name: string; address: string; user_id: number; logo?: string; type: number } = {
         name,
         address,
         user_id: Number(userId),
+        type: 1, // Set type to 1 for residences
     };
 
     // 1. Insert the organization record. This will fire the trigger.
