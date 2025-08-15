@@ -31,7 +31,7 @@ export function LoginForm() {
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">
             <Shield className="h-6 w-6" />
-            Lumen Platform Login
+            Platform Login
           </CardTitle>
           <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
         </CardHeader>
