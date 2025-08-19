@@ -3,24 +3,38 @@ import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, PlusCircle } from 'lucide-react';
+import { Package, PlusCircle, Calendar } from 'lucide-react';
 import Link from 'next/link';
 
 async function getHospitalityDashboardData(organisationId: number) {
     const supabase = await createServer();
 
-    const { count: activePackages, error: packageError } = await supabase
-        .from('packages')
-        .select('id', { count: 'exact', head: true })
-        .eq('organisation_id', organisationId)
-        .eq('is_active', true);
+    const [
+        { count: activePackages, error: packageError },
+        { count: totalBookings, error: bookingError }
+    ] = await Promise.all([
+        supabase
+            .from('packages')
+            .select('id', { count: 'exact', head: true })
+            .eq('organisation_id', organisationId)
+            .eq('is_active', true),
+        supabase
+            .from('package_bookings')
+            .select('id', { count: 'exact', head: true })
+            .eq('organisation_id', organisationId)
+    ]);
+
 
     if (packageError) {
         console.error("Error fetching active packages count:", packageError);
     }
+    if (bookingError) {
+        console.error("Error fetching total bookings count:", bookingError);
+    }
 
     return {
         activePackages: activePackages ?? 0,
+        totalBookings: totalBookings ?? 0,
     };
 }
 
@@ -47,7 +61,7 @@ export default async function HospitalityDashboardPage() {
       );
   }
 
-  const { activePackages } = await getHospitalityDashboardData(orgLink.organisation_id);
+  const { activePackages, totalBookings } = await getHospitalityDashboardData(orgLink.organisation_id);
 
   return (
     <div className="space-y-8">
@@ -67,18 +81,34 @@ export default async function HospitalityDashboardPage() {
                 <p className="text-xs text-muted-foreground">Currently available packages</p>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{totalBookings}</div>
+                <p className="text-xs text-muted-foreground">All-time package bookings received</p>
+            </CardContent>
+          </Card>
       </div>
 
        <Card>
             <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Get started by managing your packages.</CardDescription>
+                <CardDescription>Get started by managing your packages or bookings.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-wrap gap-2">
                 <Button asChild>
                     <Link href="/hospitality/packages">
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Manage Packages
+                    </Link>
+                </Button>
+                 <Button asChild variant="secondary">
+                    <Link href="/hospitality/bookings">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        View Bookings
                     </Link>
                 </Button>
             </CardContent>
