@@ -1,14 +1,15 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, User } from 'lucide-react';
+import { BarChart, Settings, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 
 const navItems = [
   { href: '/hospitality/dashboard', label: 'Dashboard', icon: BarChart },
-  // Add more hospitality-specific links here in the future
+  { href: '/hospitality/packages', label: 'Packages', icon: Package },
   { href: '/hospitality/settings', label: 'Settings', icon: Settings },
 ];
 
