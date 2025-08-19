@@ -3,13 +3,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, Package } from 'lucide-react';
+import { BarChart, Settings, Package, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 
 const navItems = [
   { href: '/hospitality/dashboard', label: 'Dashboard', icon: BarChart },
   { href: '/hospitality/packages', label: 'Packages', icon: Package },
+  { href: '/hospitality/bookings', label: 'Bookings', icon: Calendar },
   { href: '/hospitality/settings', label: 'Settings', icon: Settings },
 ];
 
