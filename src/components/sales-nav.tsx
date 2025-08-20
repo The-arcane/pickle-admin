@@ -9,10 +9,10 @@ import { useSheetContext } from '@/hooks/use-sheet-context';
 
 
 const navItems = [
-  { href: '/sales/dashboard', label: 'Dashboard', icon: BarChart },
-  { href: '/sales/organisations', label: 'Living Spaces', icon: Building },
-  { href: '/sales/profile', label: 'Profile', icon: User },
-  { href: '/sales/settings', label: 'Settings', icon: Settings },
+  { href: '/sales/dashboard', label: 'Dashboard', icon: BarChart, color: 'text-sky-500' },
+  { href: '/sales/organisations', label: 'Living Spaces', icon: Building, color: 'text-orange-500' },
+  { href: '/sales/profile', label: 'Profile', icon: User, color: 'text-slate-500' },
+  { href: '/sales/settings', label: 'Settings', icon: Settings, color: 'text-gray-500' },
 ];
 
 export function SalesNav() {
@@ -32,7 +32,7 @@ export function SalesNav() {
             pathname === item.href && item.href === '/sales/dashboard' && 'bg-muted text-primary'
           )}
         >
-          <item.icon className="h-4 w-4" />
+          <item.icon className={cn("h-4 w-4", item.color)} />
           {item.label}
         </Link>
       ))}
