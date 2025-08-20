@@ -8,10 +8,10 @@ import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 
 const navItems = [
-  { href: '/hospitality/dashboard', label: 'Dashboard', icon: BarChart },
-  { href: '/hospitality/packages', label: 'Packages', icon: Package },
-  { href: '/hospitality/bookings', label: 'Bookings', icon: Calendar },
-  { href: '/hospitality/settings', label: 'Settings', icon: Settings },
+  { href: '/hospitality/dashboard', label: 'Dashboard', icon: BarChart, color: 'text-sky-500' },
+  { href: '/hospitality/packages', label: 'Packages', icon: Package, color: 'text-orange-500' },
+  { href: '/hospitality/bookings', label: 'Bookings', icon: Calendar, color: 'text-rose-500' },
+  { href: '/hospitality/settings', label: 'Settings', icon: Settings, color: 'text-gray-500' },
 ];
 
 export function HospitalityNav() {
@@ -31,7 +31,7 @@ export function HospitalityNav() {
             pathname === item.href && item.href === '/hospitality/dashboard' && 'bg-muted text-primary'
           )}
         >
-          <item.icon className="h-4 w-4" />
+          <item.icon className={cn("h-4 w-4", item.color)} />
           {item.label}
         </Link>
       ))}
