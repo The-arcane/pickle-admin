@@ -35,7 +35,7 @@ export function LoginForm() {
           </CardTitle>
           <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
