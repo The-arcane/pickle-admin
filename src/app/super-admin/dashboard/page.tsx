@@ -3,12 +3,12 @@
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, Users, List, PartyPopper, School, Hotel, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, List, PartyPopper, School, Hotel, Home } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
 
 
@@ -103,10 +103,10 @@ export default async function SuperAdminDashboardPage() {
     } = await getSuperAdminDashboardData();
   
   const statCards = [
-      { label: 'Total Schools', value: totalSchools, icon: School, href: '/super-admin/schools' },
-      { label: 'Total Hospitality', value: totalHospitality, icon: Hotel, href: '/super-admin/hospitality' },
-      { label: 'Total Residences', value: totalResidences, icon: Home, href: '/super-admin/residences' },
-      { label: 'Total Users', value: totalUsers, icon: Users, href: '/super-admin/users' },
+      { label: 'Total Schools', value: totalSchools, icon: School, href: '/super-admin/schools', color: 'text-blue-500' },
+      { label: 'Total Hospitality', value: totalHospitality, icon: Hotel, href: '/super-admin/hospitality', color: 'text-purple-500' },
+      { label: 'Total Residences', value: totalResidences, icon: Home, href: '/super-admin/residences', color: 'text-teal-500' },
+      { label: 'Total Users', value: totalUsers, icon: Users, href: '/super-admin/users', color: 'text-violet-500' },
   ];
 
   return (
@@ -122,7 +122,7 @@ export default async function SuperAdminDashboardPage() {
             <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between">
               <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                  <stat.icon className="h-6 w-6 text-muted-foreground" />
+                  <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
               </div>
               <div>
                 <p className="text-3xl font-bold">{stat.value}</p>
@@ -206,4 +206,3 @@ export default async function SuperAdminDashboardPage() {
     </div>
   );
 }
-
