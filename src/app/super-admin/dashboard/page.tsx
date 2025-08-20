@@ -2,14 +2,14 @@
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, Users, List, PartyPopper } from 'lucide-react';
+import { Building, Users, List, PartyPopper, School, Hotel, Home, LineChart as ChartIcon, BarChart as BarChartIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
-
+import { BarChart, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Bar, Line } from 'recharts';
 
 const bookingStatusMap: { [key: number]: string } = {
   0: 'Cancelled',
@@ -19,16 +19,27 @@ const bookingStatusMap: { [key: number]: string } = {
 
 async function getSuperAdminDashboardData() {
     const supabase = await createServer();
+    
+    // Call the database function to get daily stats for the past 7 days
+    const { data: dailyStats, error: dailyStatsError } = await supabase.rpc('get_daily_stats_for_past_7_days');
 
+    if (dailyStatsError) {
+        console.error("Error fetching daily stats:", dailyStatsError);
+    }
+    
     const [
-        orgsRes,
+        schoolsRes,
+        hospitalityRes,
+        residencesRes,
         usersRes,
         courtsRes,
         eventsRes,
         recentBookingsRes,
         recentUsersRes
     ] = await Promise.all([
-        supabase.from('organisations').select('id', { count: 'exact', head: true }),
+        supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 2),
+        supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 3),
+        supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 1),
         supabase.from('user').select('id', { count: 'exact', head: true }),
         supabase.from('courts').select('id', { count: 'exact', head: true }),
         supabase.from('events').select('id', { count: 'exact', head: true }),
@@ -47,7 +58,9 @@ async function getSuperAdminDashboardData() {
     ]);
 
     // Error handling
-    if(orgsRes.error) console.error("Error fetching orgs count", orgsRes.error);
+    if(schoolsRes.error) console.error("Error fetching schools count", schoolsRes.error);
+    if(hospitalityRes.error) console.error("Error fetching hospitality count", hospitalityRes.error);
+    if(residencesRes.error) console.error("Error fetching residences count", residencesRes.error);
     if(usersRes.error) console.error("Error fetching users count", usersRes.error);
     if(courtsRes.error) console.error("Error fetching courts count", courtsRes.error);
     if(eventsRes.error) console.error("Error fetching events count", eventsRes.error);
@@ -55,12 +68,15 @@ async function getSuperAdminDashboardData() {
     if(recentUsersRes.error) console.error("Error fetching recent users", recentUsersRes.error);
 
     return {
-        totalOrganisations: orgsRes.count ?? 0,
+        totalSchools: schoolsRes.count ?? 0,
+        totalHospitality: hospitalityRes.count ?? 0,
+        totalResidences: residencesRes.count ?? 0,
         totalUsers: usersRes.count ?? 0,
         totalCourts: courtsRes.count ?? 0,
         totalEvents: eventsRes.count ?? 0,
         recentBookings: recentBookingsRes.data || [],
-        recentUsers: recentUsersRes.data || []
+        recentUsers: recentUsersRes.data || [],
+        dailyStats: (dailyStats || []).map(d => ({...d, day: format(parseISO(d.day), 'MMM d')})).reverse()
     }
 }
 
@@ -78,23 +94,27 @@ export default async function SuperAdminDashboardPage() {
   const supabase = await createServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
+    // This should not happen due to middleware, but as a safeguard.
     return redirect('/super-admin/login');
   }
 
   const { 
-      totalOrganisations, 
+      totalSchools,
+      totalHospitality,
+      totalResidences,
       totalUsers, 
       totalCourts, 
       totalEvents,
       recentBookings,
-      recentUsers
+      recentUsers,
+      dailyStats
     } = await getSuperAdminDashboardData();
   
   const statCards = [
-      { label: 'Total Organizations', value: totalOrganisations, icon: Building, href: '/super-admin/organisations' },
+      { label: 'Total Schools', value: totalSchools, icon: School, href: '/super-admin/schools' },
+      { label: 'Total Hospitality', value: totalHospitality, icon: Hotel, href: '/super-admin/hospitality' },
+      { label: 'Total Residences', value: totalResidences, icon: Home, href: '/super-admin/residences' },
       { label: 'Total Users', value: totalUsers, icon: Users, href: '/super-admin/users' },
-      { label: 'Total Courts', value: totalCourts, icon: List, href: '/super-admin/courts' },
-      { label: 'Total Events', value: totalEvents, icon: PartyPopper, href: '/super-admin/events' },
   ];
 
   return (
@@ -118,6 +138,47 @@ export default async function SuperAdminDashboardPage() {
             </Card>
           </Link>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><BarChartIcon className="h-5 w-5" />New Users (Last 7 Days)</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={dailyStats}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                            <Tooltip />
+                            <Legend />
+                            <Bar dataKey="new_users_count" fill="#8884d8" name="New Users" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </CardContent>
+        </Card>
+         <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><ChartIcon className="h-5 w-5" />Bookings (Last 7 Days)</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={dailyStats}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
+                            <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="total_bookings_count" stroke="#82ca9d" name="Bookings" />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+            </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
