@@ -10,7 +10,6 @@ import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
-import { DashboardCharts } from '@/components/dashboard-charts';
 
 
 const bookingStatusMap: { [key: number]: string } = {
@@ -21,13 +20,6 @@ const bookingStatusMap: { [key: number]: string } = {
 
 async function getSuperAdminDashboardData() {
     const supabase = await createServer();
-    
-    // Call the database function to get daily stats for the past 7 days
-    const { data: dailyStats, error: dailyStatsError } = await supabase.rpc('get_daily_stats_for_past_7_days');
-
-    if (dailyStatsError) {
-        console.error("Error fetching daily stats:", dailyStatsError);
-    }
     
     const [
         schoolsRes,
@@ -78,7 +70,6 @@ async function getSuperAdminDashboardData() {
         totalEvents: eventsRes.count ?? 0,
         recentBookings: recentBookingsRes.data || [],
         recentUsers: recentUsersRes.data || [],
-        dailyStats: (dailyStats || []).map(d => ({...d, day: format(parseISO(d.day), 'MMM d')})).reverse()
     }
 }
 
@@ -109,7 +100,6 @@ export default async function SuperAdminDashboardPage() {
       totalEvents,
       recentBookings,
       recentUsers,
-      dailyStats
     } = await getSuperAdminDashboardData();
   
   const statCards = [
@@ -141,8 +131,6 @@ export default async function SuperAdminDashboardPage() {
           </Link>
         ))}
       </div>
-
-      <DashboardCharts dailyStats={dailyStats} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
