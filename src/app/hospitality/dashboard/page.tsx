@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Package, PlusCircle, Calendar } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 async function getHospitalityDashboardData(organisationId: number) {
     const supabase = await createServer();
@@ -63,6 +64,12 @@ export default async function HospitalityDashboardPage() {
 
   const { activePackages, totalBookings } = await getHospitalityDashboardData(orgLink.organisation_id);
 
+  const stats = [
+      { label: 'Active Packages', value: activePackages, icon: Package, href: '/hospitality/packages', color: 'text-orange-500', description: 'Currently available packages' },
+      { label: 'Total Bookings', value: totalBookings, icon: Calendar, href: '/hospitality/bookings', color: 'text-rose-500', description: 'All-time package bookings' }
+  ];
+
+
   return (
     <div className="space-y-8">
       <div>
@@ -71,26 +78,20 @@ export default async function HospitalityDashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Packages</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{activePackages}</div>
-                <p className="text-xs text-muted-foreground">Currently available packages</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{totalBookings}</div>
-                <p className="text-xs text-muted-foreground">All-time package bookings received</p>
-            </CardContent>
-          </Card>
+          {stats.map((stat, i) => (
+            <Link href={stat.href} key={i} className="lg:col-span-1">
+                <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                        <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
+                    </div>
+                    <div>
+                        <p className="text-3xl font-bold">{stat.value}</p>
+                        <p className="text-xs text-muted-foreground">{stat.description}</p>
+                    </div>
+                </Card>
+            </Link>
+          ))}
       </div>
 
        <Card>
