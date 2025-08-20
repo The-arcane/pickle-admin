@@ -14,42 +14,42 @@ const navGroups = [
   {
     title: 'Academics',
     items: [
-      { href: '/education/attendance', label: 'Attendance', icon: CalendarCheck },
-      { href: '/education/skills', label: 'Skills', icon: Trophy },
-      { href: '/education/users', label: 'Admin Users', icon: Users },
-      { href: '/education/residences', label: 'Parents', icon: Users },
+      { href: '/education/attendance', label: 'Attendance', icon: CalendarCheck, color: 'text-teal-500' },
+      { href: '/education/skills', label: 'Skills', icon: Trophy, color: 'text-yellow-500' },
+      { href: '/education/users', label: 'Admin Users', icon: Users, color: 'text-violet-500' },
+      { href: '/education/residences', label: 'Parents', icon: Users, color: 'text-purple-500' },
     ]
   },
   {
     title: 'Activities',
     items: [
-      { href: '/education/events', label: 'Events', icon: PartyPopper },
-      { href: '/education/season', label: 'Season', icon: Trophy },
-      { href: '/education/media', label: 'Media', icon: ImageIcon },
-      { href: '/education/calendar', label: 'Calendar', icon: CalendarIcon },
+      { href: '/education/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
+      { href: '/education/season', label: 'Season', icon: Trophy, color: 'text-amber-500' },
+      { href: '/education/media', label: 'Media', icon: ImageIcon, color: 'text-cyan-500' },
+      { href: '/education/calendar', label: 'Calendar', icon: CalendarIcon, color: 'text-blue-500' },
     ]
   },
   {
     title: 'Administration',
     items: [
-      { href: '/education/notifications', label: 'Notifications', icon: Megaphone },
-      { href: '/education/communication', label: 'Communication', icon: MessageSquare },
-      { href: '/education/reports', label: 'Reports', icon: LineChart },
-      { href: '/education/alerts', label: 'Emergency Alerts', icon: ShieldAlert },
-      { href: '/education/inventory', label: 'Inventory', icon: Box },
-      { href: '/education/resources', label: 'Resources', icon: BookCopy },
-      { href: '/education/sponsors', label: 'Sponsors', icon: Handshake },
-      { href: '/education/health', label: 'Health & Safety', icon: HeartPulse },
+      { href: '/education/notifications', label: 'Notifications', icon: Megaphone, color: 'text-yellow-600' },
+      { href: '/education/communication', label: 'Communication', icon: MessageSquare, color: 'text-purple-600' },
+      { href: '/education/reports', label: 'Reports', icon: LineChart, color: 'text-green-600' },
+      { href: '/education/alerts', label: 'Emergency Alerts', icon: ShieldAlert, color: 'text-red-500' },
+      { href: '/education/inventory', label: 'Inventory', icon: Box, color: 'text-indigo-500' },
+      { href: '/education/resources', label: 'Resources', icon: BookCopy, color: 'text-orange-500' },
+      { href: '/education/sponsors', label: 'Sponsors', icon: Handshake, color: 'text-lime-500' },
+      { href: '/education/health', label: 'Health & Safety', icon: HeartPulse, color: 'text-rose-500' },
     ]
   }
 ];
 
 const topItems = [
-    { href: '/education/dashboard', label: 'Dashboard', icon: BarChart },
+    { href: '/education/dashboard', label: 'Dashboard', icon: BarChart, color: 'text-sky-500' },
 ];
 
 const bottomItems = [
-    { href: '/education/settings', label: 'Settings', icon: Settings },
+    { href: '/education/settings', label: 'Settings', icon: Settings, color: 'text-gray-500' },
 ];
 
 export function EducationNav() {
@@ -80,7 +80,7 @@ export function EducationNav() {
               isActive(item.href) && 'bg-muted text-primary'
             )}
           >
-            <item.icon className="h-4 w-4" />
+            <item.icon className={cn("h-4 w-4", item.color)} />
             {item.label}
           </Link>
         ))}
@@ -106,7 +106,7 @@ export function EducationNav() {
                     isActive(item.href) && 'bg-muted text-primary'
                   )}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon className={cn("h-4 w-4", item.color)} />
                   {item.label}
                 </Link>
               ))}
@@ -127,7 +127,7 @@ export function EducationNav() {
               isActive(item.href) && 'bg-muted text-primary'
             )}
           >
-            <item.icon className="h-4 w-4" />
+            <item.icon className={cn("h-4 w-4", item.color)} />
             {item.label}
           </Link>
         ))}
