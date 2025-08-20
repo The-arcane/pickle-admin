@@ -3,7 +3,7 @@ import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, List, PartyPopper, School, Hotel, Home } from 'lucide-react';
+import { Users, List, PartyPopper, School, Hotel, Home, Building } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
@@ -22,6 +22,7 @@ async function getSuperAdminDashboardData() {
     const supabase = await createServer();
     
     const [
+        totalOrgsRes,
         schoolsRes,
         hospitalityRes,
         residencesRes,
@@ -31,6 +32,7 @@ async function getSuperAdminDashboardData() {
         recentBookingsRes,
         recentUsersRes
     ] = await Promise.all([
+        supabase.from('organisations').select('id', { count: 'exact', head: true }),
         supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 2),
         supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 3),
         supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 1),
@@ -52,6 +54,7 @@ async function getSuperAdminDashboardData() {
     ]);
 
     // Error handling
+    if(totalOrgsRes.error) console.error("Error fetching total orgs count", totalOrgsRes.error);
     if(schoolsRes.error) console.error("Error fetching schools count", schoolsRes.error);
     if(hospitalityRes.error) console.error("Error fetching hospitality count", hospitalityRes.error);
     if(residencesRes.error) console.error("Error fetching residences count", residencesRes.error);
@@ -62,6 +65,7 @@ async function getSuperAdminDashboardData() {
     if(recentUsersRes.error) console.error("Error fetching recent users", recentUsersRes.error);
 
     return {
+        totalLivingSpaces: totalOrgsRes.count ?? 0,
         totalSchools: schoolsRes.count ?? 0,
         totalHospitality: hospitalityRes.count ?? 0,
         totalResidences: residencesRes.count ?? 0,
@@ -92,6 +96,7 @@ export default async function SuperAdminDashboardPage() {
   }
 
   const { 
+      totalLivingSpaces,
       totalSchools,
       totalHospitality,
       totalResidences,
@@ -103,6 +108,7 @@ export default async function SuperAdminDashboardPage() {
     } = await getSuperAdminDashboardData();
   
   const statCards = [
+      { label: 'Total Living Spaces', value: totalLivingSpaces, icon: Building, href: '/super-admin/organisations', color: 'text-orange-500' },
       { label: 'Total Schools', value: totalSchools, icon: School, href: '/super-admin/schools', color: 'text-blue-500' },
       { label: 'Total Hospitality', value: totalHospitality, icon: Hotel, href: '/super-admin/hospitality', color: 'text-purple-500' },
       { label: 'Total Residences', value: totalResidences, icon: Home, href: '/super-admin/residences', color: 'text-teal-500' },
@@ -116,7 +122,7 @@ export default async function SuperAdminDashboardPage() {
         <p className="text-muted-foreground">A high-level overview of platform-wide activity.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {statCards.map((stat, i) => (
           <Link href={stat.href} key={i}>
             <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between">
