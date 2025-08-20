@@ -224,10 +224,13 @@ export default async function DashboardPage() {
 
   const { recentBookings, stats, feedback, upcomingEvents, error, organisationLogo } = await getDashboardData(orgLink.organisation_id);
   
-  const statCards = [
+  const primaryStats = [
     { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar, color: 'text-sky-500' },
-    { label: 'Total Event Enrolments', value: stats.totalEnrolments, icon: Users, color: 'text-violet-500', description: 'Confirmed attendees for all events.'},
     { label: 'Total Revenue', value: `₹${stats.totalRevenue.toLocaleString('en-IN')}`, icon: BarChartHorizontal, color: 'text-green-500' },
+  ];
+  
+  const activityStats = [
+    { label: 'Total Event Enrolments', value: stats.totalEnrolments, icon: Users, color: 'text-violet-500', description: 'Confirmed attendees for all events.'},
     { label: 'Total Courts', value: stats.totalCourts, icon: List, color: 'text-amber-500' },
     { label: 'Total Events', value: stats.totalEventsCount, icon: PartyPopper, color: 'text-pink-500' },
   ];
@@ -257,7 +260,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-        {statCards.map((stat, i) => (
+        {primaryStats.map((stat, i) => (
           <Card key={i} className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
             <div className="flex items-center justify-between">
                 <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
@@ -270,6 +273,27 @@ export default async function DashboardPage() {
           </Card>
         ))}
       </div>
+      
+      <div>
+          <h2 className="text-2xl font-bold tracking-tight">Activity Metrics</h2>
+          <p className="text-muted-foreground">An overview of facility engagement.</p>
+      </div>
+
+       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {activityStats.map((stat, i) => (
+          <Card key={i} className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
+            <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
+            </div>
+            <div>
+              <p className="text-3xl font-bold">{stat.value}</p>
+               {stat.description && <p className="text-xs text-muted-foreground">{stat.description}</p>}
+            </div>
+          </Card>
+        ))}
+      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
