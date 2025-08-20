@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -6,12 +7,12 @@ import { QrCode, Calendar, PartyPopper, BarChart, User, Settings } from 'lucide-
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/employee/dashboard', label: 'Dashboard', icon: BarChart },
-  { href: '/employee/scan', label: 'Scan QR', icon: QrCode },
-  { href: '/employee/bookings', label: 'Bookings', icon: Calendar },
-  { href: '/employee/events', label: 'Events', icon: PartyPopper },
-  { href: '/employee/profile', label: 'Profile', icon: User },
-  { href: '/employee/settings', label: 'Settings', icon: Settings },
+  { href: '/employee/dashboard', label: 'Dashboard', icon: BarChart, color: 'text-sky-500' },
+  { href: '/employee/scan', label: 'Scan QR', icon: QrCode, color: 'text-teal-500' },
+  { href: '/employee/bookings', label: 'Bookings', icon: Calendar, color: 'text-green-500' },
+  { href: '/employee/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
+  { href: '/employee/profile', label: 'Profile', icon: User, color: 'text-slate-500' },
+  { href: '/employee/settings', label: 'Settings', icon: Settings, color: 'text-gray-500' },
 ];
 
 export function EmployeeNav() {
@@ -29,7 +30,7 @@ export function EmployeeNav() {
             pathname === item.href && item.href === '/employee/dashboard' && 'bg-muted text-primary'
           )}
         >
-          <item.icon className="h-4 w-4" />
+          <item.icon className={cn("h-4 w-4", item.color)} />
           {item.label}
         </Link>
       ))}
