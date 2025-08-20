@@ -117,15 +117,15 @@ export function EditWebsiteClientPage({ organization, websiteDetails }: { organi
                         <input type="hidden" name="org_id" value={organization.id} />
                         <div className="space-y-2">
                             <Label htmlFor="about">About Section</Label>
-                            <Textarea id="about" name="about" defaultValue={websiteDetails?.About || ''} placeholder="Tell visitors about this organization." rows={4} />
+                            <Textarea id="about" name="about" defaultValue={websiteDetails?.About || ''} placeholder="Tell visitors about this Living Space." rows={4} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="vision">Our Vision Section</Label>
-                            <Textarea id="vision" name="vision" defaultValue={websiteDetails?.Our_vision || ''} placeholder="Describe the vision of the organization." rows={3} />
+                            <Textarea id="vision" name="vision" defaultValue={websiteDetails?.Our_vision || ''} placeholder="Describe the vision of the Living Space." rows={3} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="mission">Our Mission Section</Label>
-                            <Textarea id="mission" name="mission" defaultValue={websiteDetails?.Our_mission || ''} placeholder="Describe the mission of the organization." rows={3} />
+                            <Textarea id="mission" name="mission" defaultValue={websiteDetails?.Our_mission || ''} placeholder="Describe the mission of the Living Space." rows={3} />
                         </div>
                     </CardContent>
                     <CardContent>

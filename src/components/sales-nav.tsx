@@ -10,7 +10,7 @@ import { useSheetContext } from '@/hooks/use-sheet-context';
 
 const navItems = [
   { href: '/sales/dashboard', label: 'Dashboard', icon: BarChart },
-  { href: '/sales/organisations', label: 'Organisations', icon: Building },
+  { href: '/sales/organisations', label: 'Living Spaces', icon: Building },
   { href: '/sales/profile', label: 'Profile', icon: User },
   { href: '/sales/settings', label: 'Settings', icon: Settings },
 ];
