@@ -122,7 +122,7 @@ export function EmployeesClientPage({
                     <Briefcase className="h-8 w-8 text-orange-500" />
                     <div>
                         <h1 className="text-3xl font-bold">Employees</h1>
-                        <p className="text-muted-foreground">Manage employees for your organization.</p>
+                        <p className="text-muted-foreground">Manage employees for your Living Space.</p>
                     </div>
                 </div>
                 <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
@@ -229,7 +229,7 @@ export function EmployeesClientPage({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will remove the employee from this organization. This action cannot be undone.</AlertDialogDescription>
+                        <AlertDialogDescription>This will remove the employee from this Living Space. This action cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>

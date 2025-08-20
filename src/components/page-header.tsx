@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Select,
@@ -69,7 +70,7 @@ function OrganizationSelect() {
       onValueChange={(value) => setSelectedOrgId(parseInt(value))}
     >
       <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Select Organization" />
+        <SelectValue placeholder="Select Living Space" />
       </SelectTrigger>
       <SelectContent>
         {organizations.map((org) => (

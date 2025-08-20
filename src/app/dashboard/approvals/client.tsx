@@ -122,7 +122,7 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
                 <UserCheck className="h-8 w-8 text-cyan-500" />
                 <div>
                     <h1 className="text-3xl font-bold">Pending Approvals</h1>
-                    <p className="text-muted-foreground">Approve or reject requests from users to join your organization.</p>
+                    <p className="text-muted-foreground">Approve or reject requests from users to join your Living Space.</p>
                 </div>
             </div>
             <Card>

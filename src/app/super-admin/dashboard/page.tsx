@@ -1,5 +1,4 @@
 
-
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -139,7 +138,7 @@ export default async function SuperAdminDashboardPage() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <CardTitle>Recent Platform Activity</CardTitle>
-                        <CardDescription>The latest bookings from across all organizations.</CardDescription>
+                        <CardDescription>The latest bookings from across all Living Spaces.</CardDescription>
                     </div>
                     <Button asChild variant="outline" size="sm"><Link href="/super-admin/bookings">View All</Link></Button>
                 </CardHeader>
@@ -149,7 +148,7 @@ export default async function SuperAdminDashboardPage() {
                             <TableRow>
                                 <TableHead>User</TableHead>
                                 <TableHead>Court</TableHead>
-                                <TableHead>Organization</TableHead>
+                                <TableHead>Living Space</TableHead>
                                 <TableHead>Date</TableHead>
                                 <TableHead>Status</TableHead>
                             </TableRow>

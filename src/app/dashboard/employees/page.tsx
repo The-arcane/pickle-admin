@@ -32,7 +32,7 @@ export default async function EmployeesPage() {
   if (!organisationId) {
     return (
         <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-muted-foreground">You are not associated with an organization.</p>
+            <p className="text-muted-foreground">You are not associated with a Living Space.</p>
         </div>
     );
   }

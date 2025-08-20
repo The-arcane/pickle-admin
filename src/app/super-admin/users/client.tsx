@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { PageHeader } from '@/components/page-header';
@@ -82,7 +83,7 @@ export function UsersClientPage({ users, loading }: { users: UserWithRole[], loa
     <>
       <PageHeader
         title="Users"
-        description="Manage all users for the selected organization."
+        description="Manage all users for the selected Living Space."
       />
       <Card>
         <Table>
@@ -149,7 +150,7 @@ export function UsersClientPage({ users, loading }: { users: UserWithRole[], loa
             ) : (
               <TableRow>
                 <TableCell colSpan={4} className="h-24 text-center">
-                  No users found for this organization.
+                  No users found for this Living Space.
                 </TableCell>
               </TableRow>
             )}

@@ -35,7 +35,7 @@ export async function verifyBookingByQrText(qrText: string) {
     const organisationId = orgLink?.organisation_id;
 
     if (!organisationId) {
-        return { error: 'You are not assigned to an organization.' };
+        return { error: 'You are not assigned to a Living Space.' };
     }
 
     if (!qrText) {
@@ -63,7 +63,7 @@ export async function verifyBookingByQrText(qrText: string) {
             .single();
 
         if (fetchError || !booking) {
-            return { error: `Court booking with ID ${qrContentId} not found in your organization.` };
+            return { error: `Court booking with ID ${qrContentId} not found in your Living Space.` };
         }
         
         if (booking.booking_status === completedStatusId) {
@@ -132,7 +132,7 @@ export async function verifyBookingByQrText(qrText: string) {
             .single();
         
         if (fetchError || !eventBooking) {
-            return { error: `Event booking with ID ${qrContentId} not found in your organization.` };
+            return { error: `Event booking with ID ${qrContentId} not found in your Living Space.` };
         }
         
         if (eventBooking.statuss === completedStatusId) {

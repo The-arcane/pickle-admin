@@ -20,7 +20,7 @@ export async function saveChannel(formData: FormData) {
 
     const organisationId = userProfile.user_organisations[0]?.organisation_id;
     if (!organisationId) {
-        return { error: 'You are not associated with any organization.' };
+        return { error: 'You are not associated with any Living Space.' };
     }
 
     const id = formData.get('id') as string | null;
@@ -73,7 +73,7 @@ export async function deleteChannel(formData: FormData) {
     const { data: userProfile } = await supabase.from('user').select('user_organisations(organisation_id)').eq('user_uuid', user.id).single();
     const organisationId = userProfile?.user_organisations[0]?.organisation_id;
 
-    if (!organisationId) return { error: 'Not part of an organization' };
+    if (!organisationId) return { error: 'Not part of a Living Space' };
     
     if (!id) {
         return { error: 'Channel ID is missing.' };

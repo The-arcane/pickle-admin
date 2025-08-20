@@ -35,7 +35,7 @@ export default async function ResidencesPage() {
     if (!organisationId) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
-                <p className="text-muted-foreground">You are not associated with an organization.</p>
+                <p className="text-muted-foreground">You are not associated with a Living Space.</p>
             </div>
         );
     }
@@ -68,7 +68,7 @@ export default async function ResidencesPage() {
                     <Home className="h-8 w-8 text-teal-500" />
                     <div>
                         <h1 className="text-3xl font-bold">Residences</h1>
-                        <p className="text-muted-foreground">Manage and invite residents to your organization.</p>
+                        <p className="text-muted-foreground">Manage and invite residents to your Living Space.</p>
                     </div>
                 </div>
             </div>

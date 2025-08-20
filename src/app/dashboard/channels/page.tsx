@@ -35,7 +35,7 @@ export default async function ChannelsPage() {
     if (!organisationId) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
-                <p className="text-muted-foreground">You are not associated with an organization.</p>
+                <p className="text-muted-foreground">You are not associated with a Living Space.</p>
             </div>
         );
     }
@@ -64,7 +64,7 @@ export default async function ChannelsPage() {
               <Radio className="h-8 w-8 text-indigo-500" />
               <div>
                   <h1 className="text-3xl font-bold">Channels</h1>
-                  <p className="text-muted-foreground">Manage real-time communication channels for your organization.</p>
+                  <p className="text-muted-foreground">Manage real-time communication channels for your Living Space.</p>
               </div>
           </div>
           <ChannelsClientPage initialChannels={channelsData || []} />

@@ -161,7 +161,7 @@ export function EditCoachClientPage({ coach, sports, organisationId }: { coach: 
                     </div>
                     <div className="flex items-center gap-2 rounded-lg border p-4">
                         <Switch id="is_independent" checked={isIndependent} onCheckedChange={setIsIndependent} />
-                        <Label htmlFor="is_independent">Is an independent coach (not exclusive to this organization)?</Label>
+                        <Label htmlFor="is_independent">Is an independent coach (not exclusive to this Living Space)?</Label>
                     </div>
                 </CardContent>
             </Card>

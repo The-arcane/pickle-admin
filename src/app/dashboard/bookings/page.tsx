@@ -20,7 +20,7 @@ export default async function BookingsPage() {
     .single();
 
   if (!adminProfile || !adminProfile.organisation_id) {
-    return redirect('/login?error=Your%20admin%20account%20is%20not%20associated%20with%20an%20organization.');
+    return redirect('/login?error=Your%20admin%20account%20is%20not%20associated%20with%20a%20Living%20Space.');
   }
   
   const organisationId = adminProfile.organisation_id;

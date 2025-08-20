@@ -89,11 +89,11 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
         <div className="flex items-center gap-3">
             <Building className="h-8 w-8 text-orange-500" />
             <div>
-                <h1 className="text-2xl font-bold tracking-tight">Organizations</h1>
-                <p className="text-muted-foreground">View and manage all organizations in the system.</p>
+                <h1 className="text-2xl font-bold tracking-tight">Living Spaces</h1>
+                <p className="text-muted-foreground">View and manage all Living Spaces in the system.</p>
             </div>
         </div>
-        <Button size="sm" className="gap-1" onClick={openAddDialog}><PlusCircle className="h-4 w-4" /> Add Organization</Button>
+        <Button size="sm" className="gap-1" onClick={openAddDialog}><PlusCircle className="h-4 w-4" /> Add Living Space</Button>
       </div>
       <Card className="overflow-hidden">
         <Table>
@@ -148,7 +148,7 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
             ))}
              {organizations.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={5} className="text-center h-24">No organizations found.</TableCell>
+                    <TableCell colSpan={5} className="text-center h-24">No Living Spaces found.</TableCell>
                 </TableRow>
              )}
           </TableBody>
@@ -200,7 +200,7 @@ function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: {
         if (result?.error) {
             toast({ variant: 'destructive', title: 'Error', description: result.error });
         } else {
-            toast({ title: 'Success', description: `Organization ${org ? 'updated' : 'created'} successfully.` });
+            toast({ title: 'Success', description: `Living Space ${org ? 'updated' : 'created'} successfully.` });
             onFinished();
         }
     }
@@ -209,8 +209,8 @@ function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>{org ? 'Edit Organization' : 'Add New Organization'}</DialogTitle>
-                    <DialogDescription>{org ? 'Update details for this organization.' : 'Fill in the details for the new organization.'}</DialogDescription>
+                    <DialogTitle>{org ? 'Edit Living Space' : 'Add New Living Space'}</DialogTitle>
+                    <DialogDescription>{org ? 'Update details for this Living Space.' : 'Fill in the details for the new Living Space.'}</DialogDescription>
                 </DialogHeader>
                 <form ref={formRef} action={handleFormAction} className="grid gap-4 py-4">
                     {org && <input type="hidden" name="id" value={org.id} />}
@@ -236,7 +236,7 @@ function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: {
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                        <Button type="submit">Save Organization</Button>
+                        <Button type="submit">Save Living Space</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

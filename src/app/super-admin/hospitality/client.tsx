@@ -127,7 +127,7 @@ export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
                     <Hotel className="h-8 w-8 text-purple-500" />
                     <div>
                         <h1 className="text-3xl font-bold">Hospitality</h1>
-                        <p className="text-muted-foreground">Manage hospitality-type organizations.</p>
+                        <p className="text-muted-foreground">Manage hospitality-type Living Spaces.</p>
                     </div>
                 </div>
                 <Button onClick={() => setIsAddDialogOpen(true)}>
@@ -139,7 +139,7 @@ export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Organization</TableHead>
+                                <TableHead>Living Space</TableHead>
                                 <TableHead>Admin</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
@@ -185,7 +185,7 @@ export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={4} className="text-center h-24">
-                                        No hospitality organizations found.
+                                        No hospitality Living Spaces found.
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -199,15 +199,15 @@ export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
                     <DialogHeader>
                         <DialogTitle>Add New Hospitality Org</DialogTitle>
                         <DialogDescription>
-                            Create a new hospitality organization and its primary admin user.
+                            Create a new hospitality Living Space and its primary admin user.
                         </DialogDescription>
                     </DialogHeader>
                     <form ref={formRef} action={handleAddFormAction} className="space-y-6 py-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-4 p-4 border rounded-lg">
-                                 <h3 className="font-semibold text-lg">Organization Details</h3>
+                                 <h3 className="font-semibold text-lg">Living Space Details</h3>
                                 <div className="space-y-2">
-                                    <Label htmlFor="org_name">Organization Name</Label>
+                                    <Label htmlFor="org_name">Name</Label>
                                     <Input id="org_name" name="org_name" required />
                                 </div>
                                  <div className="space-y-2">
@@ -252,7 +252,7 @@ export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will remove the hospitality organization. This action cannot be undone.</AlertDialogDescription>
+                        <AlertDialogDescription>This will remove the hospitality Living Space. This action cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>

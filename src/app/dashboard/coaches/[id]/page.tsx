@@ -27,7 +27,7 @@ export default async function EditCoachPage({ params }: { params: { id: string }
     const organisationId = userRecord?.organisation_id;
 
     if (!organisationId) {
-        return <p>You are not associated with an organization.</p>;
+        return <p>You are not associated with a Living Space.</p>;
     }
 
     let coach: Coach | null = null;

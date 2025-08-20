@@ -28,7 +28,7 @@ export default async function ApprovalsPage() {
     if (!organisationId) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
-                <p className="text-muted-foreground">Your admin account is not associated with an organization.</p>
+                <p className="text-muted-foreground">Your admin account is not associated with a Living Space.</p>
             </div>
         );
     }

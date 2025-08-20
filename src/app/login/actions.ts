@@ -44,7 +44,7 @@ export async function login(formData: FormData) {
 
         if (!orgLink?.organisation_id) {
              await supabase.auth.signOut();
-             return redirect(`${loginUrl}?error=${encodeURIComponent('Your account is not associated with an organization.')}`);
+             return redirect(`${loginUrl}?error=${encodeURIComponent('Your account is not associated with a Living Space.')}`);
         }
         
         // For education users, verify the organization type
@@ -58,7 +58,7 @@ export async function login(formData: FormData) {
             // Assuming '2' is the ID for 'education' in organisation_types
             if (orgType?.type !== 2) {
                  await supabase.auth.signOut();
-                 return redirect(`${loginUrl}?error=${encodeURIComponent('Your organization is not configured for the Education panel.')}`);
+                 return redirect(`${loginUrl}?error=${encodeURIComponent('Your Living Space is not configured for the Education panel.')}`);
             }
         }
     }

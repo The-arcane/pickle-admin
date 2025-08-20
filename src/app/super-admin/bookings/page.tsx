@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/page-header';
@@ -77,7 +78,7 @@ export default function BookingsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Bookings"
-        description="View and manage bookings for the selected organization."
+        description="View and manage bookings for the selected Living Space."
       />
       <BookingsClientPage 
         initialCourtBookings={bookings}

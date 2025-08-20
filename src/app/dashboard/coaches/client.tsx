@@ -43,7 +43,7 @@ export function CoachesClientPage({ initialCoaches }: { initialCoaches: Coach[] 
                     <Contact2 className="h-8 w-8 text-rose-500" />
                     <div>
                         <h1 className="text-3xl font-bold">Coaches</h1>
-                        <p className="text-muted-foreground">Manage coaches for your organization.</p>
+                        <p className="text-muted-foreground">Manage coaches for your Living Space.</p>
                     </div>
                 </div>
                 <Button asChild>

@@ -215,7 +215,7 @@ export default async function DashboardPage() {
   if (!orgLink?.organisation_id) {
     return (
         <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-muted-foreground">You are not associated with an organization.</p>
+            <p className="text-muted-foreground">You are not associated with a Living Space.</p>
             <p className="text-sm text-muted-foreground">Please contact support.</p>
         </div>
     );
@@ -237,7 +237,7 @@ export default async function DashboardPage() {
           {organisationLogo && (
             <Image
               src={organisationLogo}
-              alt="Organisation Logo"
+              alt="Living Space Logo"
               width={40}
               height={40}
               className="rounded-md object-cover"

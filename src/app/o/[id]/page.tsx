@@ -68,7 +68,7 @@ export default async function OrganizationPublicPage({ params }: { params: { id:
                             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
                                 {org.name}
                             </h1>
-                            <p className="text-gray-400 mt-1">Public Organization</p>
+                            <p className="text-gray-400 mt-1">Public Living Space</p>
                         </div>
                         <div className="mt-4 sm:mt-0 w-full sm:w-auto">
                             <Button className="bg-teal-500 hover:bg-teal-600 text-white w-full sm:w-auto">Claim the page</Button>

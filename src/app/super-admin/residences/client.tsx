@@ -58,7 +58,7 @@ export function SuperAdminResidencesClient({ initialOrganizations }: { initialOr
         <div className="space-y-6">
             <PageHeader 
                 title="Residences"
-                description="Manage and invite residents for the selected organization."
+                description="Manage and invite residents for the selected Living Space."
             />
             <DashboardResidencesClientPage
                 initialResidences={residences}

@@ -69,7 +69,7 @@ export default async function EmployeeDashboardPage() {
         {organisationLogo && (
             <Image
                 src={organisationLogo}
-                alt="Organisation Logo"
+                alt="Living Space Logo"
                 width={40}
                 height={40}
                 className="rounded-md object-cover"

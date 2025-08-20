@@ -41,7 +41,7 @@ export default async function EmployeeBookingsPage() {
         initialCourtBookings={[]} 
         courtBookingStatuses={[]} 
         courts={[]} 
-        error="You are not currently linked to any organization. Please contact your administrator." 
+        error="You are not currently linked to any Living Space. Please contact your administrator." 
     />;
   }
   
@@ -87,7 +87,3 @@ export default async function EmployeeBookingsPage() {
     courts={courts}
   />;
 }
-
-
-
-

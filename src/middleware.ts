@@ -111,7 +111,7 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - api/ (API routes)
-     * - o/ (Public organization pages)
+     * - o/ (Public Living Space pages)
      * Feel free to modify this pattern to include more paths.
      */
     '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',

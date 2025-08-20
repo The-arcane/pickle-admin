@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -29,7 +30,7 @@ export function CourtsClientPage({ courts, loading }: { courts: Court[], loading
   return (
     <>
       <div className="flex items-center justify-between">
-        <PageHeader title="Courts" description="View and manage courts for the selected organization." />
+        <PageHeader title="Courts" description="View and manage courts for the selected Living Space." />
         <Button asChild>
             <Link href="/super-admin/courts/add">+ Add Court</Link>
         </Button>
@@ -76,7 +77,7 @@ export function CourtsClientPage({ courts, loading }: { courts: Court[], loading
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  No courts found for this organization.
+                  No courts found for this Living Space.
                 </TableCell>
               </TableRow>
             )}
