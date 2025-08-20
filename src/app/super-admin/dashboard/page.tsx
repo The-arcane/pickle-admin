@@ -3,7 +3,7 @@
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, Users, List, PartyPopper, School, Hotel, Home, BarChart2, LineChart as LineChartIcon } from 'lucide-react';
+import { Building, Users, List, PartyPopper, School, Hotel, Home } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
@@ -65,8 +65,8 @@ async function getSuperAdminDashboardData() {
         totalSchools: schoolsRes.count ?? 0,
         totalHospitality: hospitalityRes.count ?? 0,
         totalResidences: residencesRes.count ?? 0,
-        totalUsers: usersRes.count ?? 0,
-        totalCourts: courtsRes.count ?? 0,
+        totalUsers: usersRes.count ?? 0, 
+        totalCourts: courtsRes.count ?? 0, 
         totalEvents: eventsRes.count ?? 0,
         recentBookings: recentBookingsRes.data || [],
         recentUsers: recentUsersRes.data || [],
@@ -119,14 +119,14 @@ export default async function SuperAdminDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat, i) => (
           <Link href={stat.href} key={i}>
-            <Card className="hover:bg-muted/50 transition-colors">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-              </CardContent>
+            <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                  <stat.icon className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-3xl font-bold">{stat.value}</p>
+              </div>
             </Card>
           </Link>
         ))}
@@ -206,3 +206,4 @@ export default async function SuperAdminDashboardPage() {
     </div>
   );
 }
+
