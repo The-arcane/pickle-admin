@@ -3,7 +3,7 @@ import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, List, PartyPopper, School, Hotel, Home, Building, Calendar } from 'lucide-react';
+import { Users, List, PartyPopper, School, Hotel, Home, Building, Calendar, ShieldCheck, TrendingUp, Contact2, Briefcase } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
@@ -31,7 +31,11 @@ async function getSuperAdminDashboardData() {
         eventsRes,
         bookingsRes,
         recentBookingsRes,
-        recentUsersRes
+        recentUsersRes,
+        totalAdminsRes,
+        totalSalesRes,
+        totalCoachesRes,
+        totalEmployeesRes,
     ] = await Promise.all([
         supabase.from('organisations').select('id', { count: 'exact', head: true }),
         supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 2),
@@ -52,7 +56,11 @@ async function getSuperAdminDashboardData() {
           `)
           .order('id', { ascending: false })
           .limit(5),
-        supabase.from('user').select('id, name, email, created_at, profile_image_url').order('created_at', { ascending: false }).limit(5)
+        supabase.from('user').select('id, name, email, created_at, profile_image_url').order('created_at', { ascending: false }).limit(5),
+        supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 2), // Admins
+        supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 6), // Sales
+        supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 5), // Coaches
+        supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 4), // Employees
     ]);
 
     // Error handling
@@ -66,6 +74,10 @@ async function getSuperAdminDashboardData() {
     if(bookingsRes.error) console.error("Error fetching bookings count", bookingsRes.error);
     if(recentBookingsRes.error) console.error("Error fetching recent bookings", recentBookingsRes.error);
     if(recentUsersRes.error) console.error("Error fetching recent users", recentUsersRes.error);
+    if(totalAdminsRes.error) console.error("Error fetching total admins", totalAdminsRes.error);
+    if(totalSalesRes.error) console.error("Error fetching total sales", totalSalesRes.error);
+    if(totalCoachesRes.error) console.error("Error fetching total coaches", totalCoachesRes.error);
+    if(totalEmployeesRes.error) console.error("Error fetching total employees", totalEmployeesRes.error);
 
     return {
         totalLivingSpaces: totalOrgsRes.count ?? 0,
@@ -76,6 +88,10 @@ async function getSuperAdminDashboardData() {
         totalCourts: courtsRes.count ?? 0, 
         totalEvents: eventsRes.count ?? 0,
         totalBookings: bookingsRes.count ?? 0,
+        totalAdmins: totalAdminsRes.count ?? 0,
+        totalSales: totalSalesRes.count ?? 0,
+        totalCoaches: totalCoachesRes.count ?? 0,
+        totalEmployees: totalEmployeesRes.count ?? 0,
         recentBookings: recentBookingsRes.data || [],
         recentUsers: recentUsersRes.data || [],
     }
@@ -108,6 +124,10 @@ export default async function SuperAdminDashboardPage() {
       totalCourts, 
       totalEvents,
       totalBookings,
+      totalAdmins,
+      totalSales,
+      totalCoaches,
+      totalEmployees,
       recentBookings,
       recentUsers,
     } = await getSuperAdminDashboardData();
@@ -124,6 +144,13 @@ export default async function SuperAdminDashboardPage() {
       { label: 'Total Courts', value: totalCourts, icon: List, href: '/super-admin/courts', color: 'text-amber-500' },
       { label: 'Total Bookings', value: totalBookings, icon: Calendar, href: '/super-admin/bookings', color: 'text-rose-500' },
       { label: 'Total Events', value: totalEvents, icon: PartyPopper, href: '/super-admin/events', color: 'text-pink-500' },
+  ];
+
+  const platformDataStats = [
+      { label: 'Total Admins', value: totalAdmins, icon: ShieldCheck, href: '/super-admin/admins', color: 'text-red-500' },
+      { label: 'Total Sales People', value: totalSales, icon: TrendingUp, href: '/super-admin/sales', color: 'text-green-500' },
+      { label: 'Total Coaches', value: totalCoaches, icon: Contact2, href: '#', color: 'text-rose-500' },
+      { label: 'Total Employees', value: totalEmployees, icon: Briefcase, href: '#', color: 'text-orange-500' },
   ];
 
   return (
@@ -156,6 +183,27 @@ export default async function SuperAdminDashboardPage() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {operationalStats.map((stat, i) => (
+          <Link href={stat.href} key={i}>
+            <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
+              <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                  <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
+              </div>
+              <div>
+                <p className="text-3xl font-bold">{stat.value}</p>
+              </div>
+            </Card>
+          </Link>
+        ))}
+      </div>
+      
+      <div>
+          <h2 className="text-2xl font-bold tracking-tight">Platform Data</h2>
+          <p className="text-muted-foreground">An overview of all platform-wide user roles.</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {platformDataStats.map((stat, i) => (
           <Link href={stat.href} key={i}>
             <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
               <div className="flex items-center justify-between">
