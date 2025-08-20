@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 type SalesDashboardData = {
     inactiveOrganisations: number;
@@ -51,7 +53,7 @@ export default function SalesDashboardPage() {
   }, [supabase, router]);
   
   const statCards = data ? [
-      { label: 'Inactive Organizations', value: data.inactiveOrganisations, icon: Building },
+      { label: 'Inactive Living Spaces', value: data.inactiveOrganisations, icon: Building, href: '/sales/organisations', color: 'text-orange-500' },
   ] : [];
 
   return (
@@ -67,26 +69,29 @@ export default function SalesDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {loading ? (
             Array.from({length: 1}).map((_, i) => (
-                <Card key={i}>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Loading...</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">...</div>
-                    </CardContent>
+                <Card key={i} className="p-4">
+                    <div className="flex items-center justify-between">
+                        <div className="h-4 w-24 bg-muted rounded-md" />
+                        <div className="h-6 w-6 bg-muted rounded-md" />
+                    </div>
+                    <div>
+                        <div className="h-8 w-12 bg-muted rounded-md mt-2" />
+                    </div>
                 </Card>
             ))
         ) : (
             statCards.map((stat, i) => (
-                <Card key={i}>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
-                    <stat.icon className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stat.value}</div>
-                  </CardContent>
-                </Card>
+                <Link href={stat.href} key={i}>
+                    <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                        <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
+                    </div>
+                    <div>
+                        <p className="text-3xl font-bold">{stat.value}</p>
+                    </div>
+                    </Card>
+              </Link>
             ))
         )}
       </div>
