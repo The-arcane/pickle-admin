@@ -9,7 +9,7 @@ import { useSheetContext } from '@/hooks/use-sheet-context';
 
 const navItems = [
   { href: '/super-admin/dashboard', label: 'Dashboard', icon: BarChart, color: 'text-sky-500' },
-  { href: '/super-admin/organisations', label: 'Organizations', icon: Building, color: 'text-orange-500' },
+  { href: '/super-admin/organisations', label: 'Living Spaces', icon: Building, color: 'text-orange-500' },
   { href: '/super-admin/schools', label: 'Schools', icon: School, color: 'text-blue-500' },
   { href: '/super-admin/hospitality', label: 'Hospitality', icon: Hotel, color: 'text-purple-500' },
   { href: '/super-admin/users', label: 'Users', icon: Users, color: 'text-violet-500' },
