@@ -340,17 +340,17 @@ export default async function DashboardPage() {
         </div>
 
         <div className="space-y-6">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Event Enrolments</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalEnrolments}</div>
-                    <p className="text-xs text-muted-foreground">
-                        Total attendees for all confirmed events.
-                    </p>
-                </CardContent>
+            <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">Total Event Enrolments</p>
+                <Users className="h-6 w-6 text-muted-foreground text-violet-500" />
+              </div>
+              <div>
+                <p className="text-3xl font-bold">{stats.totalEnrolments}</p>
+                 <p className="text-xs text-muted-foreground">
+                    Confirmed attendees for all events.
+                </p>
+              </div>
             </Card>
           <Card>
             <CardHeader>
