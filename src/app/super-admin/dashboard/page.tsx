@@ -3,7 +3,7 @@ import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, List, PartyPopper, School, Hotel, Home, Building } from 'lucide-react';
+import { Users, List, PartyPopper, School, Hotel, Home, Building, Calendar } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
@@ -29,6 +29,7 @@ async function getSuperAdminDashboardData() {
         usersRes,
         courtsRes,
         eventsRes,
+        bookingsRes,
         recentBookingsRes,
         recentUsersRes
     ] = await Promise.all([
@@ -39,6 +40,7 @@ async function getSuperAdminDashboardData() {
         supabase.from('user').select('id', { count: 'exact', head: true }),
         supabase.from('courts').select('id', { count: 'exact', head: true }),
         supabase.from('events').select('id', { count: 'exact', head: true }),
+        supabase.from('bookings').select('id', { count: 'exact', head: true }),
         supabase
           .from('bookings')
           .select(`
@@ -61,6 +63,7 @@ async function getSuperAdminDashboardData() {
     if(usersRes.error) console.error("Error fetching users count", usersRes.error);
     if(courtsRes.error) console.error("Error fetching courts count", courtsRes.error);
     if(eventsRes.error) console.error("Error fetching events count", eventsRes.error);
+    if(bookingsRes.error) console.error("Error fetching bookings count", bookingsRes.error);
     if(recentBookingsRes.error) console.error("Error fetching recent bookings", recentBookingsRes.error);
     if(recentUsersRes.error) console.error("Error fetching recent users", recentUsersRes.error);
 
@@ -72,6 +75,7 @@ async function getSuperAdminDashboardData() {
         totalUsers: usersRes.count ?? 0, 
         totalCourts: courtsRes.count ?? 0, 
         totalEvents: eventsRes.count ?? 0,
+        totalBookings: bookingsRes.count ?? 0,
         recentBookings: recentBookingsRes.data || [],
         recentUsers: recentUsersRes.data || [],
     }
@@ -103,16 +107,23 @@ export default async function SuperAdminDashboardPage() {
       totalUsers, 
       totalCourts, 
       totalEvents,
+      totalBookings,
       recentBookings,
       recentUsers,
     } = await getSuperAdminDashboardData();
   
-  const statCards = [
+  const livingSpaceStats = [
       { label: 'Total Living Spaces', value: totalLivingSpaces, icon: Building, href: '/super-admin/organisations', color: 'text-orange-500' },
       { label: 'Total Schools', value: totalSchools, icon: School, href: '/super-admin/schools', color: 'text-blue-500' },
       { label: 'Total Hospitality', value: totalHospitality, icon: Hotel, href: '/super-admin/hospitality', color: 'text-purple-500' },
       { label: 'Total Residences', value: totalResidences, icon: Home, href: '/super-admin/residences', color: 'text-teal-500' },
       { label: 'Total Users', value: totalUsers, icon: Users, href: '/super-admin/users', color: 'text-violet-500' },
+  ];
+  
+  const operationalStats = [
+      { label: 'Total Courts', value: totalCourts, icon: List, href: '/super-admin/courts', color: 'text-amber-500' },
+      { label: 'Total Bookings', value: totalBookings, icon: Calendar, href: '/super-admin/bookings', color: 'text-rose-500' },
+      { label: 'Total Events', value: totalEvents, icon: PartyPopper, href: '/super-admin/events', color: 'text-pink-500' },
   ];
 
   return (
@@ -123,9 +134,30 @@ export default async function SuperAdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {statCards.map((stat, i) => (
+        {livingSpaceStats.map((stat, i) => (
           <Link href={stat.href} key={i}>
-            <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between">
+            <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
+              <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                  <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
+              </div>
+              <div>
+                <p className="text-3xl font-bold">{stat.value}</p>
+              </div>
+            </Card>
+          </Link>
+        ))}
+      </div>
+      
+      <div>
+          <h2 className="text-2xl font-bold tracking-tight">Operational Data</h2>
+          <p className="text-muted-foreground">An overview of all operational metrics.</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {operationalStats.map((stat, i) => (
+          <Link href={stat.href} key={i}>
+            <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
               <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
                   <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
