@@ -9,7 +9,7 @@ import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
-import { BarChart, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Bar, Line } from 'recharts';
+import { BarChart as RechartsBarChart, LineChart as RechartsLineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Bar, Line } from 'recharts';
 
 const bookingStatusMap: { [key: number]: string } = {
   0: 'Cancelled',
@@ -148,14 +148,14 @@ export default async function SuperAdminDashboardPage() {
             <CardContent>
                 <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dailyStats}>
+                        <RechartsBarChart data={dailyStats}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
                             <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                             <Tooltip />
                             <Legend />
                             <Bar dataKey="new_users_count" fill="#8884d8" name="New Users" />
-                        </BarChart>
+                        </RechartsBarChart>
                     </ResponsiveContainer>
                 </div>
             </CardContent>
@@ -167,14 +167,14 @@ export default async function SuperAdminDashboardPage() {
             <CardContent>
                 <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={dailyStats}>
+                        <RechartsLineChart data={dailyStats}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
                             <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                             <Tooltip />
                             <Legend />
                             <Line type="monotone" dataKey="total_bookings_count" stroke="#82ca9d" name="Bookings" />
-                        </LineChart>
+                        </RechartsLineChart>
                     </ResponsiveContainer>
                 </div>
             </CardContent>
