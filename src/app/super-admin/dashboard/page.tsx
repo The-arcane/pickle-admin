@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/status-badge';
+import { cn } from '@/lib/utils';
 
 
 const bookingStatusMap: { [key: number]: string } = {
