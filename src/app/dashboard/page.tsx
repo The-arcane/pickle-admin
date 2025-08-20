@@ -226,6 +226,7 @@ export default async function DashboardPage() {
   
   const statCards = [
     { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar, color: 'text-sky-500' },
+    { label: 'Total Event Enrolments', value: stats.totalEnrolments, icon: Users, color: 'text-violet-500', description: 'Confirmed attendees for all events.'},
     { label: 'Total Revenue', value: `₹${stats.totalRevenue.toLocaleString('en-IN')}`, icon: BarChartHorizontal, color: 'text-green-500' },
     { label: 'Total Courts', value: stats.totalCourts, icon: List, color: 'text-amber-500' },
     { label: 'Total Events', value: stats.totalEventsCount, icon: PartyPopper, color: 'text-pink-500' },
@@ -255,7 +256,7 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {statCards.map((stat, i) => (
           <Card key={i} className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
             <div className="flex items-center justify-between">
@@ -264,6 +265,7 @@ export default async function DashboardPage() {
             </div>
             <div>
               <p className="text-3xl font-bold">{stat.value}</p>
+               {stat.description && <p className="text-xs text-muted-foreground">{stat.description}</p>}
             </div>
           </Card>
         ))}
@@ -340,18 +342,6 @@ export default async function DashboardPage() {
         </div>
 
         <div className="space-y-6">
-            <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-muted-foreground">Total Event Enrolments</p>
-                <Users className="h-6 w-6 text-muted-foreground text-violet-500" />
-              </div>
-              <div>
-                <p className="text-3xl font-bold">{stats.totalEnrolments}</p>
-                 <p className="text-xs text-muted-foreground">
-                    Confirmed attendees for all events.
-                </p>
-              </div>
-            </Card>
           <Card>
             <CardHeader>
               <CardTitle>Customer Feedback</CardTitle>
