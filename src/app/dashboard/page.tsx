@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 const statusMap: { [key: number]: string } = {
   0: 'Cancelled',
@@ -224,10 +225,10 @@ export default async function DashboardPage() {
   const { recentBookings, stats, feedback, upcomingEvents, error, organisationLogo } = await getDashboardData(orgLink.organisation_id);
   
   const statCards = [
-    { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar },
-    { label: 'Total Revenue', value: `₹${stats.totalRevenue.toLocaleString('en-IN')}`, icon: BarChartHorizontal },
-    { label: 'Total Courts', value: stats.totalCourts, icon: List },
-    { label: 'Total Events', value: stats.totalEventsCount, icon: PartyPopper },
+    { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar, color: 'text-sky-500' },
+    { label: 'Total Revenue', value: `₹${stats.totalRevenue.toLocaleString('en-IN')}`, icon: BarChartHorizontal, color: 'text-green-500' },
+    { label: 'Total Courts', value: stats.totalCourts, icon: List, color: 'text-amber-500' },
+    { label: 'Total Events', value: stats.totalEventsCount, icon: PartyPopper, color: 'text-pink-500' },
   ];
 
   return (
@@ -256,14 +257,14 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {statCards.map((stat, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.label}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-            </CardContent>
+          <Card key={i} className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
+            <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
+            </div>
+            <div>
+              <p className="text-3xl font-bold">{stat.value}</p>
+            </div>
           </Card>
         ))}
       </div>
