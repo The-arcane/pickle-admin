@@ -3,14 +3,15 @@
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, Users, List, PartyPopper, School, Hotel, Home, LineChart as ChartIcon, BarChart2 } from 'lucide-react';
+import { Building, Users, List, PartyPopper, School, Hotel, Home, BarChart2, LineChart as LineChartIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
-import { BarChart, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Bar, Line } from 'recharts';
+import { DashboardCharts } from '@/components/dashboard-charts';
+
 
 const bookingStatusMap: { [key: number]: string } = {
   0: 'Cancelled',
@@ -141,46 +142,7 @@ export default async function SuperAdminDashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><BarChart2 className="h-5 w-5" />New Users (Last 7 Days)</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dailyStats}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                            <Tooltip />
-                            <Legend />
-                            <Bar dataKey="new_users_count" fill="#8884d8" name="New Users" />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </CardContent>
-        </Card>
-         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><ChartIcon className="h-5 w-5" />Bookings (Last 7 Days)</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={dailyStats}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                            <Tooltip />
-                            <Legend />
-                            <Line type="monotone" dataKey="total_bookings_count" stroke="#82ca9d" name="Bookings" />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
-            </CardContent>
-        </Card>
-      </div>
+      <DashboardCharts dailyStats={dailyStats} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
