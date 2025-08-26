@@ -1,107 +1,115 @@
--- Enable RLS for all specified tables
-ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.event_bookings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.shifts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_profile ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.court_reviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.community_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.approvals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.post ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.package_bookings ENABLE ROW LEVEL SECURITY;
+-- Helper function to get the integer user ID of the currently authenticated user
+CREATE OR REPLACE FUNCTION get_my_user_id()
+RETURNS int AS $$
+DECLARE
+    my_user_id int;
+BEGIN
+    SELECT id INTO my_user_id
+    FROM "user"
+    WHERE user_uuid = auth.uid();
+    RETURN my_user_id;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-
--- Drop existing policies to avoid conflicts
-DROP POLICY IF EXISTS "residence_user_access_bookings" ON public.bookings;
-DROP POLICY IF EXISTS "residence_user_access_event_bookings" ON public.event_bookings;
-DROP POLICY IF EXISTS "residence_user_access_shifts" ON public.shifts;
-DROP POLICY IF EXISTS "residence_user_access_transactions" ON public.transactions;
-DROP POLICY IF EXISTS "residence_user_access_user_profile" ON public.user_profile;
-DROP POLICY IF EXISTS "residence_user_access_court_reviews" ON public.court_reviews;
-DROP POLICY IF EXISTS "residence_user_access_community_messages" ON public.community_messages;
-DROP POLICY IF EXISTS "residence_user_access_approvals" ON public.approvals;
-DROP POLICY IF EXISTS "residence_user_access_post" ON public.post;
-DROP POLICY IF EXISTS "residence_user_access_package_bookings" ON public.package_bookings;
+-- Enable RLS on all tables
+ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE event_bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shifts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_profile ENABLE ROW LEVEL SECURITY;
+ALTER TABLE court_reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE community_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE approvals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post ENABLE ROW LEVEL SECURITY;
+ALTER TABLE package_bookings ENABLE ROW LEVEL SECURITY;
 
 
 -- Create policies for residence users (user_type = 1)
-
--- Bookings Table
-CREATE POLICY "residence_user_access_bookings"
-ON public.bookings
+-- Bookings
+DROP POLICY IF EXISTS "Allow residence user full access on bookings" ON bookings;
+CREATE POLICY "Allow residence user full access on bookings" ON bookings
 FOR ALL
 TO authenticated
-USING (get_my_user_type() = 1 AND user_id = auth.uid())
-WITH CHECK (get_my_user_type() = 1 AND user_id = auth.uid());
+USING (get_my_user_type() = 1 AND user_id = get_my_user_id())
+WITH CHECK (get_my_user_type() = 1 AND user_id = get_my_user_id());
 
--- Event Bookings Table
-CREATE POLICY "residence_user_access_event_bookings"
-ON public.event_bookings
+-- Event Bookings
+DROP POLICY IF EXISTS "Allow residence user full access on event_bookings" ON event_bookings;
+CREATE POLICY "Allow residence user full access on event_bookings" ON event_bookings
 FOR ALL
 TO authenticated
-USING (get_my_user_type() = 1 AND user_id = auth.uid())
-WITH CHECK (get_my_user_type() = 1 AND user_id = auth.uid());
+USING (get_my_user_type() = 1 AND user_id = get_my_user_id())
+WITH CHECK (get_my_user_type() = 1 AND user_id = get_my_user_id());
 
--- Shifts Table (Assuming it's user-specific, might need adjustment based on logic)
-CREATE POLICY "residence_user_access_shifts"
-ON public.shifts
+-- Shifts (Assuming this relates to user shifts, adjust if logic is different)
+DROP POLICY IF EXISTS "Allow residence user full access on shifts" ON shifts;
+CREATE POLICY "Allow residence user full access on shifts" ON shifts
 FOR ALL
 TO authenticated
 USING (get_my_user_type() = 1)
 WITH CHECK (get_my_user_type() = 1);
 
--- Transactions Table
-CREATE POLICY "residence_user_access_transactions"
-ON public.transactions
+-- Transactions
+DROP POLICY IF EXISTS "Allow residence user full access on transactions" ON transactions;
+CREATE POLICY "Allow residence user full access on transactions" ON transactions
 FOR ALL
 TO authenticated
-USING (get_my_user_type() = 1) -- Simplified, might need user_id check depending on schema
+USING (
+    get_my_user_type() = 1 AND
+    EXISTS (
+        SELECT 1 FROM bookings b
+        WHERE b.id = transactions.reference_id AND b.user_id = get_my_user_id()
+    )
+)
 WITH CHECK (get_my_user_type() = 1);
 
--- User Profile Table
-CREATE POLICY "residence_user_access_user_profile"
-ON public.user_profile
+-- User Profile
+DROP POLICY IF EXISTS "Allow residence user full access on user_profile" ON user_profile;
+CREATE POLICY "Allow residence user full access on user_profile" ON user_profile
 FOR ALL
 TO authenticated
-USING (get_my_user_type() = 1 AND id = auth.uid())
-WITH CHECK (get_my_user_type() = 1 AND id = auth.uid());
+USING (get_my_user_type() = 1 AND id = get_my_user_id())
+WITH CHECK (get_my_user_type() = 1 AND id = get_my_user_id());
 
--- Court Reviews Table
-CREATE POLICY "residence_user_access_court_reviews"
-ON public.court_reviews
+-- Court Reviews
+DROP POLICY IF EXISTS "Allow residence user full access on court_reviews" ON court_reviews;
+CREATE POLICY "Allow residence user full access on court_reviews" ON court_reviews
 FOR ALL
 TO authenticated
-USING (get_my_user_type() = 1) -- Simplified, assuming reviewer name/id is checked elsewhere
-WITH CHECK (get_my_user_type() = 1);
+USING (get_my_user_type() = 1) -- Users can see all reviews, but only manage their own
+WITH CHECK (get_my_user_type() = 1); -- This needs to be more specific if users can add reviews. Assuming no direct user_id link here.
 
--- Community Messages Table
-CREATE POLICY "residence_user_access_community_messages"
-ON public.community_messages
+-- Community Messages
+DROP POLICY IF EXISTS "Allow residence user access on community_messages" ON community_messages;
+CREATE POLICY "Allow residence user access on community_messages" ON community_messages
 FOR ALL
 TO authenticated
-USING (get_my_user_type() = 1 AND sender_id = auth.uid())
-WITH CHECK (get_my_user_type() = 1 AND sender_id = auth.uid());
+USING (get_my_user_type() = 1)
+WITH CHECK (get_my_user_type() = 1 AND sender_id = get_my_user_id());
 
--- Approvals Table
-CREATE POLICY "residence_user_access_approvals"
-ON public.approvals
+-- Approvals
+DROP POLICY IF EXISTS "Allow residence user full access on approvals" ON approvals;
+CREATE POLICY "Allow residence user full access on approvals" ON approvals
 FOR ALL
 TO authenticated
-USING (get_my_user_type() = 1 AND user_id = auth.uid())
-WITH CHECK (get_my_user_type() = 1 AND user_id = auth.uid());
+USING (get_my_user_type() = 1 AND user_id = get_my_user_id())
+WITH CHECK (get_my_user_type() = 1 AND user_id = get_my_user_id());
 
--- Post Table
-CREATE POLICY "residence_user_access_post"
-ON public.post
+-- Posts
+DROP POLICY IF EXISTS "Allow residence user full access on post" ON post;
+CREATE POLICY "Allow residence user full access on post" ON post
 FOR ALL
 TO authenticated
-USING (get_my_user_type() = 1 AND created_by_user_id = auth.uid())
-WITH CHECK (get_my_user_type() = 1 AND created_by_user_id = auth.uid());
+USING (get_my_user_type() = 1 AND created_by_user_id = get_my_user_id())
+WITH CHECK (get_my_user_type() = 1 AND created_by_user_id = get_my_user_id());
 
--- Package Bookings Table
-CREATE POLICY "residence_user_access_package_bookings"
-ON public.package_bookings
+-- Package Bookings
+DROP POLICY IF EXISTS "Allow residence user full access on package_bookings" ON package_bookings;
+CREATE POLICY "Allow residence user full access on package_bookings" ON package_bookings
 FOR ALL
 TO authenticated
-USING (get_my_user_type() = 1 AND user_id = auth.uid())
-WITH CHECK (get_my_user_type() = 1 AND user_id = auth.uid());
+USING (get_my_user_type() = 1 AND user_id = get_my_user_id())
+WITH CHECK (get_my_user_type() = 1 AND user_id = get_my_user_id());
