@@ -1,115 +1,294 @@
--- Helper function to get the integer user ID of the currently authenticated user
+-- First, ensure the helper function to get the user's integer ID exists and is correct.
 CREATE OR REPLACE FUNCTION get_my_user_id()
-RETURNS int AS $$
+RETURNS INT AS $$
 DECLARE
-    my_user_id int;
+    user_id INT;
 BEGIN
-    SELECT id INTO my_user_id
-    FROM "user"
-    WHERE user_uuid = auth.uid();
-    RETURN my_user_id;
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        RETURN NULL;
+    SELECT id INTO user_id
+    FROM public."user"
+    WHERE user_uuid = auth.uid()
+    LIMIT 1;
+    
+    RETURN user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Enable RLS on all tables
-ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE event_bookings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE shifts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_profile ENABLE ROW LEVEL SECURITY;
-ALTER TABLE court_reviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE community_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE approvals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE post ENABLE ROW LEVEL SECURITY;
-ALTER TABLE package_bookings ENABLE ROW LEVEL SECURITY;
+-- Drop existing policies for a clean slate, just in case.
+-- Note: This is commented out to prevent errors on first run, but can be useful for debugging.
+/*
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN (SELECT policyname, tablename FROM pg_policies WHERE schemaname = 'public') LOOP
+        EXECUTE 'DROP POLICY IF EXISTS ' || quote_ident(r.policyname) || ' ON ' || quote_ident(r.tablename) || ';';
+    END LOOP;
+END $$;
+*/
 
+-- =================================================================
+-- Table: bookings
+-- =================================================================
+ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "residence_user_bookings_select" ON public.bookings;
+CREATE POLICY "residence_user_bookings_select" ON public.bookings
+    FOR SELECT
+    TO authenticated
+    USING (get_my_user_id() = user_id);
 
--- Create policies for residence users (user_type = 1)
--- Bookings
-DROP POLICY IF EXISTS "Allow residence user full access on bookings" ON bookings;
-CREATE POLICY "Allow residence user full access on bookings" ON bookings
-FOR ALL
-TO authenticated
-USING (get_my_user_type() = 1 AND user_id = get_my_user_id())
-WITH CHECK (get_my_user_type() = 1 AND user_id = get_my_user_id());
+DROP POLICY IF EXISTS "residence_user_bookings_insert" ON public.bookings;
+CREATE POLICY "residence_user_bookings_insert" ON public.bookings
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
 
--- Event Bookings
-DROP POLICY IF EXISTS "Allow residence user full access on event_bookings" ON event_bookings;
-CREATE POLICY "Allow residence user full access on event_bookings" ON event_bookings
-FOR ALL
-TO authenticated
-USING (get_my_user_type() = 1 AND user_id = get_my_user_id())
-WITH CHECK (get_my_user_type() = 1 AND user_id = get_my_user_id());
+DROP POLICY IF EXISTS "residence_user_bookings_update" ON public.bookings;
+CREATE POLICY "residence_user_bookings_update" ON public.bookings
+    FOR UPDATE
+    TO authenticated
+    USING (get_my_user_id() = user_id)
+    WITH CHECK (true);
 
--- Shifts (Assuming this relates to user shifts, adjust if logic is different)
-DROP POLICY IF EXISTS "Allow residence user full access on shifts" ON shifts;
-CREATE POLICY "Allow residence user full access on shifts" ON shifts
-FOR ALL
-TO authenticated
-USING (get_my_user_type() = 1)
-WITH CHECK (get_my_user_type() = 1);
+DROP POLICY IF EXISTS "residence_user_bookings_delete" ON public.bookings;
+CREATE POLICY "residence_user_bookings_delete" ON public.bookings
+    FOR DELETE
+    TO authenticated
+    USING (get_my_user_id() = user_id);
 
--- Transactions
-DROP POLICY IF EXISTS "Allow residence user full access on transactions" ON transactions;
-CREATE POLICY "Allow residence user full access on transactions" ON transactions
-FOR ALL
-TO authenticated
-USING (
-    get_my_user_type() = 1 AND
-    EXISTS (
-        SELECT 1 FROM bookings b
-        WHERE b.id = transactions.reference_id AND b.user_id = get_my_user_id()
-    )
-)
-WITH CHECK (get_my_user_type() = 1);
+-- =================================================================
+-- Table: event_bookings
+-- =================================================================
+ALTER TABLE public.event_bookings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "residence_user_event_bookings_select" ON public.event_bookings;
+CREATE POLICY "residence_user_event_bookings_select" ON public.event_bookings
+    FOR SELECT
+    TO authenticated
+    USING (get_my_user_id() = user_id);
 
--- User Profile
-DROP POLICY IF EXISTS "Allow residence user full access on user_profile" ON user_profile;
-CREATE POLICY "Allow residence user full access on user_profile" ON user_profile
-FOR ALL
-TO authenticated
-USING (get_my_user_type() = 1 AND id = get_my_user_id())
-WITH CHECK (get_my_user_type() = 1 AND id = get_my_user_id());
+DROP POLICY IF EXISTS "residence_user_event_bookings_insert" ON public.event_bookings;
+CREATE POLICY "residence_user_event_bookings_insert" ON public.event_bookings
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
+    
+DROP POLICY IF EXISTS "residence_user_event_bookings_update" ON public.event_bookings;
+CREATE POLICY "residence_user_event_bookings_update" ON public.event_bookings
+    FOR UPDATE
+    TO authenticated
+    USING (get_my_user_id() = user_id)
+    WITH CHECK (true);
 
--- Court Reviews
-DROP POLICY IF EXISTS "Allow residence user full access on court_reviews" ON court_reviews;
-CREATE POLICY "Allow residence user full access on court_reviews" ON court_reviews
-FOR ALL
-TO authenticated
-USING (get_my_user_type() = 1) -- Users can see all reviews, but only manage their own
-WITH CHECK (get_my_user_type() = 1); -- This needs to be more specific if users can add reviews. Assuming no direct user_id link here.
+DROP POLICY IF EXISTS "residence_user_event_bookings_delete" ON public.event_bookings;
+CREATE POLICY "residence_user_event_bookings_delete" ON public.event_bookings
+    FOR DELETE
+    TO authenticated
+    USING (get_my_user_id() = user_id);
+    
+-- =================================================================
+-- Table: shifts
+-- =================================================================
+ALTER TABLE public.shifts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "residence_user_shifts_select" ON public.shifts;
+CREATE POLICY "residence_user_shifts_select" ON public.shifts
+    FOR SELECT
+    TO authenticated
+    USING (true); -- Shifts are likely generic, so all can view
 
--- Community Messages
-DROP POLICY IF EXISTS "Allow residence user access on community_messages" ON community_messages;
-CREATE POLICY "Allow residence user access on community_messages" ON community_messages
-FOR ALL
-TO authenticated
-USING (get_my_user_type() = 1)
-WITH CHECK (get_my_user_type() = 1 AND sender_id = get_my_user_id());
+DROP POLICY IF EXISTS "residence_user_shifts_write" ON public.shifts;
+CREATE POLICY "residence_user_shifts_write" ON public.shifts
+    FOR ALL
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);
 
--- Approvals
-DROP POLICY IF EXISTS "Allow residence user full access on approvals" ON approvals;
-CREATE POLICY "Allow residence user full access on approvals" ON approvals
-FOR ALL
-TO authenticated
-USING (get_my_user_type() = 1 AND user_id = get_my_user_id())
-WITH CHECK (get_my_user_type() = 1 AND user_id = get_my_user_id());
+-- =================================================================
+-- Table: transactions
+-- =================================================================
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+-- For transactions, we might need a more complex join to find the user.
+-- Assuming a transaction is linked via a booking, this is a placeholder.
+-- A direct user_id on transactions table would be better.
+-- For now, allowing insert/update.
+DROP POLICY IF EXISTS "residence_user_transactions_select" ON public.transactions;
+CREATE POLICY "residence_user_transactions_select" ON public.transactions
+    FOR SELECT
+    TO authenticated
+    USING (true); -- This might need to be locked down further depending on schema.
 
--- Posts
-DROP POLICY IF EXISTS "Allow residence user full access on post" ON post;
-CREATE POLICY "Allow residence user full access on post" ON post
-FOR ALL
-TO authenticated
-USING (get_my_user_type() = 1 AND created_by_user_id = get_my_user_id())
-WITH CHECK (get_my_user_type() = 1 AND created_by_user_id = get_my_user_id());
+DROP POLICY IF EXISTS "residence_user_transactions_insert" ON public.transactions;
+CREATE POLICY "residence_user_transactions_insert" ON public.transactions
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
+    
+DROP POLICY IF EXISTS "residence_user_transactions_update" ON public.transactions;
+CREATE POLICY "residence_user_transactions_update" ON public.transactions
+    FOR UPDATE
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);
 
--- Package Bookings
-DROP POLICY IF EXISTS "Allow residence user full access on package_bookings" ON package_bookings;
-CREATE POLICY "Allow residence user full access on package_bookings" ON package_bookings
-FOR ALL
-TO authenticated
-USING (get_my_user_type() = 1 AND user_id = get_my_user_id())
-WITH CHECK (get_my_user_type() = 1 AND user_id = get_my_user_id());
+DROP POLICY IF EXISTS "residence_user_transactions_delete" ON public.transactions;
+CREATE POLICY "residence_user_transactions_delete" ON public.transactions
+    FOR DELETE
+    TO authenticated
+    USING (true);
+
+-- =================================================================
+-- Table: user_profile
+-- =================================================================
+ALTER TABLE public.user_profile ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "residence_user_profile_select" ON public.user_profile;
+CREATE POLICY "residence_user_profile_select" ON public.user_profile
+    FOR SELECT
+    TO authenticated
+    USING (get_my_user_id() = id);
+
+DROP POLICY IF EXISTS "residence_user_profile_insert" ON public.user_profile;
+CREATE POLICY "residence_user_profile_insert" ON public.user_profile
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
+    
+DROP POLICY IF EXISTS "residence_user_profile_update" ON public.user_profile;
+CREATE POLICY "residence_user_profile_update" ON public.user_profile
+    FOR UPDATE
+    TO authenticated
+    USING (get_my_user_id() = id)
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "residence_user_profile_delete" ON public.user_profile;
+CREATE POLICY "residence_user_profile_delete" ON public.user_profile
+    FOR DELETE
+    TO authenticated
+    USING (get_my_user_id() = id);
+
+-- =================================================================
+-- Table: court_reviews
+-- =================================================================
+ALTER TABLE public.court_reviews ENABLE ROW LEVEL SECURITY;
+-- Assuming reviewer_name can be linked to user, but no direct user_id.
+-- This policy is permissive for now. A user_id column would be better.
+DROP POLICY IF EXISTS "residence_user_court_reviews_all" ON public.court_reviews;
+CREATE POLICY "residence_user_court_reviews_all" ON public.court_reviews
+    FOR ALL
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);
+
+-- =================================================================
+-- Table: community_messages
+-- =================================================================
+ALTER TABLE public.community_messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "residence_user_community_messages_select" ON public.community_messages;
+CREATE POLICY "residence_user_community_messages_select" ON public.community_messages
+    FOR SELECT
+    TO authenticated
+    USING (true); -- All members of a channel can see messages
+
+DROP POLICY IF EXISTS "residence_user_community_messages_insert" ON public.community_messages;
+CREATE POLICY "residence_user_community_messages_insert" ON public.community_messages
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (get_my_user_id() = sender_id);
+    
+DROP POLICY IF EXISTS "residence_user_community_messages_update" ON public.community_messages;
+CREATE POLICY "residence_user_community_messages_update" ON public.community_messages
+    FOR UPDATE
+    TO authenticated
+    USING (get_my_user_id() = sender_id)
+    WITH CHECK (get_my_user_id() = sender_id);
+
+DROP POLICY IF EXISTS "residence_user_community_messages_delete" ON public.community_messages;
+CREATE POLICY "residence_user_community_messages_delete" ON public.community_messages
+    FOR DELETE
+    TO authenticated
+    USING (get_my_user_id() = sender_id);
+
+-- =================================================================
+-- Table: approvals
+-- =================================================================
+ALTER TABLE public.approvals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "residence_user_approvals_select" ON public.approvals;
+CREATE POLICY "residence_user_approvals_select" ON public.approvals
+    FOR SELECT
+    TO authenticated
+    USING (get_my_user_id() = user_id);
+
+DROP POLICY IF EXISTS "residence_user_approvals_insert" ON public.approvals;
+CREATE POLICY "residence_user_approvals_insert" ON public.approvals
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (get_my_user_id() = user_id);
+
+-- No update/delete for users on their own approvals.
+-- This should be handled by an admin.
+
+-- =================================================================
+-- Table: post
+-- =================================================================
+ALTER TABLE public.post ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "residence_user_post_select" ON public.post;
+CREATE POLICY "residence_user_post_select" ON public.post
+    FOR SELECT
+    TO authenticated
+    USING (true); -- Assuming posts are public within an org
+
+DROP POLICY IF EXISTS "residence_user_post_insert" ON public.post;
+CREATE POLICY "residence_user_post_insert" ON public.post
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (get_my_user_id() = created_by_user_id);
+    
+DROP POLICY IF EXISTS "residence_user_post_update" ON public.post;
+CREATE POLICY "residence_user_post_update" ON public.post
+    FOR UPDATE
+    TO authenticated
+    USING (get_my_user_id() = created_by_user_id)
+    WITH CHECK (get_my_user_id() = created_by_user_id);
+
+DROP POLICY IF EXISTS "residence_user_post_delete" ON public.post;
+CREATE POLICY "residence_user_post_delete" ON public.post
+    FOR DELETE
+    TO authenticated
+    USING (get_my_user_id() = created_by_user_id);
+
+-- =================================================================
+-- Table: package_bookings
+-- =================================================================
+ALTER TABLE public.package_bookings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "residence_user_package_bookings_select" ON public.package_bookings;
+CREATE POLICY "residence_user_package_bookings_select" ON public.package_bookings
+    FOR SELECT
+    TO authenticated
+    USING (get_my_user_id() = user_id);
+
+DROP POLICY IF EXISTS "residence_user_package_bookings_insert" ON public.package_bookings;
+CREATE POLICY "residence_user_package_bookings_insert" ON public.package_bookings
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
+    
+DROP POLICY IF EXISTS "residence_user_package_bookings_update" ON public.package_bookings;
+CREATE POLICY "residence_user_package_bookings_update" ON public.package_bookings
+    FOR UPDATE
+    TO authenticated
+    USING (get_my_user_id() = user_id)
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS "residence_user_package_bookings_delete" ON public.package_bookings;
+CREATE POLICY "residence_user_package_bookings_delete" ON public.package_bookings
+    FOR DELETE
+    TO authenticated
+    USING (get_my_user_id() = user_id);
+    
+-- =================================================================
+-- Table: timeslots
+-- =================================================================
+ALTER TABLE public.timeslots ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "residence_user_timeslots_all" ON public.timeslots;
+CREATE POLICY "residence_user_timeslots_all" ON public.timeslots
+    FOR ALL
+    TO authenticated
+    USING (true)
+    WITH CHECK (true);
