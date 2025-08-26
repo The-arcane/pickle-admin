@@ -70,7 +70,26 @@ export async function addCourt(formData: FormData) {
   const supabase = await createServer();
   
   try {
-    const courtFields = getCourtFields(formData);
+    const courtFields = {
+        name: formData.get('name') as string,
+        address: formData.get('address') as string,
+        lat: Number(formData.get('lat')),
+        lng: Number(formData.get('lng')),
+        organisation_id: Number(formData.get('organisation_id')),
+        sport_id: Number(formData.get('sport_id')),
+        description: formData.get('description') as string,
+        max_players: formData.get('max_players') ? Number(formData.get('max_players')) : null,
+        audience_capacity: formData.get('audience_capacity') ? Number(formData.get('audience_capacity')) : null,
+        is_equipment_available: formData.get('is_equipment_available') === 'true',
+        surface: formData.get('surface') as string,
+        has_floodlights: formData.get('has_floodlights') === 'true',
+        price: formData.get('price') ? Number(formData.get('price')) : null,
+        discount: formData.get('discount') ? Number(formData.get('discount')) : null,
+        feature: formData.get('feature') as string,
+        badge_type: formData.get('badge_type') as string,
+        c_start_time: formData.get('c_start_time') || null,
+        c_end_time: formData.get('c_end_time') || null,
+    };
 
     if (!courtFields.name || !courtFields.organisation_id || !courtFields.sport_id) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
