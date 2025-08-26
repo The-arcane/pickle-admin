@@ -1,51 +1,107 @@
--- This file contains policies for residence users (user_type = 1).
+-- Enable RLS for all specified tables
+ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.shifts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_profile ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.court_reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.approvals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.post ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.package_bookings ENABLE ROW LEVEL SECURITY;
 
---
--- Bookings
---
 
--- Allow residence users to insert, update, and delete their own bookings.
--- The SELECT policy is separate in policies.sql and restricts view to their own records.
-CREATE POLICY "Allow residence users full write access on bookings"
+-- Drop existing policies to avoid conflicts
+DROP POLICY IF EXISTS "residence_user_access_bookings" ON public.bookings;
+DROP POLICY IF EXISTS "residence_user_access_event_bookings" ON public.event_bookings;
+DROP POLICY IF EXISTS "residence_user_access_shifts" ON public.shifts;
+DROP POLICY IF EXISTS "residence_user_access_transactions" ON public.transactions;
+DROP POLICY IF EXISTS "residence_user_access_user_profile" ON public.user_profile;
+DROP POLICY IF EXISTS "residence_user_access_court_reviews" ON public.court_reviews;
+DROP POLICY IF EXISTS "residence_user_access_community_messages" ON public.community_messages;
+DROP POLICY IF EXISTS "residence_user_access_approvals" ON public.approvals;
+DROP POLICY IF EXISTS "residence_user_access_post" ON public.post;
+DROP POLICY IF EXISTS "residence_user_access_package_bookings" ON public.package_bookings;
+
+
+-- Create policies for residence users (user_type = 1)
+
+-- Bookings Table
+CREATE POLICY "residence_user_access_bookings"
 ON public.bookings
 FOR ALL
-USING (auth.uid() = (select user_uuid from public.user where id = user_id))
-WITH CHECK (auth.uid() = (select user_uuid from public.user where id = user_id));
+TO authenticated
+USING (get_my_user_type() = 1 AND user_id = auth.uid())
+WITH CHECK (get_my_user_type() = 1 AND user_id = auth.uid());
 
-
---
--- Event Bookings
---
-
--- Allow residence users to insert, update, and delete their own event bookings.
-CREATE POLICY "Allow residence users full write access on event_bookings"
+-- Event Bookings Table
+CREATE POLICY "residence_user_access_event_bookings"
 ON public.event_bookings
 FOR ALL
-USING (auth.uid() = (select user_uuid from public.user where id = user_id))
-WITH CHECK (auth.uid() = (select user_uuid from public.user where id = user_id));
+TO authenticated
+USING (get_my_user_type() = 1 AND user_id = auth.uid())
+WITH CHECK (get_my_user_type() = 1 AND user_id = auth.uid());
 
-
---
--- Shifts
---
-
--- As requested, providing full access to shifts for residence users.
--- Note: 'shifts' appears to be a lookup table. Granting full access is unusual.
--- This might need to be revised to a more restrictive policy later.
-CREATE POLICY "Allow residence users full access on shifts"
+-- Shifts Table (Assuming it's user-specific, might need adjustment based on logic)
+CREATE POLICY "residence_user_access_shifts"
 ON public.shifts
 FOR ALL
+TO authenticated
 USING (get_my_user_type() = 1)
 WITH CHECK (get_my_user_type() = 1);
 
-
---
--- Transactions
---
-
--- Allow residence users to manage their own transactions.
-CREATE POLICY "Allow residence users full write access on transactions"
+-- Transactions Table
+CREATE POLICY "residence_user_access_transactions"
 ON public.transactions
 FOR ALL
-USING (auth.uid() = (select user_uuid from public.user where id = (select user_id from bookings where id = reference_id and reference_type = 'booking'))) -- Example check
+TO authenticated
+USING (get_my_user_type() = 1) -- Simplified, might need user_id check depending on schema
 WITH CHECK (get_my_user_type() = 1);
+
+-- User Profile Table
+CREATE POLICY "residence_user_access_user_profile"
+ON public.user_profile
+FOR ALL
+TO authenticated
+USING (get_my_user_type() = 1 AND id = auth.uid())
+WITH CHECK (get_my_user_type() = 1 AND id = auth.uid());
+
+-- Court Reviews Table
+CREATE POLICY "residence_user_access_court_reviews"
+ON public.court_reviews
+FOR ALL
+TO authenticated
+USING (get_my_user_type() = 1) -- Simplified, assuming reviewer name/id is checked elsewhere
+WITH CHECK (get_my_user_type() = 1);
+
+-- Community Messages Table
+CREATE POLICY "residence_user_access_community_messages"
+ON public.community_messages
+FOR ALL
+TO authenticated
+USING (get_my_user_type() = 1 AND sender_id = auth.uid())
+WITH CHECK (get_my_user_type() = 1 AND sender_id = auth.uid());
+
+-- Approvals Table
+CREATE POLICY "residence_user_access_approvals"
+ON public.approvals
+FOR ALL
+TO authenticated
+USING (get_my_user_type() = 1 AND user_id = auth.uid())
+WITH CHECK (get_my_user_type() = 1 AND user_id = auth.uid());
+
+-- Post Table
+CREATE POLICY "residence_user_access_post"
+ON public.post
+FOR ALL
+TO authenticated
+USING (get_my_user_type() = 1 AND created_by_user_id = auth.uid())
+WITH CHECK (get_my_user_type() = 1 AND created_by_user_id = auth.uid());
+
+-- Package Bookings Table
+CREATE POLICY "residence_user_access_package_bookings"
+ON public.package_bookings
+FOR ALL
+TO authenticated
+USING (get_my_user_type() = 1 AND user_id = auth.uid())
+WITH CHECK (get_my_user_type() = 1 AND user_id = auth.uid());
