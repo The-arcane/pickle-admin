@@ -1,199 +1,127 @@
--- Helper function to get the current user's organization ID
-CREATE OR REPLACE FUNCTION get_my_organisation_id()
-RETURNS INT
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-    org_id INT;
-BEGIN
-    SELECT organisation_id INTO org_id
-    FROM user_organisations
-    WHERE user_id = (SELECT id FROM "user" WHERE user_uuid = auth.uid());
-    
-    RETURN org_id;
-END;
-$$;
+-- Policies for Administrator (user_type = 2)
 
--- RLS Policies for Admins (user_type = 2)
+-- #################################
+-- ### Helpers                   ###
+-- #################################
 
--- Organisations Table
-ALTER TABLE public.organisations ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can view their own organisation" ON public.organisations;
-CREATE POLICY "Admins can view their own organisation"
-ON public.organisations
-FOR SELECT
-TO authenticated
-USING (id = get_my_organisation_id());
-
-DROP POLICY IF EXISTS "Admins can update their own organisation" ON public.organisations;
-CREATE POLICY "Admins can update their own organisation"
-ON public.organisations
-FOR UPDATE
-TO authenticated
-USING (id = get_my_organisation_id());
+-- (The helper functions get_my_user_type() and get_my_organisation_id() are assumed to exist from previous steps)
 
 
--- Courts Table
+-- #################################
+-- ### Tables with direct org_id ###
+-- #################################
+
+-- === courts ===
 ALTER TABLE public.courts ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage courts in their own organisation" ON public.courts;
-CREATE POLICY "Admins can manage courts in their own organisation"
-ON public.courts
-FOR ALL
-TO authenticated
-USING (organisation_id = get_my_organisation_id())
-WITH CHECK (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can view courts in their org" ON public.courts FOR SELECT TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can insert courts into their org" ON public.courts FOR INSERT TO authenticated WITH CHECK (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can update courts in their org" ON public.courts FOR UPDATE TO authenticated USING (organisation_id = get_my_organisation_id()) WITH CHECK (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can delete courts in their org" ON public.courts FOR DELETE TO authenticated USING (organisation_id = get_my_organisation_id());
 
-
--- Timeslots Table
-ALTER TABLE public.timeslots ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage timeslots for their org's courts" ON public.timeslots;
-CREATE POLICY "Admins can manage timeslots for their org's courts"
-ON public.timeslots
-FOR ALL
-TO authenticated
-USING (
-  court_id IN (
-    SELECT id FROM courts WHERE organisation_id = get_my_organisation_id()
-  )
-);
-
--- Bookings Table
-ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage bookings in their own organisation" ON public.bookings;
-CREATE POLICY "Admins can manage bookings in their own organisation"
-ON public.bookings
-FOR ALL
-TO authenticated
-USING (
-  court_id IN (
-    SELECT id FROM courts WHERE organisation_id = get_my_organisation_id()
-  )
-);
-
--- Users Table (viewing users within their org)
-ALTER TABLE public.user ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can view users in their own organisation" ON public.user;
-CREATE POLICY "Admins can view users in their own organisation"
-ON public.user
-FOR SELECT
-TO authenticated
-USING (
-  id IN (
-    SELECT user_id FROM user_organisations WHERE organisation_id = get_my_organisation_id()
-  )
-);
-
--- Approvals Table
+-- === approvals ===
 ALTER TABLE public.approvals ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage approvals for their own organisation" ON public.approvals;
-CREATE POLICY "Admins can manage approvals for their own organisation"
-ON public.approvals
-FOR ALL
-TO authenticated
-USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can view approvals in their org" ON public.approvals FOR SELECT TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can update approvals in their org" ON public.approvals FOR UPDATE TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can delete approvals in their org" ON public.approvals FOR DELETE TO authenticated USING (organisation_id = get_my_organisation_id());
 
+-- === packages ===
+ALTER TABLE public.packages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin can view packages in their org" ON public.packages FOR SELECT TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can insert packages into their org" ON public.packages FOR INSERT TO authenticated WITH CHECK (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can update packages in their org" ON public.packages FOR UPDATE TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can delete packages in their org" ON public.packages FOR DELETE TO authenticated USING (organisation_id = get_my_organisation_id());
 
--- Events Table
-ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage events in their own organisation" ON public.events;
-CREATE POLICY "Admins can manage events in their own organisation"
-ON public.events
-FOR ALL
-TO authenticated
-USING (organiser_org_id = get_my_organisation_id());
+-- === package_bookings ===
+ALTER TABLE public.package_bookings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin can view package_bookings in their org" ON public.package_bookings FOR SELECT TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can insert package_bookings into their org" ON public.package_bookings FOR INSERT TO authenticated WITH CHECK (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can update package_bookings in their org" ON public.package_bookings FOR UPDATE TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can delete package_bookings in their org" ON public.package_bookings FOR DELETE TO authenticated USING (organisation_id = get_my_organisation_id());
 
--- Event Bookings Table
-ALTER TABLE public.event_bookings ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage event bookings in their own organisation" ON public.event_bookings;
-CREATE POLICY "Admins can manage event bookings in their own organisation"
-ON public.event_bookings
-FOR ALL
-TO authenticated
-USING (
-  event_id IN (
-    SELECT id FROM events WHERE organiser_org_id = get_my_organisation_id()
-  )
-);
-
--- Coaches Table
+-- === coaches ===
 ALTER TABLE public.coaches ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage coaches in their own organisation" ON public.coaches;
-CREATE POLICY "Admins can manage coaches in their own organisation"
-ON public.coaches
-FOR ALL
-TO authenticated
-USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can view coaches in their org" ON public.coaches FOR SELECT TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can insert coaches into their org" ON public.coaches FOR INSERT TO authenticated WITH CHECK (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can update coaches in their org" ON public.coaches FOR UPDATE TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can delete coaches in their org" ON public.coaches FOR DELETE TO authenticated USING (organisation_id = get_my_organisation_id());
 
--- Residences Table
-ALTER TABLE public.residences ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage residences in their own organisation" ON public.residences;
-CREATE POLICY "Admins can manage residences in their own organisation"
-ON public.residences
-FOR ALL
-TO authenticated
-USING (organisation_id = get_my_organisation_id());
-
--- Realtime Channels Table
-ALTER TABLE public.realtime_channels ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage channels in their own organisation" ON public.realtime_channels;
-CREATE POLICY "Admins can manage channels in their own organisation"
-ON public.realtime_channels
-FOR ALL
-TO authenticated
-USING (owner_org_id = get_my_organisation_id());
-
--- Channel Invitations Table
-ALTER TABLE public.channel_invitations ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage channel invitations in their own organisation" ON public.channel_invitations;
-CREATE POLICY "Admins can manage channel invitations in their own organisation"
-ON public.channel_invitations
-FOR ALL
-TO authenticated
-USING (
-  channel_id IN (
-    SELECT id FROM realtime_channels WHERE owner_org_id = get_my_organisation_id()
-  )
-);
-
--- User Organisations Table
+-- === user_organisations ===
 ALTER TABLE public.user_organisations ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage user links for their own organisation" ON public.user_organisations;
-CREATE POLICY "Admins can manage user links for their own organisation"
-ON public.user_organisations
-FOR ALL
-TO authenticated
-USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can view user_organisations in their org" ON public.user_organisations FOR SELECT TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can insert user_organisations into their org" ON public.user_organisations FOR INSERT TO authenticated WITH CHECK (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can update user_organisations in their org" ON public.user_organisations FOR UPDATE TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can delete user_organisations in their org" ON public.user_organisations FOR DELETE TO authenticated USING (organisation_id = get_my_organisation_id());
 
--- Employees (user_employee_permissions)
-ALTER TABLE public.user_employee_permissions ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Admins can manage employees in their own org" ON public.user_employee_permissions;
-CREATE POLICY "Admins can manage employees in their own org"
-ON public.user_employee_permissions
-FOR ALL
-TO authenticated
-USING (
-  manager_id IN (
-    SELECT id FROM "user" WHERE user_uuid IN (
-      SELECT user_uuid FROM "user" u JOIN user_organisations uo ON u.id = uo.user_id WHERE uo.organisation_id = get_my_organisation_id()
-    )
-  )
-);
+-- === residences ===
+ALTER TABLE public.residences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin can view residences in their org" ON public.residences FOR SELECT TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can insert residences into their org" ON public.residences FOR INSERT TO authenticated WITH CHECK (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can update residences in their org" ON public.residences FOR UPDATE TO authenticated USING (organisation_id = get_my_organisation_id());
+CREATE POLICY "Admin can delete residences in their org" ON public.residences FOR DELETE TO authenticated USING (organisation_id = get_my_organisation_id());
+
+-- === realtime_channels ===
+ALTER TABLE public.realtime_channels ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin can view channels in their org" ON public.realtime_channels FOR SELECT TO authenticated USING (owner_org_id = get_my_organisation_id());
+CREATE POLICY "Admin can insert channels into their org" ON public.realtime_channels FOR INSERT TO authenticated WITH CHECK (owner_org_id = get_my_organisation_id());
+CREATE POLICY "Admin can update channels in their org" ON public.realtime_channels FOR UPDATE TO authenticated USING (owner_org_id = get_my_organisation_id());
+CREATE POLICY "Admin can delete channels in their org" ON public.realtime_channels FOR DELETE TO authenticated USING (owner_org_id = get_my_organisation_id());
 
 
--- Read-only tables for Admins
-ALTER TABLE public.amenities ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Admins can view amenities" ON public.amenities FOR SELECT TO authenticated USING (true);
+-- #######################################
+-- ### Tables with indirect org linkage ###
+-- #######################################
 
+-- === Linked via courts.organisation_id ===
+CREATE POLICY "Admin can view timeslots" ON public.timeslots FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM courts WHERE ((courts.id = timeslots.court_id) AND (courts.organisation_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view availability_blocks" ON public.availability_blocks FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM courts WHERE ((courts.id = availability_blocks.court_id) AND (courts.organisation_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view recurring_unavailability" ON public.recurring_unavailability FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM courts WHERE ((courts.id = recurring_unavailability.court_id) AND (courts.organisation_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view court_rules" ON public.court_rules FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM courts WHERE ((courts.id = court_rules.court_id) AND (courts.organisation_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view court_contacts" ON public.court_contacts FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM courts WHERE ((courts.id = court_contacts.court_id) AND (courts.organisation_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view court_amenities" ON public.court_amenities FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM courts WHERE ((courts.id = court_amenities.court_id) AND (courts.organisation_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view court_gallery" ON public.court_gallery FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM courts WHERE ((courts.id = court_gallery.court_id) AND (courts.organisation_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view court_reviews" ON public.court_reviews FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM courts WHERE ((courts.id = court_reviews.court_id) AND (courts.organisation_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view bookings" ON public.bookings FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM courts WHERE ((courts.id = bookings.court_id) AND (courts.organisation_id = get_my_organisation_id())))));
+
+-- === Linked via events.organiser_org_id ===
+CREATE POLICY "Admin can view events" ON public.events FOR SELECT TO authenticated USING (organiser_org_id = get_my_organisation_id());
+CREATE POLICY "Admin can view event_bookings" ON public.event_bookings FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM events WHERE ((events.id = event_bookings.event_id) AND (events.organiser_org_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view event_sub_events" ON public.event_sub_events FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM events WHERE ((events.id = event_sub_events.event_id) AND (events.organiser_org_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view event_what_to_bring" ON public.event_what_to_bring FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM events WHERE ((events.id = event_what_to_bring.event_id) AND (events.organiser_org_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view event_gallery_images" ON public.event_gallery_images FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM events WHERE ((events.id = event_gallery_images.event_id) AND (events.organiser_org_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view event_category_map" ON public.event_category_map FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM events WHERE ((events.id = event_category_map.event_id) AND (events.organiser_org_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view event_tag_map" ON public.event_tag_map FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM events WHERE ((events.id = event_tag_map.event_id) AND (events.organiser_org_id = get_my_organisation_id())))));
+
+-- === Linked via coaches.organisation_id ===
+CREATE POLICY "Admin can view coach_sports" ON public.coach_sports FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM coaches WHERE ((coaches.id = coach_sports.coach_id) AND (coaches.organisation_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can view coach_pricing" ON public.coach_pricing FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM coaches WHERE ((coaches.id = coach_pricing.coach_id) AND (coaches.organisation_id = get_my_organisation_id())))));
+
+-- === Linked via users in org ===
+CREATE POLICY "Admin can view user_employee_permissions" ON public.user_employee_permissions FOR SELECT TO authenticated USING ((EXISTS (SELECT 1 FROM user_organisations WHERE user_organisations.user_id = user_employee_permissions.manager_id AND user_organisations.organisation_id = get_my_organisation_id())));
+CREATE POLICY "Admin can view user_employee_entity_permissions" ON public.user_employee_entity_permissions FOR SELECT TO authenticated USING ((EXISTS (SELECT 1 FROM user_employee_permissions uep JOIN user_organisations uo ON uep.manager_id = uo.user_id WHERE uo.organisation_id = get_my_organisation_id() AND uep.id = user_employee_entity_permissions.user_employee_permission_id)));
+CREATE POLICY "Admin can view channel_invitations" ON public.channel_invitations FOR SELECT TO authenticated USING ((EXISTS (SELECT 1 FROM realtime_channels WHERE realtime_channels.id = channel_invitations.channel_id AND realtime_channels.owner_org_id = get_my_organisation_id())));
+
+
+-- #################################
+-- ### Read-only and User Tables ###
+-- #################################
+
+-- Admins can read these tables freely
 ALTER TABLE public.booking_status ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Admins can view booking statuses" ON public.booking_status FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admin can view booking_status" ON public.booking_status FOR SELECT TO authenticated USING (true);
 
 ALTER TABLE public.event_booking_status ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Admins can view event booking statuses" ON public.event_booking_status FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admin can view event_booking_status" ON public.event_booking_status FOR SELECT TO authenticated USING (true);
 
 ALTER TABLE public.sports ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Admins can view sports" ON public.sports FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admin can view sports" ON public.sports FOR SELECT TO authenticated USING (true);
 
 ALTER TABLE public.organisation_roles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Admins can view org roles" ON public.organisation_roles FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admin can view organisation_roles" ON public.organisation_roles FOR SELECT TO authenticated USING (true);
+
+ALTER TABLE public.permission_entity ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin can view permission_entity" ON public.permission_entity FOR SELECT TO authenticated USING (true);
+
+-- Admins can view users within their own organization.
+ALTER TABLE public."user" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin can view users in their org" ON public."user" FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1 FROM user_organisations WHERE (("user".id = user_organisations.user_id) AND (user_organisations.organisation_id = get_my_organisation_id())))));
+CREATE POLICY "Admin can update users in their org" ON public."user" FOR UPDATE TO authenticated USING ((EXISTS ( SELECT 1 FROM user_organisations WHERE (("user".id = user_organisations.user_id) AND (user_organisations.organisation_id = get_my_organisation_id())))));
