@@ -123,7 +123,7 @@ export function ResidencesClientPage({
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "parents_template.csv");
+        link.setAttribute("download", "residents_template.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -135,11 +135,11 @@ export function ResidencesClientPage({
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
-                            <CardTitle>Parent List</CardTitle>
-                            <CardDescription>A list of all invited and joined parents.</CardDescription>
+                            <CardTitle>Residents List</CardTitle>
+                            <CardDescription>A list of all invited and joined residents.</CardDescription>
                         </div>
                          <Button onClick={() => setIsInviteDialogOpen(true)} disabled={!organisationId || loading} className="w-full sm:w-auto">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Invite Parents
+                            <PlusCircle className="mr-2 h-4 w-4" /> Invite Residents
                         </Button>
                     </div>
                 </CardHeader>
@@ -194,7 +194,7 @@ export function ResidencesClientPage({
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={5} className="text-center h-24">
-                                        No parents found. Invite some to get started!
+                                        No residents found. Invite some to get started!
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -211,7 +211,7 @@ export function ResidencesClientPage({
             }}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Invite New Parents via CSV</DialogTitle>
+                        <DialogTitle>Invite New Residents via CSV</DialogTitle>
                         <DialogDescription>
                             Upload a CSV file with 'Name', 'email', and 'phone' columns. New users will be created if they don't exist.
                         </DialogDescription>
@@ -255,7 +255,7 @@ export function ResidencesClientPage({
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will remove the parent from this organization. This action cannot be undone.</AlertDialogDescription>
+                        <AlertDialogDescription>This will remove the resident from this organization. This action cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>

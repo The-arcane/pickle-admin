@@ -5,14 +5,14 @@ import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import Papa from 'papaparse';
 
-// This action handles inviting new parents in bulk from a CSV file.
+// This action handles inviting new residents in bulk from a CSV file.
 export async function inviteResidents(formData: FormData) {
   const supabase = createServer();
 
   // 1. Get current user to set as 'invited_by'
   const { data: { user: inviter } } = await supabase.auth.getUser();
   if (!inviter) {
-    return { error: 'You must be logged in to invite parents.' };
+    return { error: 'You must be logged in to invite residents.' };
   }
   const { data: inviterProfile } = await supabase.from('user').select('id').eq('user_uuid', inviter.id).single();
   if (!inviterProfile) {
@@ -65,7 +65,7 @@ export async function inviteResidents(formData: FormData) {
   }
 
   if (residentsDataFromCsv.length === 0) {
-    return { error: 'No valid parent data with Name and email found in the uploaded file.' };
+    return { error: 'No valid resident data with Name and email found in the uploaded file.' };
   }
 
   // 4. Find which emails from the CSV already exist for this organization.
@@ -116,7 +116,7 @@ export async function inviteResidents(formData: FormData) {
 
   let message = `Processed ${residentsDataFromCsv.length} records.`;
   if (successCount > 0) {
-    message += ` ${successCount} new parent(s) were successfully invited.`;
+    message += ` ${successCount} new resident(s) were successfully invited.`;
   }
 
   if (skippedCount > 0) {
@@ -124,7 +124,7 @@ export async function inviteResidents(formData: FormData) {
   }
   
   if (successCount === 0 && residentsDataFromCsv.length > 0) {
-    message = "No new parents were invited. All users from the CSV were already part of this organization.";
+    message = "No new residents were invited. All users from the CSV were already part of this organization.";
   }
 
 
@@ -151,11 +151,11 @@ export async function removeResidence(formData: FormData) {
 
     if (error) {
         console.error("Error removing residence:", error);
-        return { error: "Failed to remove parent." };
+        return { error: "Failed to remove resident." };
     }
     
     revalidatePath('/dashboard/residences');
     revalidatePath('/super-admin/residences');
 
-    return { success: true, message: "Parent removed successfully." };
+    return { success: true, message: "Resident removed successfully." };
 }
