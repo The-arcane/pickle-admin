@@ -134,7 +134,6 @@ export async function updateBooking(formData: FormData) {
 
 export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number) {
     const supabase = await createServer();
-    const { data: { user } } = await supabase.auth.getUser();
     
     if (!dateString) {
         console.error("[getTimeslots] Date string is missing.");
@@ -186,17 +185,8 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
     }
 
     // --- Check for existing bookings ---
-    // Rule: One booking per user per day
-    if (user && courtRules.one_booking_per_user_per_day) {
-        const { data: userBookings, error: userBookingsError } = await supabase
-            .rpc('get_user_bookings_for_date', { p_user_id: user.id, p_date: dateString });
-        if (userBookingsError) { console.error('Error fetching user bookings:', userBookingsError); }
-        
-        if (userBookings && userBookings.length > 0) {
-            return []; // User already has a booking, return no slots
-        }
-    }
-
+    // For admin panel, we don't apply user-specific rules like one booking per day,
+    // as the admin can override this. We only filter out already booked slots.
 
     // 2. Fetch the start times of already booked slots using the provided function
     const { data: bookedSlots, error: rpcError } = await supabase
@@ -218,6 +208,8 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         
         const formattedStartTime = format(parseISO(slot.start_time), 'HH:mm');
         
+        // When editing a booking, the current timeslot should appear as available
+        // This is handled by excluding the current bookingId in the RPC call or subsequent logic
         return !bookedStartTimes.has(formattedStartTime);
     });
 

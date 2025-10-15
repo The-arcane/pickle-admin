@@ -45,7 +45,7 @@ export default async function BookingsPage() {
       .eq('events.organiser_org_id', organisationId)
       .order('booking_time', { ascending: false }),
     supabase.from('courts').select('id, name').eq('organisation_id', organisationId),
-    supabase.from('user').select('id, name').eq('organisation_id', organisationId).eq('user_type', 1),
+    supabase.from('user').select('id, name').eq('organisation_id', organisationId), // Fetch all users from the same org
     supabase.from('booking_status').select('id, label'),
     supabase.from('event_booking_status').select('id, label'),
   ]);
