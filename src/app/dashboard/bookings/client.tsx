@@ -24,13 +24,13 @@ import { Input } from '@/components/ui/input';
 // Types
 type CourtBookingFromDb = {
   id: number; booking_status: number; court_id: number; timeslot_id: number;
-  user: { name: string } | null;
+  user: { name: string, id: number } | null;
   courts: { name: string } | null;
   timeslots: { date: string | null; start_time: string | null, end_time: string | null } | null;
 };
 type ProcessedCourtBooking = {
   id: number; user: string; court: string; date: string; time: string; status: string;
-  court_id: number; timeslot_id: number; raw_date: Date | undefined;
+  user_id: number; court_id: number; timeslot_id: number; raw_date: Date | undefined;
 };
 type EventBookingFromDb = {
     id: number; booking_time: string | null; quantity: number | null; status: number;
@@ -87,7 +87,7 @@ export function BookingsClientPage({
             date: date ? format(date, 'MMM d, yyyy') : 'N/A',
             time: `${formatTime(b.timeslots?.start_time)} - ${formatTime(b.timeslots?.end_time)}`,
             status: courtStatusMap[b.booking_status] ?? 'Unknown',
-            court_id: b.court_id, timeslot_id: b.timeslot_id, raw_date: date
+            court_id: b.court_id, timeslot_id: b.timeslot_id, raw_date: date, user_id: b.user?.id ?? 0
         };
     }), [initialCourtBookings, courtStatusMap]);
     
@@ -127,6 +127,7 @@ export function BookingsClientPage({
     const [editAvailableSlots, setEditAvailableSlots] = useState<Timeslot[]>([]);
     const [isEditLoadingSlots, setIsEditLoadingSlots] = useState(false);
 
+    const [addUserId, setAddUserId] = useState<string>('');
     const [addCourtId, setAddCourtId] = useState<string>('');
     const [addDate, setAddDate] = useState<Date | undefined>(undefined);
     const [addAvailableSlots, setAddAvailableSlots] = useState<Timeslot[]>([]);
@@ -134,10 +135,10 @@ export function BookingsClientPage({
 
     // Fetch available timeslots for Edit Dialog
     useEffect(() => {
-        if (editCourtId && editDate && isEditDialogOpen) {
+        if (editCourtId && editDate && isEditDialogOpen && selectedBooking) {
             setIsEditLoadingSlots(true);
             const dateString = formatISO(editDate, { representation: 'date' });
-            getTimeslots(Number(editCourtId), dateString, selectedBooking?.id)
+            getTimeslots(Number(editCourtId), dateString, selectedBooking.id, selectedBooking.user_id)
                 .then(slots => {
                     setEditAvailableSlots(slots);
                     if (!slots.some(s => s.id.toString() === editTimeslotId)) setEditTimeslotId('');
@@ -148,13 +149,13 @@ export function BookingsClientPage({
 
     // Fetch available timeslots for Add Dialog
     useEffect(() => {
-        if (addCourtId && addDate && isAddDialogOpen) {
+        if (addCourtId && addDate && addUserId && isAddDialogOpen) {
             setIsAddLoadingSlots(true);
-            getTimeslots(Number(addCourtId), formatISO(addDate, { representation: 'date' }))
+            getTimeslots(Number(addCourtId), formatISO(addDate, { representation: 'date' }), undefined, Number(addUserId))
                 .then(setAddAvailableSlots)
                 .finally(() => setIsAddLoadingSlots(false));
         }
-    }, [addCourtId, addDate, isAddDialogOpen]);
+    }, [addCourtId, addDate, addUserId, isAddDialogOpen]);
 
     const handleEditClick = (booking: ProcessedCourtBooking) => {
         setSelectedBooking(booking);
@@ -376,7 +377,7 @@ export function BookingsClientPage({
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
                                 <Label>User</Label>
-                                <Select name="user_id"><SelectTrigger><SelectValue placeholder="Select user"/></SelectTrigger>
+                                <Select name="user_id" onValueChange={setAddUserId}><SelectTrigger><SelectValue placeholder="Select user"/></SelectTrigger>
                                 <SelectContent>{allUsers.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>)}</SelectContent></Select>
                             </div>
                             <div className="space-y-2">
@@ -392,9 +393,9 @@ export function BookingsClientPage({
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>
-                                <Select name="timeslot_id" disabled={isAddLoadingSlots || !addDate || !addCourtId}>
-                                    <SelectTrigger><SelectValue placeholder={isAddLoadingSlots ? "Loading..." : "Select timeslot"} /></SelectTrigger>
-                                    <SelectContent>{addAvailableSlots.length > 0 ? addAvailableSlots.map(s => <SelectItem key={s.id} value={s.id.toString()}>{formatTime(s.start_time)} - {formatTime(s.end_time)}</SelectItem>) : <SelectItem value="none" disabled>No slots</SelectItem>}</SelectContent>
+                                <Select name="timeslot_id" disabled={isAddLoadingSlots || !addDate || !addCourtId || !addUserId}>
+                                    <SelectTrigger><SelectValue placeholder={isAddLoadingSlots ? "Loading..." : "Select user, court, and date first"} /></SelectTrigger>
+                                    <SelectContent>{addAvailableSlots.length > 0 ? addAvailableSlots.map(s => <SelectItem key={s.id} value={s.id.toString()}>{formatTime(s.start_time)} - {formatTime(s.end_time)}</SelectItem>) : <SelectItem value="none" disabled>No slots available</SelectItem>}</SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">

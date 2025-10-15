@@ -36,7 +36,7 @@ export default async function BookingsPage() {
   ] = await Promise.all([
     supabase
       .from('bookings')
-      .select('id, booking_status, court_id, timeslot_id, user:user_id(name), courts:court_id!inner(name, organisation_id), timeslots:timeslot_id(date, start_time, end_time)')
+      .select('id, booking_status, court_id, timeslot_id, user:user_id(id, name), courts:court_id!inner(name, organisation_id), timeslots:timeslot_id(date, start_time, end_time)')
       .eq('courts.organisation_id', organisationId)
       .order('id', { ascending: false }),
     supabase
@@ -45,7 +45,7 @@ export default async function BookingsPage() {
       .eq('events.organiser_org_id', organisationId)
       .order('booking_time', { ascending: false }),
     supabase.from('courts').select('id, name').eq('organisation_id', organisationId),
-    supabase.from('user').select('id, name').eq('organisation_id', organisationId), // Fetch all users from the same org
+    supabase.from('user').select('id, name').eq('organisation_id', organisationId).not('user_type', 'is', null), // Fetch all users from the same org
     supabase.from('booking_status').select('id, label'),
     supabase.from('event_booking_status').select('id, label'),
   ]);
