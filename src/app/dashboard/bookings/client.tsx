@@ -122,14 +122,14 @@ export function BookingsClientPage({
     // Dialog state
     const [selectedBooking, setSelectedBooking] = useState<ProcessedCourtBooking | null>(null);
     const [editCourtId, setEditCourtId] = useState<string>('');
-    const [editDate, setEditDate] = useState<Date | undefined>(undefined);
+    const [editDate, setEditDate] = useState<string>('');
     const [editTimeslotId, setEditTimeslotId] = useState<string>('');
     const [editAvailableSlots, setEditAvailableSlots] = useState<Timeslot[]>([]);
     const [isEditLoadingSlots, setIsEditLoadingSlots] = useState(false);
 
     const [addUserId, setAddUserId] = useState<string>('');
     const [addCourtId, setAddCourtId] = useState<string>('');
-    const [addDate, setAddDate] = useState<Date | undefined>(new Date());
+    const [addDate, setAddDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
     const [addAvailableSlots, setAddAvailableSlots] = useState<Timeslot[]>([]);
     const [isAddLoadingSlots, setIsAddLoadingSlots] = useState(false);
 
@@ -137,8 +137,7 @@ export function BookingsClientPage({
     useEffect(() => {
         if (editCourtId && editDate && isEditDialogOpen && selectedBooking) {
             setIsEditLoadingSlots(true);
-            const dateString = formatISO(editDate, { representation: 'date' });
-            getTimeslots(Number(editCourtId), dateString, selectedBooking.id, selectedBooking.user_id)
+            getTimeslots(Number(editCourtId), editDate, selectedBooking.id, selectedBooking.user_id)
                 .then(slots => {
                     setEditAvailableSlots(slots);
                     if (!slots.some(s => s.id.toString() === editTimeslotId)) setEditTimeslotId('');
@@ -152,7 +151,7 @@ export function BookingsClientPage({
         if (addCourtId && addDate && addUserId) {
             setIsAddLoadingSlots(true);
             setAddAvailableSlots([]); // Clear old slots
-            getTimeslots(Number(addCourtId), formatISO(addDate, { representation: 'date' }), undefined, Number(addUserId))
+            getTimeslots(Number(addCourtId), addDate, undefined, Number(addUserId))
                 .then(setAddAvailableSlots)
                 .finally(() => setIsAddLoadingSlots(false));
         }
@@ -161,7 +160,7 @@ export function BookingsClientPage({
     const handleEditClick = (booking: ProcessedCourtBooking) => {
         setSelectedBooking(booking);
         setEditCourtId(booking.court_id.toString());
-        setEditDate(booking.raw_date);
+        setEditDate(booking.raw_date ? format(booking.raw_date, 'yyyy-MM-dd') : '');
         setEditTimeslotId(booking.timeslot_id.toString());
         setIsEditDialogOpen(true);
     };
@@ -171,7 +170,7 @@ export function BookingsClientPage({
             // Reset form state when dialog closes
             setAddUserId('');
             setAddCourtId('');
-            setAddDate(new Date());
+            setAddDate(format(new Date(), 'yyyy-MM-dd'));
             setAddAvailableSlots([]);
         }
         setIsAddDialogOpen(open);
@@ -354,9 +353,7 @@ export function BookingsClientPage({
                             </div>
                             <div className="space-y-2">
                                 <Label>Date</Label>
-                                <Popover><PopoverTrigger asChild>
-                                    <Button variant="outline" className="w-full justify-start font-normal">{editDate ? format(editDate, "PPP") : "Pick a date"}</Button>
-                                </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={editDate} onSelect={setEditDate} initialFocus/></PopoverContent></Popover>
+                                <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>
@@ -383,7 +380,6 @@ export function BookingsClientPage({
                 <DialogContent><DialogHeader><DialogTitle>Add New Court Booking</DialogTitle></DialogHeader>
                     <form onSubmit={(e) => { e.preventDefault(); 
                         const formData = new FormData(e.currentTarget);
-                        if (addDate) formData.append('date', formatISO(addDate, { representation: 'date' }));
                         handleFormSubmit(addBooking(formData), "Booking added.", "Add Failed");
                     }}>
                         <div className="space-y-4 py-4">
@@ -399,14 +395,7 @@ export function BookingsClientPage({
                             </div>
                             <div className="space-y-2">
                                 <Label>Date</Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className="w-full justify-start font-normal">{addDate ? format(addDate, "PPP") : "Pick a date"}</Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <Calendar mode="single" selected={addDate} onSelect={setAddDate} disabled={(d) => d < startOfDay(new Date())} initialFocus/>
-                                    </PopoverContent>
-                                </Popover>
+                                <Input type="date" name="date" value={addDate} onChange={(e) => setAddDate(e.target.value)} min={format(new Date(), 'yyyy-MM-dd')} />
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>
@@ -428,5 +417,3 @@ export function BookingsClientPage({
         </div>
     );
 }
-
-    
