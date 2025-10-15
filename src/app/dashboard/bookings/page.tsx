@@ -45,7 +45,10 @@ export default async function BookingsPage() {
       .eq('events.organiser_org_id', organisationId)
       .order('booking_time', { ascending: false }),
     supabase.from('courts').select('id, name').eq('organisation_id', organisationId),
-    supabase.from('user').select('id, name').eq('organisation_id', organisationId).not('user_type', 'is', null), // Fetch all users from the same org
+    supabase
+        .from('user_organisations')
+        .select('user!inner(id, name)')
+        .eq('organisation_id', organisationId),
     supabase.from('booking_status').select('id, label'),
     supabase.from('event_booking_status').select('id, label'),
   ]);
@@ -58,6 +61,7 @@ export default async function BookingsPage() {
   if (eventStatusesRes.error) console.error('Error fetching event statuses:', eventStatusesRes.error);
   
   let eventBookings = eventBookingsRes.data || [];
+  const usersForDropdown = usersRes.data?.map(u => u.user).filter(Boolean) || [];
 
   if (eventBookings.length > 0) {
     const eventIdsWithBookings = [...new Set(eventBookings.map(b => b.event_id).filter(Boolean))];
@@ -89,7 +93,7 @@ export default async function BookingsPage() {
     initialCourtBookings={courtBookingsRes.data || []}
     initialEventBookings={eventBookings}
     courts={courtsRes.data || []}
-    users={usersRes.data || []}
+    users={usersForDropdown}
     courtBookingStatuses={courtStatusesRes.data || []}
     eventBookingStatuses={eventStatusesRes.data || []}
   />;
