@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
-import { Calendar as CalendarIcon, Pencil, Search, X, PartyPopper } from 'lucide-react';
+import { Calendar as CalendarIcon, Pencil, Search, X, PartyPopper, Info } from 'lucide-react';
 import { addBooking, updateBooking, getTimeslots } from './actions';
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, formatISO, isEqual, startOfDay } from 'date-fns';
@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 // Types
 type CourtBookingFromDb = {
@@ -41,7 +42,13 @@ type EventBookingFromDb = {
 type ProcessedEventBooking = {
     id: number; user: string; event: string; quantity: number; date: string; status: string; total_enrolled: number;
 };
-type Court = { id: number; name: string; };
+type Court = { 
+    id: number; 
+    name: string;
+    booking_window: number;
+    one_booking_per_user_per_day: boolean;
+    is_booking_rolling: boolean;
+};
 type User = { id: number; name: string; };
 type Timeslot = { id: number; start_time: string | null; end_time: string | null; };
 type BookingStatus = { id: number; label: string; };
@@ -126,17 +133,20 @@ export function BookingsClientPage({
     const [editTimeslotId, setEditTimeslotId] = useState<string>('');
     const [editAvailableSlots, setEditAvailableSlots] = useState<Timeslot[]>([]);
     const [isEditLoadingSlots, setIsEditLoadingSlots] = useState(false);
+    const [editCourtRules, setEditCourtRules] = useState<Partial<Court> | null>(null);
 
     const [addUserId, setAddUserId] = useState<string>('');
     const [addCourtId, setAddCourtId] = useState<string>('');
     const [addDate, setAddDate] = useState<string>(formatISO(new Date(), { representation: 'date'}));
     const [addAvailableSlots, setAddAvailableSlots] = useState<Timeslot[]>([]);
     const [isAddLoadingSlots, setIsAddLoadingSlots] = useState(false);
+    const [addCourtRules, setAddCourtRules] = useState<Partial<Court> | null>(null);
 
     // Fetch available timeslots for Edit Dialog
     useEffect(() => {
         if (editCourtId && editDate && isEditDialogOpen && selectedBooking) {
             setIsEditLoadingSlots(true);
+            setEditCourtRules(allCourts.find(c => c.id.toString() === editCourtId) ?? null);
             getTimeslots(Number(editCourtId), editDate, selectedBooking.id, selectedBooking.user_id)
                 .then(slots => {
                     setEditAvailableSlots(slots);
@@ -144,18 +154,21 @@ export function BookingsClientPage({
                 })
                 .finally(() => setIsEditLoadingSlots(false));
         }
-    }, [editCourtId, editDate, isEditDialogOpen, selectedBooking, editTimeslotId]);
+    }, [editCourtId, editDate, isEditDialogOpen, selectedBooking, editTimeslotId, allCourts]);
 
     // Fetch available timeslots for Add Dialog
     useEffect(() => {
         if (addCourtId && addDate && addUserId) {
             setIsAddLoadingSlots(true);
             setAddAvailableSlots([]); // Clear old slots
+            setAddCourtRules(allCourts.find(c => c.id.toString() === addCourtId) ?? null);
             getTimeslots(Number(addCourtId), addDate, undefined, Number(addUserId))
                 .then(setAddAvailableSlots)
                 .finally(() => setIsAddLoadingSlots(false));
+        } else {
+            setAddCourtRules(null);
         }
-    }, [addCourtId, addDate, addUserId]);
+    }, [addCourtId, addDate, addUserId, allCourts]);
 
     const handleEditClick = (booking: ProcessedCourtBooking) => {
         setSelectedBooking(booking);
@@ -172,6 +185,7 @@ export function BookingsClientPage({
             setAddCourtId('');
             setAddDate(formatISO(new Date(), { representation: 'date'}));
             setAddAvailableSlots([]);
+            setAddCourtRules(null);
         }
         setIsAddDialogOpen(open);
     }
@@ -351,6 +365,18 @@ export function BookingsClientPage({
                                     <SelectContent>{allCourts.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
+                             {editCourtRules && (
+                                <Card className="bg-muted/50 text-sm">
+                                    <CardHeader className="p-3">
+                                        <CardTitle className="text-base flex items-center gap-2"><Info className="h-4 w-4"/> Court Rules</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-3 pt-0 text-muted-foreground space-y-1">
+                                        <p><strong>Booking Window:</strong> {editCourtRules.booking_window} day(s)</p>
+                                        <div className="flex items-center gap-2"><strong>One per day:</strong> <Badge variant={editCourtRules.one_booking_per_user_per_day ? 'default' : 'secondary'}>{editCourtRules.one_booking_per_user_per_day ? 'Yes' : 'No'}</Badge></div>
+                                        <div className="flex items-center gap-2"><strong>Rolling 24hr:</strong> <Badge variant={editCourtRules.is_booking_rolling ? 'default' : 'secondary'}>{editCourtRules.is_booking_rolling ? 'Yes' : 'No'}</Badge></div>
+                                    </CardContent>
+                                </Card>
+                            )}
                             <div className="space-y-2">
                                 <Label>Date</Label>
                                 <Input type="date" name="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
@@ -393,6 +419,18 @@ export function BookingsClientPage({
                                 <Select name="court_id" onValueChange={setAddCourtId} value={addCourtId}><SelectTrigger><SelectValue placeholder="Select court"/></SelectTrigger>
                                 <SelectContent>{allCourts.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}</SelectContent></Select>
                             </div>
+                             {addCourtRules && (
+                                <Card className="bg-muted/50 text-sm">
+                                    <CardHeader className="p-3">
+                                        <CardTitle className="text-base flex items-center gap-2"><Info className="h-4 w-4"/> Court Rules</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-3 pt-0 text-muted-foreground space-y-1">
+                                        <p><strong>Booking Window:</strong> {addCourtRules.booking_window} day(s)</p>
+                                        <div className="flex items-center gap-2"><strong>One per day:</strong> <Badge variant={addCourtRules.one_booking_per_user_per_day ? 'default' : 'secondary'}>{addCourtRules.one_booking_per_user_per_day ? 'Yes' : 'No'}</Badge></div>
+                                        <div className="flex items-center gap-2"><strong>Rolling 24hr:</strong> <Badge variant={addCourtRules.is_booking_rolling ? 'default' : 'secondary'}>{addCourtRules.is_booking_rolling ? 'Yes' : 'No'}</Badge></div>
+                                    </CardContent>
+                                </Card>
+                            )}
                             <div className="space-y-2">
                                 <Label>Date</Label>
                                 <Input type="date" name="date" value={addDate} onChange={(e) => setAddDate(e.target.value)} min={formatISO(new Date(), { representation: 'date'})} />

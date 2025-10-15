@@ -44,7 +44,7 @@ export default async function BookingsPage() {
       .select('id, event_id, booking_time, quantity, status, user:user_id(name), events:event_id!inner(title, organiser_org_id)')
       .eq('events.organiser_org_id', organisationId)
       .order('booking_time', { ascending: false }),
-    supabase.from('courts').select('id, name').eq('organisation_id', organisationId),
+    supabase.from('courts').select('id, name, booking_window, one_booking_per_user_per_day, is_booking_rolling').eq('organisation_id', organisationId),
     supabase
         .from('user_organisations')
         .select('user!inner(id, name)')
