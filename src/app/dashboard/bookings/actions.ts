@@ -190,7 +190,7 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
     if (courtRules.one_booking_per_user_per_day) {
         // If a targetUserId is provided (admin booking for someone), check that user.
         // Otherwise, check the currently logged-in user (for user-facing booking flows).
-        const userIdToCheck = targetUserId ? targetUserId : (await supabase.from('user').select('id').eq('user_uuid', currentUser?.id).single()).data?.id;
+        const userIdToCheck = targetUserId;
 
         if (userIdToCheck) {
             const { data: userBookings, error: userBookingsError } = await supabase
