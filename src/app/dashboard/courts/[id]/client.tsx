@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -62,6 +61,8 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
     const [equipmentRental, setEquipmentRental] = useState(false);
     const [floodlights, setFloodlights] = useState(false);
     const [isPublic, setIsPublic] = useState(true);
+    const [oneBookingPerDay, setOneBookingPerDay] = useState(false);
+    const [isBookingRolling, setIsBookingRolling] = useState(false);
     
     // State for related tables
     const [rules, setRules] = useState<Partial<CourtRule>[]>([{ rule: '' }]);
@@ -87,6 +88,8 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
             setEquipmentRental(court.is_equipment_available ?? false);
             setFloodlights(court.has_floodlights ?? false);
             setIsPublic(court.is_public ?? true);
+            setOneBookingPerDay(court.one_booking_per_user_per_day ?? false);
+            setIsBookingRolling(court.is_booking_rolling ?? false);
             setRules(court.court_rules.length > 0 ? court.court_rules : [{ rule: '' }]);
             setContact(court.court_contacts?.[0] ?? {});
             setAvailability(court.availability_blocks ?? []);
@@ -100,6 +103,7 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
     const navSections = [
         { id: 'court-info', label: 'Court Info' },
         { id: 'court-availability', label: 'Availability' },
+        { id: 'advanced-rules', label: 'Booking Rules'},
         { id: 'images-pricing', label: 'Images & Pricing' },
         { id: 'court-gallery-section', label: 'Gallery' },
         { id: 'court-rules', label: 'Rules' },
@@ -134,6 +138,8 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
         formData.append('is_equipment_available', String(equipmentRental));
         formData.append('has_floodlights', String(floodlights));
         formData.append('is_public', String(isPublic));
+        formData.append('one_booking_per_user_per_day', String(oneBookingPerDay));
+        formData.append('is_booking_rolling', String(isBookingRolling));
         formData.append('rules', JSON.stringify(rules.filter(r => r.rule && r.rule.trim() !== '')));
         formData.append('contact', JSON.stringify(contact));
         formData.append('availability', JSON.stringify(availability.filter(a => a.date)));
@@ -347,6 +353,35 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
                                     </div>
                                 ))}
                                 <Button type="button" variant="outline" size="sm" className="h-auto py-1.5" onClick={handleAddUnavailability}><Plus className="mr-2 h-4 w-4" /> Add Unavailability</Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Advanced Booking Rules */}
+                    <Card id="advanced-rules" className="scroll-mt-24">
+                         <CardHeader>
+                            <CardTitle>Advanced Booking Rules</CardTitle>
+                            <CardDescription>Set specific constraints for how and when users can book this court.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="booking_window">Booking Window (Days)</Label>
+                                <Input id="booking_window" name="booking_window" type="number" defaultValue={court?.booking_window ?? 1} placeholder="e.g., 2" className="w-48" />
+                                <p className="text-xs text-muted-foreground">How many days in advance can a user book? (e.g., 1 means today only, 2 means today and tomorrow).</p>
+                            </div>
+                            <div className="flex items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-1">
+                                    <Label htmlFor="one_booking_per_user_per_day" className="text-base font-medium">One Booking Per Day</Label>
+                                    <p className="text-xs text-muted-foreground">Limit users to one booking on this court per calendar day.</p>
+                                </div>
+                                <Switch id="one_booking_per_user_per_day" name="one_booking_per_user_per_day" checked={oneBookingPerDay} onCheckedChange={setOneBookingPerDay} />
+                            </div>
+                             <div className="flex items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-1">
+                                    <Label htmlFor="is_booking_rolling" className="text-base font-medium">Rolling 24-Hour Window</Label>
+                                    <p className="text-xs text-muted-foreground">Users can only book a slot if it's within 24 hours of the current time.</p>
+                                </div>
+                                <Switch id="is_booking_rolling" name="is_booking_rolling" checked={isBookingRolling} onCheckedChange={setIsBookingRolling} />
                             </div>
                         </CardContent>
                     </Card>

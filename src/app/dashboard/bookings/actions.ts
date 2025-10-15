@@ -3,7 +3,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { parseISO, getDay, format } from 'date-fns';
+import { parseISO, getDay, format, addDays, isBefore, startOfDecade } from 'date-fns';
 import { randomUUID } from 'crypto';
 
 const statusMapToDb: { [key: string]: number } = {
@@ -134,13 +134,21 @@ export async function updateBooking(formData: FormData) {
 
 export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number) {
     const supabase = await createServer();
+    const { data: { user } } = await supabase.auth.getUser();
     
     if (!dateString) {
         console.error("[getTimeslots] Date string is missing.");
         return [];
     }
+    const selectedDate = parseISO(dateString);
 
-    // 1. Fetch all possible timeslots for the court and date
+    // 1. Fetch court rules and all timeslots for the court and date
+    const { data: courtRules, error: courtRulesError } = await supabase
+        .from('courts')
+        .select('booking_window, one_booking_per_user_per_day, is_booking_rolling')
+        .eq('id', courtId)
+        .single();
+
     const { data: allTimeslots, error: timeslotsError } = await supabase
         .from('timeslots')
         .select('id, start_time, end_time')
@@ -148,10 +156,47 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         .eq('date', dateString)
         .order('start_time');
 
-    if (timeslotsError || !allTimeslots) {
-        console.error('Error fetching initial timeslots:', timeslotsError);
+    if (courtRulesError || timeslotsError) {
+        console.error('Error fetching court rules or timeslots:', courtRulesError || timeslotsError);
         return [];
     }
+
+    if (!allTimeslots || !courtRules) {
+        return [];
+    }
+
+    // --- Apply Advanced Booking Rules ---
+    // Rule: Booking window (e.g., cannot book more than X days in advance)
+    const bookingWindow = courtRules.booking_window ?? 1; // Default to 1 day if not set
+    const maxBookingDate = addDays(new Date(), bookingWindow -1);
+    if (isBefore(maxBookingDate, selectedDate)) {
+        return []; // Selected date is outside the booking window
+    }
+    
+    let filteredTimeslots = allTimeslots;
+
+    // Rule: Rolling 24-hour booking window
+    if (courtRules.is_booking_rolling) {
+        const now = new Date();
+        filteredTimeslots = filteredTimeslots.filter(slot => {
+            if (!slot.start_time) return false;
+            const slotStartTime = parseISO(slot.start_time);
+            return isBefore(now, slotStartTime) && isBefore(slotStartTime, addDays(now, 1));
+        });
+    }
+
+    // --- Check for existing bookings ---
+    // Rule: One booking per user per day
+    if (user && courtRules.one_booking_per_user_per_day) {
+        const { data: userBookings, error: userBookingsError } = await supabase
+            .rpc('get_user_bookings_for_date', { p_user_id: user.id, p_date: dateString });
+        if (userBookingsError) { console.error('Error fetching user bookings:', userBookingsError); }
+        
+        if (userBookings && userBookings.length > 0) {
+            return []; // User already has a booking, return no slots
+        }
+    }
+
 
     // 2. Fetch the start times of already booked slots using the provided function
     const { data: bookedSlots, error: rpcError } = await supabase
@@ -162,19 +207,15 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
     
     if (rpcError) {
         console.error('Error calling get_booked_timeslots_for_court_and_date:', rpcError);
-        // Fallback to old method or just return all? For now, we'll return all to not block UI.
-        // A better approach would be to handle this error gracefully on the client.
-        // For now, let's assume if this fails, we can't determine booked slots.
-        return allTimeslots;
+        return filteredTimeslots; // Return what we have if RPC fails
     }
 
     const bookedStartTimes = new Set(bookedSlots.map((s: any) => s.start_time_str));
     
-    // 3. Filter the initial list of timeslots to exclude the booked ones.
-    const availableTimeslots = allTimeslots.filter(slot => {
+    // 3. Filter the list of timeslots to exclude the booked ones.
+    const availableTimeslots = filteredTimeslots.filter(slot => {
         if (!slot.start_time) return false;
         
-        // The start_time from timeslots table is a full timestamp, format it to HH:MI to match the RPC output
         const formattedStartTime = format(parseISO(slot.start_time), 'HH:mm');
         
         return !bookedStartTimes.has(formattedStartTime);

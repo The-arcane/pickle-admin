@@ -77,6 +77,9 @@ export type Court = {
   c_start_time: string | null;
   c_end_time: string | null;
   is_public: boolean | null;
+  booking_window: number;
+  one_booking_per_user_per_day: boolean;
+  is_booking_rolling: boolean;
   
   // Nested relations
   organisations: Organisation | null;
