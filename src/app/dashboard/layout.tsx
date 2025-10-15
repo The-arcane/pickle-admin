@@ -115,7 +115,7 @@ export default function DashboardLayout({
               <DashboardNav />
           </div>
           <div className="mt-auto p-4">
-              <p className="text-xs text-muted-foreground">Version 16.3.3</p>
+              <p className="text-xs text-muted-foreground">Version 16.3.9</p>
           </div>
         </aside>
         <div className="flex flex-col sm:pl-60 flex-1">
