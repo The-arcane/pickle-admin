@@ -387,9 +387,14 @@ export function BookingsClientPage({
                             </div>
                             <div className="space-y-2">
                                 <Label>Date</Label>
-                                <Popover><PopoverTrigger asChild>
-                                    <Button variant="outline" className="w-full justify-start font-normal">{addDate ? format(addDate, "PPP") : "Pick a date"}</Button>
-                                </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={addDate} onSelect={setAddDate} disabled={(d) => d < startOfDay(new Date())} initialFocus/></PopoverContent></Popover>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="w-full justify-start font-normal">{addDate ? format(addDate, "PPP") : "Pick a date"}</Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar mode="single" selected={addDate} onSelect={setAddDate} disabled={(d) => d < startOfDay(new Date())} initialFocus/>
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>
