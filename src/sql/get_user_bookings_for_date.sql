@@ -1,31 +1,26 @@
 
--- This function retrieves all non-cancelled bookings for a given user on a specific date.
--- It joins bookings with timeslots to filter by date.
---
--- Parameters:
---   p_user_uuid: The UUID of the user to check for bookings.
---   p_date: The specific date to check, in 'YYYY-MM-DD' format.
---
--- Returns:
---   A table with the booking ID, timeslot ID, and court ID for each booking found.
+-- This function retrieves all active bookings for a specific user on a given date.
+-- It joins bookings with timeslots to filter by date and returns booking details.
 
-CREATE OR REPLACE FUNCTION get_user_bookings_for_date(p_user_uuid UUID, p_date TEXT)
-RETURNS TABLE(booking_id INT, timeslot_id INT, court_id INT) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT
-        b.id AS booking_id,
-        b.timeslot_id,
-        b.court_id
-    FROM
+create or replace function get_user_bookings_for_date(p_user_id integer, p_date date)
+returns table (
+    id integer,
+    booking_status integer
+)
+language plpgsql
+as $$
+begin
+    return query
+    select
+        b.id,
+        b.booking_status
+    from
         public.bookings b
-    JOIN
-        public.timeslots t ON b.timeslot_id = t.id
-    JOIN
-        public.user u ON b.user_id = u.id
-    WHERE
-        u.user_uuid = p_user_uuid
-        AND t.date = p_date::date
-        AND b.booking_status != 0; -- Exclude cancelled bookings (assuming 0 is 'Cancelled')
-END;
-$$ LANGUAGE plpgsql;
+    join
+        public.timeslots t on b.timeslot_id = t.id
+    where
+        b.user_id = p_user_id
+        and t.date = p_date
+        and b.booking_status in (1, 2); -- 1: Confirmed, 2: Pending
+end;$$;
+

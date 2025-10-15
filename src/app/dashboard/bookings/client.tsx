@@ -129,7 +129,7 @@ export function BookingsClientPage({
 
     const [addUserId, setAddUserId] = useState<string>('');
     const [addCourtId, setAddCourtId] = useState<string>('');
-    const [addDate, setAddDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+    const [addDate, setAddDate] = useState<string>(formatISO(new Date(), { representation: 'date'}));
     const [addAvailableSlots, setAddAvailableSlots] = useState<Timeslot[]>([]);
     const [isAddLoadingSlots, setIsAddLoadingSlots] = useState(false);
 
@@ -170,7 +170,7 @@ export function BookingsClientPage({
             // Reset form state when dialog closes
             setAddUserId('');
             setAddCourtId('');
-            setAddDate(format(new Date(), 'yyyy-MM-dd'));
+            setAddDate(formatISO(new Date(), { representation: 'date'}));
             setAddAvailableSlots([]);
         }
         setIsAddDialogOpen(open);
@@ -353,7 +353,7 @@ export function BookingsClientPage({
                             </div>
                             <div className="space-y-2">
                                 <Label>Date</Label>
-                                <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+                                <Input type="date" name="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>
@@ -395,7 +395,7 @@ export function BookingsClientPage({
                             </div>
                             <div className="space-y-2">
                                 <Label>Date</Label>
-                                <Input type="date" name="date" value={addDate} onChange={(e) => setAddDate(e.target.value)} min={format(new Date(), 'yyyy-MM-dd')} />
+                                <Input type="date" name="date" value={addDate} onChange={(e) => setAddDate(e.target.value)} min={formatISO(new Date(), { representation: 'date'})} />
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>

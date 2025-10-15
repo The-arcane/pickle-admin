@@ -61,7 +61,7 @@ export default async function BookingsPage() {
   if (eventStatusesRes.error) console.error('Error fetching event statuses:', eventStatusesRes.error);
   
   let eventBookings = eventBookingsRes.data || [];
-  const usersForDropdown = usersRes.data?.map(u => u.user).filter(Boolean) || [];
+  const usersForDropdown = usersRes.data?.map(u => u.user).filter(Boolean) as {id: number, name: string}[] || [];
 
   if (eventBookings.length > 0) {
     const eventIdsWithBookings = [...new Set(eventBookings.map(b => b.event_id).filter(Boolean))];

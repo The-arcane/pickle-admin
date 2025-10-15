@@ -207,7 +207,7 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         return [];
     }
 
-    const { data: bookedTimeslotIds, error: bookingsError } = await supabase
+    const { data: bookedTimeslots, error: bookingsError } = await supabase
         .from('bookings')
         .select('timeslot_id')
         .in('timeslot_id', timeslotIds)
@@ -218,7 +218,7 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         return filteredTimeslots; // Return all slots on error
     }
 
-    const bookedSet = new Set(bookedTimeslotIds.map(b => b.timeslot_id));
+    const bookedSet = new Set(bookedTimeslots.map(b => b.timeslot_id));
     
     const availableTimeslots = filteredTimeslots.filter(slot => !bookedSet.has(slot.id));
 
