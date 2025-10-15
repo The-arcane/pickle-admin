@@ -129,7 +129,7 @@ export function BookingsClientPage({
 
     const [addUserId, setAddUserId] = useState<string>('');
     const [addCourtId, setAddCourtId] = useState<string>('');
-    const [addDate, setAddDate] = useState<Date | undefined>(undefined);
+    const [addDate, setAddDate] = useState<Date | undefined>(new Date());
     const [addAvailableSlots, setAddAvailableSlots] = useState<Timeslot[]>([]);
     const [isAddLoadingSlots, setIsAddLoadingSlots] = useState(false);
 
@@ -149,13 +149,14 @@ export function BookingsClientPage({
 
     // Fetch available timeslots for Add Dialog
     useEffect(() => {
-        if (addCourtId && addDate && addUserId && isAddDialogOpen) {
+        if (addCourtId && addDate && addUserId) {
             setIsAddLoadingSlots(true);
+            setAddAvailableSlots([]); // Clear old slots
             getTimeslots(Number(addCourtId), formatISO(addDate, { representation: 'date' }), undefined, Number(addUserId))
                 .then(setAddAvailableSlots)
                 .finally(() => setIsAddLoadingSlots(false));
         }
-    }, [addCourtId, addDate, addUserId, isAddDialogOpen]);
+    }, [addCourtId, addDate, addUserId]);
 
     const handleEditClick = (booking: ProcessedCourtBooking) => {
         setSelectedBooking(booking);
@@ -164,6 +165,17 @@ export function BookingsClientPage({
         setEditTimeslotId(booking.timeslot_id.toString());
         setIsEditDialogOpen(true);
     };
+
+    const handleAddDialogChange = (open: boolean) => {
+        if (!open) {
+            // Reset form state when dialog closes
+            setAddUserId('');
+            setAddCourtId('');
+            setAddDate(new Date());
+            setAddAvailableSlots([]);
+        }
+        setIsAddDialogOpen(open);
+    }
 
     const handleFormSubmit = useCallback(async (action: Promise<any>, successMsg: string, errorTitle: string) => {
         const result = await action;
@@ -367,7 +379,7 @@ export function BookingsClientPage({
             </Dialog>}
 
             {/* Add Dialog */}
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogChange}>
                 <DialogContent><DialogHeader><DialogTitle>Add New Court Booking</DialogTitle></DialogHeader>
                     <form onSubmit={(e) => { e.preventDefault(); 
                         const formData = new FormData(e.currentTarget);
@@ -377,12 +389,12 @@ export function BookingsClientPage({
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
                                 <Label>User</Label>
-                                <Select name="user_id" onValueChange={setAddUserId}><SelectTrigger><SelectValue placeholder="Select user"/></SelectTrigger>
+                                <Select name="user_id" onValueChange={setAddUserId} value={addUserId}><SelectTrigger><SelectValue placeholder="Select user"/></SelectTrigger>
                                 <SelectContent>{allUsers.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>)}</SelectContent></Select>
                             </div>
                             <div className="space-y-2">
                                 <Label>Court</Label>
-                                <Select name="court_id" onValueChange={setAddCourtId}><SelectTrigger><SelectValue placeholder="Select court"/></SelectTrigger>
+                                <Select name="court_id" onValueChange={setAddCourtId} value={addCourtId}><SelectTrigger><SelectValue placeholder="Select court"/></SelectTrigger>
                                 <SelectContent>{allCourts.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}</SelectContent></Select>
                             </div>
                             <div className="space-y-2">
@@ -416,3 +428,5 @@ export function BookingsClientPage({
         </div>
     );
 }
+
+    
