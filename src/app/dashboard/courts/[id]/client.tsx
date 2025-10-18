@@ -364,10 +364,23 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
                             <CardDescription>Set specific constraints for how and when users can book this court.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="booking_window">Booking Window (Days)</Label>
-                                <Input id="booking_window" name="booking_window" type="number" defaultValue={court?.booking_window ?? 1} placeholder="e.g., 2" className="w-48" />
-                                <p className="text-xs text-muted-foreground">How many days in advance can a user book? (e.g., 1 means today only, 2 means today and tomorrow).</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="booking_window">Booking Window (Days)</Label>
+                                    <Input id="booking_window" name="booking_window" type="number" defaultValue={court?.booking_window ?? 1} placeholder="e.g., 2" />
+                                    <p className="text-xs text-muted-foreground">How many days in advance can a user book? (e.g., 1 means today only, 2 means today and tomorrow).</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="booking_style">Booking Style</Label>
+                                    <Select name="booking_style" defaultValue={court?.booking_style ?? 'calendar'}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="calendar">Calendar</SelectItem>
+                                            <SelectItem value="rolling_window">Rolling Window</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                     <p className="text-xs text-muted-foreground">Choose how booking availability is presented to users.</p>
+                                </div>
                             </div>
                             <div className="flex items-center justify-between rounded-lg border p-4">
                                 <div className="space-y-1">

@@ -150,6 +150,8 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         const action = isAdding ? addCourt : updateCourt;
         if (!isAdding && court) {
             formData.append('id', court.id.toString());
+        } else if (isAdding && selectedOrgId) {
+            formData.set('organisation_id', selectedOrgId.toString());
         }
         
         const result = await action(formData);
@@ -213,7 +215,7 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
         }
     };
 
-    const selectedOrganisation = organisations.find(o => o.id === selectedOrgId);
+    const selectedOrganisation = organisations.find(o => o.id === (court?.organisation_id ?? selectedOrgId));
 
 
     return (
@@ -259,9 +261,9 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                                 <div className="space-y-2">
                                     <Label htmlFor="organisation_id">Venue Name</Label>
                                     <Input id="organisation_name" name="organisation_name" value={selectedOrganisation?.name || ''} disabled />
-                                    <input type="hidden" name="organisation_id" value={selectedOrgId || ''} />
+                                    <input type="hidden" name="organisation_id" value={court?.organisation_id || selectedOrgId || ''} />
                                 </div>
-                                <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" name="address" defaultValue={court?.address || ''} placeholder="Court address" required/></div>
+                                <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" name="address" defaultValue={court?.address || selectedOrganisation?.address || ''} placeholder="Court address" required/></div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2"><Label htmlFor="lat">Latitude</Label><Input id="lat" name="lat" type="number" step="any" defaultValue={court?.lat ?? ''} placeholder="e.g., 28.6139" required/></div>
@@ -353,10 +355,23 @@ export function EditCourtClientPage({ court, organisations, sports }: { court: C
                             <CardDescription>Set specific constraints for how and when users can book this court.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="booking_window">Booking Window (Days)</Label>
-                                <Input id="booking_window" name="booking_window" type="number" defaultValue={court?.booking_window ?? 1} placeholder="e.g., 2" className="w-48" />
-                                <p className="text-xs text-muted-foreground">How many days in advance can a user book? (e.g., 1 means today only, 2 means today and tomorrow).</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="booking_window">Booking Window (Days)</Label>
+                                    <Input id="booking_window" name="booking_window" type="number" defaultValue={court?.booking_window ?? 1} placeholder="e.g., 2" />
+                                    <p className="text-xs text-muted-foreground">How many days in advance can a user book? (e.g., 1 means today only, 2 means today and tomorrow).</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="booking_style">Booking Style</Label>
+                                    <Select name="booking_style" defaultValue={court?.booking_style ?? 'calendar'}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="calendar">Calendar</SelectItem>
+                                            <SelectItem value="rolling_window">Rolling Window</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                     <p className="text-xs text-muted-foreground">Choose how booking availability is presented to users.</p>
+                                </div>
                             </div>
                             <div className="flex items-center justify-between rounded-lg border p-4">
                                 <div className="space-y-1">
