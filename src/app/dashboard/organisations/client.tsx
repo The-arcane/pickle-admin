@@ -12,6 +12,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { updateOrganization, addBuilding, addBuildingNumber, addFlat, deleteBuilding, deleteBuildingNumber, deleteFlat } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFormStatus } from 'react-dom';
+import { Textarea } from '@/components/ui/textarea';
 
 type Organisation = {
     id: number;
