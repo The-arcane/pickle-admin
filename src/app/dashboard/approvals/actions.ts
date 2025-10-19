@@ -14,28 +14,45 @@ export async function approveRequest(formData: FormData) {
         return { error: 'Missing required IDs for approval.' };
     }
 
-    // Step 1: Update the user's organisation_id in the user table
-    const { error: userUpdateError } = await supabase
-        .from('user')
-        .update({ organisation_id: organisationId })
-        .eq('id', userId);
+    // Step 1: Find the 'member' role ID.
+    const { data: roleData, error: roleError } = await supabase
+        .from('organisation_roles')
+        .select('id')
+        .eq('name', 'member')
+        .single();
+    
+    if (roleError || !roleData) {
+        console.error('Error finding member role:', roleError);
+        return { error: "System configuration error: 'member' role not found." };
+    }
+    const memberRoleId = roleData.id;
 
-    if (userUpdateError) {
-        console.error('Error updating user organization:', userUpdateError);
-        return { error: `Failed to update user profile: ${userUpdateError.message}` };
+    // Step 2: Add the user to the user_organisations table.
+    // Using upsert to prevent errors if a relationship somehow already exists.
+    const { error: userOrgError } = await supabase
+        .from('user_organisations')
+        .upsert({
+            user_id: userId,
+            organisation_id: organisationId,
+            role_id: memberRoleId,
+        }, { onConflict: 'user_id, organisation_id' });
+
+    if (userOrgError) {
+        console.error('Error adding user to organization:', userOrgError);
+        return { error: `Failed to link user to organization: ${userOrgError.message}` };
     }
 
-    // Step 2: Mark the approval request as approved
-    const { error: approvalUpdateError } = await supabase
+    // Step 3: Mark the approval request as approved (or delete it).
+    // Deleting is cleaner as we don't need to keep approved requests.
+    const { error: approvalDeleteError } = await supabase
         .from('approvals')
-        .update({ is_approved: true })
+        .delete()
         .eq('id', approvalId);
 
-    if (approvalUpdateError) {
-        console.error('Error updating approval status:', approvalUpdateError);
-        // If this fails, we should ideally roll back the user update.
-        // For now, we'll return an error message indicating a partial failure.
-        return { error: `User profile updated, but failed to update approval status: ${approvalUpdateError.message}` };
+    if (approvalDeleteError) {
+        console.error('Error deleting approval request:', approvalDeleteError);
+        // This isn't a critical failure, as the main action (linking user) succeeded.
+        // We can log this and proceed.
     }
     
     revalidatePath('/dashboard/approvals');
@@ -77,30 +94,47 @@ export async function approveMultipleRequests(approvals: { approvalId: number, u
     if (!approvals || approvals.length === 0) {
         return { error: 'No approvals selected.' };
     }
+    
+    // Find the 'member' role ID once.
+    const { data: roleData, error: roleError } = await supabase
+        .from('organisation_roles')
+        .select('id')
+        .eq('name', 'member')
+        .single();
+    
+    if (roleError || !roleData) {
+        console.error('Error finding member role:', roleError);
+        return { error: "System configuration error: 'member' role not found." };
+    }
+    const memberRoleId = roleData.id;
 
-    for (const approval of approvals) {
-        // Step 1: Update the user's organisation_id in the user table
-        const { error: userUpdateError } = await supabase
-            .from('user')
-            .update({ organisation_id: approval.organisationId })
-            .eq('id', approval.userId);
-        
-        if (userUpdateError) {
-            console.error(`Bulk approve: Error updating user ${approval.userId}`, userUpdateError);
-            // Continue to next approval, but maybe log this failure
-            continue;
-        }
+    const userOrgInserts = approvals.map(approval => ({
+        user_id: approval.userId,
+        organisation_id: approval.organisationId,
+        role_id: memberRoleId,
+    }));
+    
+    // Step 1: Bulk add users to the user_organisations table.
+    const { error: userOrgError } = await supabase
+        .from('user_organisations')
+        .upsert(userOrgInserts, { onConflict: 'user_id, organisation_id' });
+    
+    if (userOrgError) {
+        console.error('Bulk approve: Error adding users to organization:', userOrgError);
+        // Partial success is hard to report here, so we'll report a general failure.
+        return { error: `Failed to link users to organization: ${userOrgError.message}` };
+    }
+    
+    // Step 2: Bulk delete the now-processed approval requests.
+    const approvalIdsToDelete = approvals.map(a => a.approvalId);
+    const { error: approvalDeleteError } = await supabase
+        .from('approvals')
+        .delete()
+        .in('id', approvalIdsToDelete);
 
-        // Step 2: Mark the approval request as approved
-        const { error: approvalUpdateError } = await supabase
-            .from('approvals')
-            .update({ is_approved: true })
-            .eq('id', approval.approvalId);
-        
-        if (approvalUpdateError) {
-             console.error(`Bulk approve: Error updating approval ${approval.approvalId}`, approvalUpdateError);
-             // Continue even if this part fails
-        }
+    if (approvalDeleteError) {
+        console.error(`Bulk approve: Error deleting approvals`, approvalDeleteError);
+        // Continue even if this part fails, as the main action succeeded.
     }
     
     revalidatePath('/dashboard/approvals');

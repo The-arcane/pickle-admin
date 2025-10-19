@@ -215,6 +215,7 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
                              : `You are about to ${actionType} the request for ${selectedApproval?.user?.name}.`
                             }
                             {(actionType === 'reject' || actionType === 'bulk_reject') && " This action cannot be undone."}
+                            {(actionType === 'approve' || actionType === 'bulk_approve') && " This will add the user(s) to your Living Space."}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

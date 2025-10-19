@@ -14,17 +14,21 @@ export default async function ApprovalsPage() {
     }
 
     // Get the admin's own user record to find their organization
-    const { data: userRecord } = await supabase
-        .from('user')
+    const { data: orgLink } = await supabase
+        .from('user_organisations')
         .select('organisation_id')
-        .eq('user_uuid', user.id)
+        .eq('user_uuid', user.id) // Correctly query user_organisations by user_uuid
         .single();
     
-    if (!userRecord) {
-        return redirect('/login');
+    if (!orgLink) {
+         return (
+            <div className="flex flex-col items-center justify-center h-full">
+                <p className="text-muted-foreground">Your admin account is not associated with a Living Space.</p>
+            </div>
+        );
     }
 
-    const organisationId = userRecord.organisation_id;
+    const organisationId = orgLink.organisation_id;
     if (!organisationId) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
@@ -34,6 +38,7 @@ export default async function ApprovalsPage() {
     }
     
     // Fetch pending approvals for the admin's organization
+    // We now delete approved requests, so we don't need the is_approved filter.
     const { data: approvals, error } = await supabase
         .from('approvals')
         .select(`
@@ -44,7 +49,6 @@ export default async function ApprovalsPage() {
             user:user_id ( name, email, profile_image_url )
         `)
         .eq('organisation_id', organisationId)
-        .eq('is_approved', false)
         .order('created_at', { ascending: true });
     
     if (error) {
