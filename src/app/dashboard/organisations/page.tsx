@@ -1,14 +1,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { updateOrganization } from './actions';
-import { Separator } from '@/components/ui/separator';
+import { OrganisationClientPage } from './client';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,41 +47,25 @@ export default async function OrganisationPage() {
         return <p>Could not load Living Space details.</p>
     }
 
+    // Fetch buildings and their flats
+    const { data: buildings, error: buildingsError } = await supabase
+        .from('buildings')
+        .select(`
+            id,
+            building_number,
+            flats ( id, flat_number )
+        `)
+        .eq('organisation_id', org.id)
+        .order('building_number', { ascending: true });
+
+    if(buildingsError) {
+        console.error("Error fetching buildings:", buildingsError);
+    }
+
     return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-3">
-                <Building className="h-8 w-8 text-orange-500" />
-                <div>
-                    <h1 className="text-3xl font-bold">Living Space Profile</h1>
-                    <p className="text-muted-foreground">Manage your Living Space's public information.</p>
-                </div>
-            </div>
-            <form action={updateOrganization}>
-                <input type="hidden" name="id" value={org.id} />
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Basic Information</CardTitle>
-                        <CardDescription>Update the name and address of your Living Space.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Living Space Name</Label>
-                            <Input id="name" name="name" defaultValue={org.name || ''} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="address">Address</Label>
-                            <Textarea id="address" name="address" defaultValue={org.address || ''} />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="logo">Logo URL</Label>
-                            <Input id="logo" name="logo" defaultValue={org.logo || ''} />
-                        </div>
-                    </CardContent>
-                </Card>
-                 <div className="flex justify-end pt-4">
-                    <Button type="submit">Save Changes</Button>
-                </div>
-            </form>
-        </div>
+      <OrganisationClientPage 
+        organisation={org} 
+        initialBuildings={buildings || []} 
+      />
     );
 }
