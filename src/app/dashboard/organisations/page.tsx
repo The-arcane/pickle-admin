@@ -47,25 +47,46 @@ export default async function OrganisationPage() {
         return <p>Could not load Living Space details.</p>
     }
 
-    // Fetch buildings and their flats
-    const { data: buildings, error: buildingsError } = await supabase
+    // Fetch buildings and their flats in two steps for robustness
+    const { data: buildingsData, error: buildingsError } = await supabase
         .from('buildings')
-        .select(`
-            id,
-            building_number,
-            flats:flats!building_id ( id, flat_number )
-        `)
+        .select('id, building_number')
         .eq('organisation_id', org.id)
         .order('building_number', { ascending: true });
 
     if(buildingsError) {
         console.error("Error fetching buildings:", buildingsError);
     }
+    
+    const buildings = buildingsData || [];
+    let processedBuildings = [];
+
+    if (buildings.length > 0) {
+        const buildingIds = buildings.map(b => b.id);
+        const { data: flatsData, error: flatsError } = await supabase
+            .from('flats')
+            .select('id, flat_number, building_id')
+            .in('building_id', buildingIds)
+            .order('flat_number', {ascending: true});
+
+        if (flatsError) {
+            console.error("Error fetching flats:", flatsError);
+        }
+
+        // Manually join flats to their buildings
+        processedBuildings = buildings.map(building => ({
+            ...building,
+            flats: flatsData?.filter(flat => flat.building_id === building.id) || []
+        }));
+    } else {
+        processedBuildings = [];
+    }
+
 
     return (
       <OrganisationClientPage 
         organisation={org} 
-        initialBuildings={buildings || []} 
+        initialBuildings={processedBuildings} 
       />
     );
 }
