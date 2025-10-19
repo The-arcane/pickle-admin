@@ -14,10 +14,24 @@ export default async function ApprovalsPage() {
     }
 
     // Get the admin's own user record to find their organization
+    const { data: userRecord } = await supabase
+        .from('user')
+        .select('id')
+        .eq('user_uuid', user.id)
+        .single();
+    
+    if (!userRecord) {
+         return (
+            <div className="flex flex-col items-center justify-center h-full">
+                <p className="text-muted-foreground">Your admin account profile could not be found.</p>
+            </div>
+        );
+    }
+    
     const { data: orgLink } = await supabase
         .from('user_organisations')
         .select('organisation_id')
-        .eq('user_uuid', user.id) // Correctly query user_organisations by user_uuid
+        .eq('user_id', userRecord.id)
         .single();
     
     if (!orgLink) {
@@ -29,13 +43,6 @@ export default async function ApprovalsPage() {
     }
 
     const organisationId = orgLink.organisation_id;
-    if (!organisationId) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full">
-                <p className="text-muted-foreground">Your admin account is not associated with a Living Space.</p>
-            </div>
-        );
-    }
     
     // Fetch pending approvals for the admin's organization
     // We now delete approved requests, so we don't need the is_approved filter.
