@@ -44,8 +44,8 @@ export default async function ApprovalsPage() {
 
     const organisationId = orgLink.organisation_id;
     
-    // Fetch pending approvals for the admin's organization
-    // We now delete approved requests, so we don't need the is_approved filter.
+    // Fetch pending approvals for the admin's organization.
+    // Approved requests are deleted, so any existing record is considered pending.
     const { data: approvals, error } = await supabase
         .from('approvals')
         .select(`

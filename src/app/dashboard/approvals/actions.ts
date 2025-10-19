@@ -42,8 +42,7 @@ export async function approveRequest(formData: FormData) {
         return { error: `Failed to link user to organization: ${userOrgError.message}` };
     }
 
-    // Step 3: Mark the approval request as approved (or delete it).
-    // Deleting is cleaner as we don't need to keep approved requests.
+    // Step 3: Delete the approval request as it's now been processed.
     const { error: approvalDeleteError } = await supabase
         .from('approvals')
         .delete()
