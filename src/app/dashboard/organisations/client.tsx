@@ -1,7 +1,6 @@
-
 'use client';
 import { useState, useRef } from 'react';
-import { Building, Home, PlusCircle, Trash2, Milestone } from 'lucide-react';
+import { Building, Home, PlusCircle, Trash2, Milestone, ChevronsRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { updateOrganization, addBuilding, addBuildingNumber, addFlat, deleteBuilding, deleteBuildingNumber, deleteFlat } from './actions';
+import { updateOrganization, addBuilding, addBuildingNumber, addFlat, deleteBuilding, deleteBuildingNumber } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFormStatus } from 'react-dom';
 import { Textarea } from '@/components/ui/textarea';
+import Link from 'next/link';
 
 type Organisation = {
     id: number;
@@ -21,15 +21,9 @@ type Organisation = {
     logo: string | null;
 }
 
-type Flat = {
-    id: number;
-    flat_number: string;
-}
-
 type BuildingNumber = {
     id: number;
     number: string;
-    flats: Flat[];
 }
 
 type Building = {
@@ -47,16 +41,13 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
     const { toast } = useToast();
     const [isBuildingDialogOpen, setIsBuildingDialogOpen] = useState(false);
     const [isBuildingNumberDialogOpen, setIsBuildingNumberDialogOpen] = useState(false);
-    const [isFlatDialogOpen, setIsFlatDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     
-    const [itemToDelete, setItemToDelete] = useState<{ type: 'building' | 'building_number' | 'flat', id: number } | null>(null);
+    const [itemToDelete, setItemToDelete] = useState<{ type: 'building' | 'building_number' , id: number } | null>(null);
     const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
-    const [selectedBuildingNumberId, setSelectedBuildingNumberId] = useState<number | null>(null);
     
     const buildingFormRef = useRef<HTMLFormElement>(null);
     const buildingNumberFormRef = useRef<HTMLFormElement>(null);
-    const flatFormRef = useRef<HTMLFormElement>(null);
 
     const handleFormAction = async (action: (formData: FormData) => Promise<{ error?: string, success?: boolean, message?: string }>, formData: FormData, dialogSetter?: (open: boolean) => void, formRef?: React.RefObject<HTMLFormElement>) => {
         const result = await action(formData);
@@ -76,7 +67,6 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
         switch (itemToDelete.type) {
             case 'building': action = deleteBuilding; break;
             case 'building_number': action = deleteBuildingNumber; break;
-            case 'flat': action = deleteFlat; break;
         }
 
         const formData = new FormData();
@@ -160,8 +150,8 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                         <Accordion type="multiple" className="w-full">
                             {initialBuildings.map(building => (
                                 <AccordionItem key={building.id} value={`building-${building.id}`}>
-                                    <div className="flex items-center justify-between w-full group">
-                                        <AccordionTrigger className="flex-1 hover:no-underline pr-4">
+                                    <div className="flex items-center w-full group pr-4">
+                                        <AccordionTrigger className="flex-1 hover:no-underline">
                                             <div className="flex items-center gap-2">
                                                 <Building className="h-5 w-5 text-muted-foreground" />
                                                 <span className="font-semibold">{building.name}</span>
@@ -177,49 +167,25 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                                     <AccordionContent>
                                         <div className="pl-4 border-l-2 ml-2 space-y-2">
                                             {building.building_numbers.map(bldgNumber => (
-                                                <Accordion key={bldgNumber.id} type="multiple" className="w-full">
-                                                    <AccordionItem value={`bldg-num-${bldgNumber.id}`}>
-                                                         <div className="flex items-center justify-between w-full group">
-                                                            <AccordionTrigger className="flex-1 hover:no-underline text-sm p-2 rounded-md hover:bg-muted pr-2">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Milestone className="h-4 w-4 text-muted-foreground" />
-                                                                    <span>Wing / Block: {bldgNumber.number}</span>
-                                                                </div>
-                                                            </AccordionTrigger>
-                                                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 hover:bg-destructive/10" onClick={() => {
-                                                                setItemToDelete({ type: 'building_number', id: bldgNumber.id });
-                                                                setIsDeleteDialogOpen(true);
-                                                            }}>
-                                                                <Trash2 className="h-3 w-3 text-destructive" />
-                                                            </Button>
-                                                        </div>
-                                                        <AccordionContent>
-                                                            <div className="pl-4 border-l-2 ml-2 space-y-2 mt-2">
-                                                                {bldgNumber.flats.map(flat => (
-                                                                    <div key={flat.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Home className="h-4 w-4 text-muted-foreground" />
-                                                                            <span>Flat {flat.flat_number}</span>
-                                                                        </div>
-                                                                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                                                                            setItemToDelete({ type: 'flat', id: flat.id });
-                                                                            setIsDeleteDialogOpen(true);
-                                                                        }}>
-                                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                                        </Button>
-                                                                    </div>
-                                                                ))}
-                                                                {bldgNumber.flats.length === 0 && <p className="text-xs text-muted-foreground p-2">No flats added yet.</p>}
-                                                                <Button variant="outline" size="sm" className="mt-2 h-8" onClick={() => {
-                                                                    setSelectedBuildingNumberId(bldgNumber.id);
-                                                                    setIsFlatDialogOpen(true);
-                                                                }}>
-                                                                    <PlusCircle className="mr-2 h-3 w-3" /> Add Flat
-                                                                </Button>
-                                                            </div>
-                                                        </AccordionContent>
-                                                    </AccordionItem>
-                                                </Accordion>
+                                                <div key={bldgNumber.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
+                                                    <div className="flex items-center gap-2">
+                                                        <Milestone className="h-4 w-4 text-muted-foreground" />
+                                                        <span>Wing / Block: {bldgNumber.number}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Button asChild variant="secondary" size="sm">
+                                                            <Link href={`/dashboard/organisations/flats/${bldgNumber.id}`}>
+                                                                Manage Flats <ChevronsRight className="ml-2 h-4 w-4" />
+                                                            </Link>
+                                                        </Button>
+                                                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 hover:bg-destructive/10" onClick={() => {
+                                                            setItemToDelete({ type: 'building_number', id: bldgNumber.id });
+                                                            setIsDeleteDialogOpen(true);
+                                                        }}>
+                                                            <Trash2 className="h-3 w-3 text-destructive" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
                                             ))}
                                             {building.building_numbers.length === 0 && <p className="text-sm text-muted-foreground p-2">No wings/blocks added yet.</p>}
                                             <Button variant="outline" size="sm" className="mt-2" onClick={() => {
@@ -251,24 +217,6 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                         <DialogFooter>
                             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
                             <SubmitButton>Add Wing/Block</SubmitButton>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
-            {/* Add Flat Dialog */}
-             <Dialog open={isFlatDialogOpen} onOpenChange={setIsFlatDialogOpen}>
-                <DialogContent>
-                    <DialogHeader><DialogTitle>Add New Flat</DialogTitle></DialogHeader>
-                    <form ref={flatFormRef} action={(fd) => handleFormAction(addFlat, fd, setIsFlatDialogOpen, flatFormRef)} className="space-y-4">
-                        <input type="hidden" name="building_number_id" value={selectedBuildingNumberId || ''} />
-                        <div className="space-y-2">
-                            <Label htmlFor="flat_number">Flat Number</Label>
-                            <Input id="flat_number" name="flat_number" placeholder="e.g., 101, G-02" required/>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                            <SubmitButton>Add Flat</SubmitButton>
                         </DialogFooter>
                     </form>
                 </DialogContent>

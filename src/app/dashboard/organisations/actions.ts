@@ -91,7 +91,7 @@ export async function addFlat(formData: FormData) {
         if(error.code === '23505') return { error: 'A flat with this number already exists in this wing/block.' };
         return { error: `Failed to add flat: ${error.message}` };
     }
-    revalidatePath('/dashboard/organisations');
+    revalidatePath(`/dashboard/organisations/flats/${building_number_id}`);
     return { success: true, message: "Flat added." };
 }
 
@@ -122,11 +122,12 @@ export async function deleteBuildingNumber(formData: FormData) {
 export async function deleteFlat(formData: FormData) {
     const supabase = await createServer();
     const id = formData.get('id');
+    const building_number_id = formData.get('building_number_id');
     if (!id) return { error: 'Flat ID is missing.' };
 
     const { error } = await supabase.from('flats').delete().eq('id', id);
     if (error) return { error: `Failed to delete flat: ${error.message}` };
     
-    revalidatePath('/dashboard/organisations');
+    revalidatePath(`/dashboard/organisations/flats/${building_number_id}`);
     return { success: true, message: 'Flat deleted.' };
 }
