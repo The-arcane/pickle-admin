@@ -128,120 +128,118 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                     </Card>
                 </form>
 
-                 <Card>
-                    <CardHeader>
-                         <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle>Buildings & Flats</CardTitle>
-                                <CardDescription>Manage the structure of your Living Space.</CardDescription>
+                <Dialog open={isBuildingDialogOpen} onOpenChange={setIsBuildingDialogOpen}>
+                    <Card>
+                        <CardHeader>
+                             <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Buildings & Flats</CardTitle>
+                                    <CardDescription>Manage the structure of your Living Space.</CardDescription>
+                                </div>
+                                <DialogTrigger asChild>
+                                    <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Building</Button>
+                                </DialogTrigger>
                             </div>
-                             <DialogTrigger asChild>
-                                <Button onClick={() => setIsBuildingDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Add Building</Button>
-                            </DialogTrigger>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                       <Accordion type="multiple" className="w-full">
-                            {initialBuildings.map(building => (
-                                <AccordionItem key={building.id} value={`building-${building.id}`}>
-                                    <AccordionTrigger className="hover:no-underline">
-                                        <div className="flex items-center justify-between w-full pr-4">
-                                            <div className="flex items-center gap-2">
-                                                 <Building className="h-5 w-5 text-muted-foreground" />
-                                                <span className="font-semibold">{building.name}</span>
+                        </CardHeader>
+                        <CardContent>
+                           <Accordion type="multiple" className="w-full">
+                                {initialBuildings.map(building => (
+                                    <AccordionItem key={building.id} value={`building-${building.id}`}>
+                                        <AccordionTrigger className="hover:no-underline">
+                                            <div className="flex items-center justify-between w-full pr-4">
+                                                <div className="flex items-center gap-2">
+                                                     <Building className="h-5 w-5 text-muted-foreground" />
+                                                    <span className="font-semibold">{building.name}</span>
+                                                </div>
+                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10" onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setItemToDelete({ type: 'building', id: building.id });
+                                                    setIsDeleteDialogOpen(true);
+                                                }}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
                                             </div>
-                                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10" onClick={(e) => {
-                                                e.stopPropagation();
-                                                setItemToDelete({ type: 'building', id: building.id });
-                                                setIsDeleteDialogOpen(true);
-                                            }}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="pl-4 border-l-2 ml-2 space-y-2">
-                                            {building.building_numbers.map(bldgNumber => (
-                                                <Accordion key={bldgNumber.id} type="multiple" className="w-full">
-                                                    <AccordionItem value={`bldg-num-${bldgNumber.id}`}>
-                                                        <AccordionTrigger className="hover:no-underline text-sm p-2 rounded-md hover:bg-muted">
-                                                            <div className="flex items-center justify-between w-full pr-2">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Milestone className="h-4 w-4 text-muted-foreground" />
-                                                                    <span>Wing / Block: {bldgNumber.number}</span>
-                                                                </div>
-                                                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7 hover:bg-destructive/10" onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setItemToDelete({ type: 'building_number', id: bldgNumber.id });
-                                                                    setIsDeleteDialogOpen(true);
-                                                                }}>
-                                                                    <Trash2 className="h-3 w-3 text-destructive" />
-                                                                </Button>
-                                                            </div>
-                                                        </AccordionTrigger>
-                                                        <AccordionContent>
-                                                            <div className="pl-4 border-l-2 ml-2 space-y-2 mt-2">
-                                                                {bldgNumber.flats.map(flat => (
-                                                                    <div key={flat.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Home className="h-4 w-4 text-muted-foreground" />
-                                                                            <span>Flat {flat.flat_number}</span>
-                                                                        </div>
-                                                                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setItemToDelete({ type: 'flat', id: flat.id });
-                                                                            setIsDeleteDialogOpen(true);
-                                                                        }}>
-                                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                                        </Button>
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className="pl-4 border-l-2 ml-2 space-y-2">
+                                                {building.building_numbers.map(bldgNumber => (
+                                                    <Accordion key={bldgNumber.id} type="multiple" className="w-full">
+                                                        <AccordionItem value={`bldg-num-${bldgNumber.id}`}>
+                                                            <AccordionTrigger className="hover:no-underline text-sm p-2 rounded-md hover:bg-muted">
+                                                                <div className="flex items-center justify-between w-full pr-2">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Milestone className="h-4 w-4 text-muted-foreground" />
+                                                                        <span>Wing / Block: {bldgNumber.number}</span>
                                                                     </div>
-                                                                ))}
-                                                                {bldgNumber.flats.length === 0 && <p className="text-xs text-muted-foreground p-2">No flats added yet.</p>}
-                                                                <Button variant="outline" size="sm" className="mt-2 h-8" onClick={() => {
-                                                                    setSelectedBuildingNumberId(bldgNumber.id);
-                                                                    setIsFlatDialogOpen(true);
-                                                                }}>
-                                                                    <PlusCircle className="mr-2 h-3 w-3" /> Add Flat
-                                                                </Button>
-                                                            </div>
-                                                        </AccordionContent>
-                                                    </AccordionItem>
-                                                </Accordion>
-                                            ))}
-                                            {building.building_numbers.length === 0 && <p className="text-sm text-muted-foreground p-2">No wings/blocks added yet.</p>}
-                                            <Button variant="outline" size="sm" className="mt-2" onClick={() => {
-                                                setSelectedBuildingId(building.id);
-                                                setIsBuildingNumberDialogOpen(true);
-                                            }}>
-                                                <PlusCircle className="mr-2 h-4 w-4" /> Add Wing/Block
-                                            </Button>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                            {initialBuildings.length === 0 && <p className="text-center text-muted-foreground py-8">No buildings added yet.</p>}
-                       </Accordion>
-                    </CardContent>
-                </Card>
+                                                                    <Button type="button" variant="ghost" size="icon" className="h-7 w-7 hover:bg-destructive/10" onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setItemToDelete({ type: 'building_number', id: bldgNumber.id });
+                                                                        setIsDeleteDialogOpen(true);
+                                                                    }}>
+                                                                        <Trash2 className="h-3 w-3 text-destructive" />
+                                                                    </Button>
+                                                                </div>
+                                                            </AccordionTrigger>
+                                                            <AccordionContent>
+                                                                <div className="pl-4 border-l-2 ml-2 space-y-2 mt-2">
+                                                                    {bldgNumber.flats.map(flat => (
+                                                                        <div key={flat.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Home className="h-4 w-4 text-muted-foreground" />
+                                                                                <span>Flat {flat.flat_number}</span>
+                                                                            </div>
+                                                                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setItemToDelete({ type: 'flat', id: flat.id });
+                                                                                setIsDeleteDialogOpen(true);
+                                                                            }}>
+                                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    ))}
+                                                                    {bldgNumber.flats.length === 0 && <p className="text-xs text-muted-foreground p-2">No flats added yet.</p>}
+                                                                    <Button variant="outline" size="sm" className="mt-2 h-8" onClick={() => {
+                                                                        setSelectedBuildingNumberId(bldgNumber.id);
+                                                                        setIsFlatDialogOpen(true);
+                                                                    }}>
+                                                                        <PlusCircle className="mr-2 h-3 w-3" /> Add Flat
+                                                                    </Button>
+                                                                </div>
+                                                            </AccordionContent>
+                                                        </AccordionItem>
+                                                    </Accordion>
+                                                ))}
+                                                {building.building_numbers.length === 0 && <p className="text-sm text-muted-foreground p-2">No wings/blocks added yet.</p>}
+                                                <Button variant="outline" size="sm" className="mt-2" onClick={() => {
+                                                    setSelectedBuildingId(building.id);
+                                                    setIsBuildingNumberDialogOpen(true);
+                                                }}>
+                                                    <PlusCircle className="mr-2 h-4 w-4" /> Add Wing/Block
+                                                </Button>
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                                {initialBuildings.length === 0 && <p className="text-center text-muted-foreground py-8">No buildings added yet.</p>}
+                           </Accordion>
+                        </CardContent>
+                    </Card>
+                    <DialogContent>
+                        <DialogHeader><DialogTitle>Add New Building</DialogTitle></DialogHeader>
+                        <form ref={buildingFormRef} action={(fd) => handleFormAction(addBuilding, fd, setIsBuildingDialogOpen, buildingFormRef)} className="space-y-4">
+                            <input type="hidden" name="organisation_id" value={organisation.id} />
+                            <div className="space-y-2">
+                                <Label htmlFor="building_name">Building Name</Label>
+                                <Input id="building_name" name="building_name" placeholder="e.g., Tower A" required/>
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                                <SubmitButton>Add Building</SubmitButton>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </div>
-
-            {/* Add Building Dialog */}
-            <Dialog open={isBuildingDialogOpen} onOpenChange={setIsBuildingDialogOpen}>
-                <DialogContent>
-                    <DialogHeader><DialogTitle>Add New Building</DialogTitle></DialogHeader>
-                    <form ref={buildingFormRef} action={(fd) => handleFormAction(addBuilding, fd, setIsBuildingDialogOpen, buildingFormRef)} className="space-y-4">
-                        <input type="hidden" name="organisation_id" value={organisation.id} />
-                        <div className="space-y-2">
-                            <Label htmlFor="building_name">Building Name</Label>
-                            <Input id="building_name" name="building_name" placeholder="e.g., Tower A" required/>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                            <SubmitButton>Add Building</SubmitButton>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
 
             {/* Add Building Number Dialog */}
             <Dialog open={isBuildingNumberDialogOpen} onOpenChange={setIsBuildingNumberDialogOpen}>
