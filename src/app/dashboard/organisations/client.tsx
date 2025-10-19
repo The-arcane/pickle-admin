@@ -1,16 +1,15 @@
 
 'use client';
 import { useState, useRef } from 'react';
-import { Building, Home, PlusCircle, Trash2 } from 'lucide-react';
+import { Building, Home, PlusCircle, Trash2, Milestone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { updateOrganization, addBuilding, addFlat, deleteBuilding, deleteFlat } from './actions';
+import { updateOrganization, addBuilding, addBuildingNumber, addFlat, deleteBuilding, deleteBuildingNumber, deleteFlat } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { useFormStatus } from 'react-dom';
 
@@ -26,10 +25,16 @@ type Flat = {
     flat_number: string;
 }
 
+type BuildingNumber = {
+    id: number;
+    number: string;
+    flats: Flat[];
+}
+
 type Building = {
     id: number;
-    building_number: string;
-    flats: Flat[];
+    name: string;
+    building_numbers: BuildingNumber[];
 }
 
 function SubmitButton({ children }: { children: React.ReactNode }) {
@@ -37,38 +42,42 @@ function SubmitButton({ children }: { children: React.ReactNode }) {
     return <Button type="submit" disabled={pending}>{pending ? 'Saving...' : children}</Button>
 }
 
-function DeleteButton() {
-    const { pending } = useFormStatus();
-    return <Button type="submit" variant="destructive" size="icon" className="h-7 w-7" disabled={pending}>{pending ? <Trash2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}</Button>
-}
-
 export function OrganisationClientPage({ organisation, initialBuildings }: { organisation: Organisation, initialBuildings: Building[] }) {
-    const [buildings, setBuildings] = useState(initialBuildings);
+    const { toast } = useToast();
     const [isBuildingDialogOpen, setIsBuildingDialogOpen] = useState(false);
+    const [isBuildingNumberDialogOpen, setIsBuildingNumberDialogOpen] = useState(false);
     const [isFlatDialogOpen, setIsFlatDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [itemToDelete, setItemToDelete] = useState<{ type: 'building' | 'flat', id: number } | null>(null);
-    const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
     
-    const { toast } = useToast();
+    const [itemToDelete, setItemToDelete] = useState<{ type: 'building' | 'building_number' | 'flat', id: number } | null>(null);
+    const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
+    const [selectedBuildingNumberId, setSelectedBuildingNumberId] = useState<number | null>(null);
+    
     const buildingFormRef = useRef<HTMLFormElement>(null);
+    const buildingNumberFormRef = useRef<HTMLFormElement>(null);
     const flatFormRef = useRef<HTMLFormElement>(null);
 
-    const handleFormAction = async (action: (formData: FormData) => Promise<{ error?: string, success?: boolean, message?: string }>, formData: FormData, dialogSetter: (open: boolean) => void, formRef: React.RefObject<HTMLFormElement>) => {
+    const handleFormAction = async (action: (formData: FormData) => Promise<{ error?: string, success?: boolean, message?: string }>, formData: FormData, dialogSetter?: (open: boolean) => void, formRef?: React.RefObject<HTMLFormElement>) => {
         const result = await action(formData);
         if (result.error) {
             toast({ variant: 'destructive', title: 'Error', description: result.error });
         } else {
-            toast({ title: 'Success', description: result.message });
-            dialogSetter(false);
-            formRef.current?.reset();
+            if (result.message) toast({ title: 'Success', description: result.message });
+            if (dialogSetter) dialogSetter(false);
+            if (formRef?.current) formRef.current.reset();
         }
     }
     
     const handleDeleteAction = async () => {
         if (!itemToDelete) return;
 
-        const action = itemToDelete.type === 'building' ? deleteBuilding : deleteFlat;
+        let action;
+        switch (itemToDelete.type) {
+            case 'building': action = deleteBuilding; break;
+            case 'building_number': action = deleteBuildingNumber; break;
+            case 'flat': action = deleteFlat; break;
+        }
+
         const formData = new FormData();
         formData.append('id', itemToDelete.id.toString());
 
@@ -92,7 +101,7 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                         <p className="text-muted-foreground">Manage your Living Space's public information and structure.</p>
                     </div>
                 </div>
-                <form action={(fd) => handleFormAction(updateOrganization, fd, () => {}, {current: null})}>
+                <form action={(fd) => handleFormAction(updateOrganization, fd)}>
                     <input type="hidden" name="id" value={organisation.id} />
                     <Card>
                         <CardHeader>
@@ -138,52 +147,72 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                                         <div className="flex items-center justify-between w-full pr-4">
                                             <div className="flex items-center gap-2">
                                                  <Building className="h-5 w-5 text-muted-foreground" />
-                                                <span className="font-semibold">Building {building.building_number}</span>
+                                                <span className="font-semibold">{building.name}</span>
                                             </div>
-                                             <form action={(fd) => {
-                                                    fd.append('id', building.id.toString());
-                                                    setItemToDelete({ type: 'building', id: building.id });
-                                                    setIsDeleteDialogOpen(true);
-                                                }}>
-                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10" onClick={(e) => {
-                                                    e.stopPropagation(); // prevent accordion from toggling
-                                                    setItemToDelete({ type: 'building', id: building.id });
-                                                    setIsDeleteDialogOpen(true);
-                                                }}>
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </form>
+                                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10" onClick={(e) => {
+                                                e.stopPropagation();
+                                                setItemToDelete({ type: 'building', id: building.id });
+                                                setIsDeleteDialogOpen(true);
+                                            }}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
                                         </div>
                                     </AccordionTrigger>
                                     <AccordionContent>
                                         <div className="pl-4 border-l-2 ml-2 space-y-2">
-                                            {building.flats.map(flat => (
-                                                <div key={flat.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
-                                                    <div className="flex items-center gap-2">
-                                                        <Home className="h-4 w-4 text-muted-foreground" />
-                                                        <span>Flat {flat.flat_number}</span>
-                                                    </div>
-                                                    <form action={(fd) => {
-                                                        fd.append('id', flat.id.toString());
-                                                        setItemToDelete({ type: 'flat', id: flat.id });
-                                                        setIsDeleteDialogOpen(true);
-                                                    }}>
-                                                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setItemToDelete({ type: 'flat', id: flat.id });
-                                                            setIsDeleteDialogOpen(true);
-                                                        }}>
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                    </form>
-                                                </div>
+                                            {building.building_numbers.map(bldgNumber => (
+                                                <Accordion key={bldgNumber.id} type="multiple" className="w-full">
+                                                    <AccordionItem value={`bldg-num-${bldgNumber.id}`}>
+                                                        <AccordionTrigger className="hover:no-underline text-sm p-2 rounded-md hover:bg-muted">
+                                                            <div className="flex items-center justify-between w-full pr-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Milestone className="h-4 w-4 text-muted-foreground" />
+                                                                    <span>Wing / Block: {bldgNumber.number}</span>
+                                                                </div>
+                                                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7 hover:bg-destructive/10" onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setItemToDelete({ type: 'building_number', id: bldgNumber.id });
+                                                                    setIsDeleteDialogOpen(true);
+                                                                }}>
+                                                                    <Trash2 className="h-3 w-3 text-destructive" />
+                                                                </Button>
+                                                            </div>
+                                                        </AccordionTrigger>
+                                                        <AccordionContent>
+                                                            <div className="pl-4 border-l-2 ml-2 space-y-2 mt-2">
+                                                                {bldgNumber.flats.map(flat => (
+                                                                    <div key={flat.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Home className="h-4 w-4 text-muted-foreground" />
+                                                                            <span>Flat {flat.flat_number}</span>
+                                                                        </div>
+                                                                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setItemToDelete({ type: 'flat', id: flat.id });
+                                                                            setIsDeleteDialogOpen(true);
+                                                                        }}>
+                                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                                        </Button>
+                                                                    </div>
+                                                                ))}
+                                                                {bldgNumber.flats.length === 0 && <p className="text-xs text-muted-foreground p-2">No flats added yet.</p>}
+                                                                <Button variant="outline" size="sm" className="mt-2 h-8" onClick={() => {
+                                                                    setSelectedBuildingNumberId(bldgNumber.id);
+                                                                    setIsFlatDialogOpen(true);
+                                                                }}>
+                                                                    <PlusCircle className="mr-2 h-3 w-3" /> Add Flat
+                                                                </Button>
+                                                            </div>
+                                                        </AccordionContent>
+                                                    </AccordionItem>
+                                                </Accordion>
                                             ))}
-                                             {building.flats.length === 0 && <p className="text-sm text-muted-foreground p-2">No flats added yet.</p>}
-                                             <Button variant="outline" size="sm" className="mt-2" onClick={() => {
-                                                 setSelectedBuildingId(building.id);
-                                                 setIsFlatDialogOpen(true);
-                                             }}>
-                                                 <PlusCircle className="mr-2 h-4 w-4" /> Add Flat
+                                            {building.building_numbers.length === 0 && <p className="text-sm text-muted-foreground p-2">No wings/blocks added yet.</p>}
+                                            <Button variant="outline" size="sm" className="mt-2" onClick={() => {
+                                                setSelectedBuildingId(building.id);
+                                                setIsBuildingNumberDialogOpen(true);
+                                            }}>
+                                                <PlusCircle className="mr-2 h-4 w-4" /> Add Wing/Block
                                             </Button>
                                         </div>
                                     </AccordionContent>
@@ -202,12 +231,30 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                     <form ref={buildingFormRef} action={(fd) => handleFormAction(addBuilding, fd, setIsBuildingDialogOpen, buildingFormRef)} className="space-y-4">
                         <input type="hidden" name="organisation_id" value={organisation.id} />
                         <div className="space-y-2">
-                            <Label htmlFor="building_number">Building Number/Name</Label>
-                            <Input id="building_number" name="building_number" placeholder="e.g., A, B1, Tower 1" required/>
+                            <Label htmlFor="building_name">Building Name</Label>
+                            <Input id="building_name" name="building_name" placeholder="e.g., Tower A" required/>
                         </div>
                         <DialogFooter>
                             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
                             <SubmitButton>Add Building</SubmitButton>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Building Number Dialog */}
+            <Dialog open={isBuildingNumberDialogOpen} onOpenChange={setIsBuildingNumberDialogOpen}>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Add New Wing/Block</DialogTitle></DialogHeader>
+                    <form ref={buildingNumberFormRef} action={(fd) => handleFormAction(addBuildingNumber, fd, setIsBuildingNumberDialogOpen, buildingNumberFormRef)} className="space-y-4">
+                        <input type="hidden" name="building_id" value={selectedBuildingId || ''} />
+                        <div className="space-y-2">
+                            <Label htmlFor="building_wing_number">Wing/Block Number</Label>
+                            <Input id="building_wing_number" name="building_wing_number" placeholder="e.g., A, B1" required/>
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                            <SubmitButton>Add Wing/Block</SubmitButton>
                         </DialogFooter>
                     </form>
                 </DialogContent>
@@ -218,7 +265,7 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                 <DialogContent>
                     <DialogHeader><DialogTitle>Add New Flat</DialogTitle></DialogHeader>
                     <form ref={flatFormRef} action={(fd) => handleFormAction(addFlat, fd, setIsFlatDialogOpen, flatFormRef)} className="space-y-4">
-                        <input type="hidden" name="building_id" value={selectedBuildingId || ''} />
+                        <input type="hidden" name="building_number_id" value={selectedBuildingNumberId || ''} />
                         <div className="space-y-2">
                             <Label htmlFor="flat_number">Flat Number</Label>
                             <Input id="flat_number" name="flat_number" placeholder="e.g., 101, G-02" required/>
@@ -237,7 +284,7 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the {itemToDelete?.type} and all its contents. This action cannot be undone.
+                            This will permanently delete the {itemToDelete?.type.replace('_', ' ')} and all its contents (e.g., deleting a building deletes all its wings and flats). This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
