@@ -33,6 +33,7 @@ export function FlatsClientPage({ buildingNumberId, initialFlats, buildingInfo }
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<Flat | null>(null);
+    const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
     const formRef = useRef<HTMLFormElement>(null);
 
     const handleFormAction = async (action: (formData: FormData) => Promise<{ error?: string, success?: boolean, message?: string }>, formData: FormData, dialogSetter?: (open: boolean) => void, formRef?: React.RefObject<HTMLFormElement>) => {
@@ -47,7 +48,7 @@ export function FlatsClientPage({ buildingNumberId, initialFlats, buildingInfo }
     };
     
     const handleDeleteAction = async () => {
-        if (!itemToDelete) return;
+        if (!itemToDelete || deleteConfirmationText !== 'DELETE') return;
 
         const formData = new FormData();
         formData.append('id', itemToDelete.id.toString());
@@ -139,17 +140,33 @@ export function FlatsClientPage({ buildingNumberId, initialFlats, buildingInfo }
             </div>
 
             {/* Delete Confirmation Dialog */}
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+                if(!open) setDeleteConfirmationText('');
+                setIsDeleteDialogOpen(open);
+            }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                           This will permanently delete Flat {itemToDelete?.flat_number}. This action cannot be undone.
+                           This will permanently delete Flat <span className="font-bold">{itemToDelete?.flat_number}</span>. This action cannot be undone.
                         </AlertDialogDescription>
+                        <div className="space-y-2 pt-2">
+                            <Label htmlFor="delete-confirm">To confirm, type <span className="font-bold text-destructive">DELETE</span> below:</Label>
+                            <Input 
+                                id="delete-confirm" 
+                                value={deleteConfirmationText}
+                                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                            />
+                        </div>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteAction} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                        <AlertDialogCancel onClick={() => setDeleteConfirmationText('')}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleDeleteAction} 
+                            disabled={deleteConfirmationText !== 'DELETE'}
+                            className="bg-destructive hover:bg-destructive/90">
+                                Delete
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

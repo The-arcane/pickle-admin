@@ -43,8 +43,9 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
     const [isBuildingNumberDialogOpen, setIsBuildingNumberDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     
-    const [itemToDelete, setItemToDelete] = useState<{ type: 'building' | 'building_number' , id: number } | null>(null);
+    const [itemToDelete, setItemToDelete] = useState<{ type: 'building' | 'building_number' , id: number, name: string } | null>(null);
     const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
+    const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
     
     const buildingFormRef = useRef<HTMLFormElement>(null);
     const buildingNumberFormRef = useRef<HTMLFormElement>(null);
@@ -61,7 +62,7 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
     }
     
     const handleDeleteAction = async () => {
-        if (!itemToDelete) return;
+        if (!itemToDelete || deleteConfirmationText !== 'DELETE') return;
 
         let action;
         switch (itemToDelete.type) {
@@ -158,7 +159,7 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                                             </div>
                                         </AccordionTrigger>
                                         <Button type="button" variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10" onClick={() => {
-                                            setItemToDelete({ type: 'building', id: building.id });
+                                            setItemToDelete({ type: 'building', id: building.id, name: building.name });
                                             setIsDeleteDialogOpen(true);
                                         }}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -179,7 +180,7 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                                                             </Link>
                                                         </Button>
                                                         <Button type="button" variant="ghost" size="icon" className="h-7 w-7 hover:bg-destructive/10" onClick={() => {
-                                                            setItemToDelete({ type: 'building_number', id: bldgNumber.id });
+                                                            setItemToDelete({ type: 'building_number', id: bldgNumber.id, name: `Wing ${bldgNumber.number}` });
                                                             setIsDeleteDialogOpen(true);
                                                         }}>
                                                             <Trash2 className="h-3 w-3 text-destructive" />
@@ -223,17 +224,33 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
             </Dialog>
 
             {/* Delete Confirmation Dialog */}
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+                if(!open) setDeleteConfirmationText('');
+                setIsDeleteDialogOpen(open);
+            }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the {itemToDelete?.type.replace('_', ' ')} and all its contents (e.g., deleting a building deletes all its wings and flats). This action cannot be undone.
+                            This will permanently delete the {itemToDelete?.type.replace('_', ' ')} <span className="font-bold">{itemToDelete?.name}</span> and all its contents. This action cannot be undone.
                         </AlertDialogDescription>
+                         <div className="space-y-2 pt-2">
+                            <Label htmlFor="delete-confirm">To confirm, type <span className="font-bold text-destructive">DELETE</span> below:</Label>
+                            <Input 
+                                id="delete-confirm" 
+                                value={deleteConfirmationText}
+                                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                            />
+                        </div>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteAction} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                        <AlertDialogCancel onClick={() => setDeleteConfirmationText('')}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleDeleteAction} 
+                            disabled={deleteConfirmationText !== 'DELETE'}
+                            className="bg-destructive hover:bg-destructive/90">
+                                Delete
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
