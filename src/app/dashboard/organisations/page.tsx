@@ -53,7 +53,7 @@ export default async function OrganisationPage() {
         .select(`
             id,
             building_number,
-            flats ( id, flat_number )
+            flats:flats!building_id ( id, flat_number )
         `)
         .eq('organisation_id', org.id)
         .order('building_number', { ascending: true });
