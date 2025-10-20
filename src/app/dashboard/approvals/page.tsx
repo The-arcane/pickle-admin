@@ -52,17 +52,15 @@ export default async function ApprovalsPage() {
             user_id,
             organisation_id,
             created_at,
-            flat_id,
+            flat,
             user:user_id ( name, email, profile_image_url ),
-            flats:flat_id (
-                flat_number,
-                building_numbers (
-                    number,
-                    buildings ( name )
-                )
+            building_details:building_numbers (
+                number,
+                building:buildings ( name )
             )
         `)
         .eq('organisation_id', organisationId)
+        .eq('is_approved', false)
         .order('created_at', { ascending: true });
     
     if (error) {

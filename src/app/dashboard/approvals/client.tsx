@@ -22,13 +22,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
-type FlatDetails = {
-    flat_number: string;
-    building_numbers: {
-        number: string;
-        buildings: {
-            name: string;
-        } | null;
+type BuildingDetails = {
+    number: string;
+    building: {
+        name: string;
     } | null;
 } | null;
 
@@ -38,8 +35,8 @@ type Approval = {
     user_id: number;
     organisation_id: number;
     created_at: string;
-    flat_id: number | null;
-    flats: FlatDetails;
+    flat: string | null;
+    building_details: BuildingDetails;
     user: {
         name: string | null;
         email: string | null;
@@ -126,11 +123,11 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
         );
     };
     
-    const formatFlatDetails = (flat: FlatDetails) => {
-        if (!flat) return 'N/A';
-        const building = flat.building_numbers?.buildings?.name ?? 'N/A';
-        const wing = flat.building_numbers?.number ?? 'N/A';
-        const flatNumber = flat.flat_number ?? 'N/A';
+    const formatFlatDetails = (approval: Approval) => {
+        if (!approval.building_details && !approval.flat) return 'N/A';
+        const building = approval.building_details?.building?.name ?? 'N/A';
+        const wing = approval.building_details?.number ?? 'N/A';
+        const flatNumber = approval.flat ?? 'N/A';
         return `${building}, Wing ${wing}, Flat ${flatNumber}`;
     };
 
@@ -203,7 +200,7 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <p className="font-medium">{formatFlatDetails(approval.flats)}</p>
+                                            <p className="font-medium">{formatFlatDetails(approval)}</p>
                                         </TableCell>
                                         <TableCell>{formatDistanceToNow(new Date(approval.created_at), { addSuffix: true })}</TableCell>
                                         <TableCell className="text-right">
