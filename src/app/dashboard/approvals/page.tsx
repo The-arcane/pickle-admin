@@ -45,7 +45,6 @@ export default async function ApprovalsPage() {
     const organisationId = orgLink.organisation_id;
     
     // Fetch pending approvals for the admin's organization.
-    // Approved requests are deleted, so any existing record is considered pending.
     const { data: approvals, error } = await supabase
         .from('approvals')
         .select(`
@@ -53,7 +52,15 @@ export default async function ApprovalsPage() {
             user_id,
             organisation_id,
             created_at,
-            user:user_id ( name, email, profile_image_url )
+            flat_id,
+            user:user_id ( name, email, profile_image_url ),
+            flats:flat_id (
+                flat_number,
+                building_numbers (
+                    number,
+                    buildings ( name )
+                )
+            )
         `)
         .eq('organisation_id', organisationId)
         .order('created_at', { ascending: true });

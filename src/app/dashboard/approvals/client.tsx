@@ -22,11 +22,24 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
+type FlatDetails = {
+    flat_number: string;
+    building_numbers: {
+        number: string;
+        buildings: {
+            name: string;
+        } | null;
+    } | null;
+} | null;
+
+
 type Approval = {
     id: number;
     user_id: number;
     organisation_id: number;
     created_at: string;
+    flat_id: number | null;
+    flats: FlatDetails;
     user: {
         name: string | null;
         email: string | null;
@@ -112,6 +125,14 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
             checked ? [...prev, id] : prev.filter(selId => selId !== id)
         );
     };
+    
+    const formatFlatDetails = (flat: FlatDetails) => {
+        if (!flat) return 'N/A';
+        const building = flat.building_numbers?.buildings?.name ?? 'N/A';
+        const wing = flat.building_numbers?.number ?? 'N/A';
+        const flatNumber = flat.flat_number ?? 'N/A';
+        return `${building}, Wing ${wing}, Flat ${flatNumber}`;
+    };
 
     const isAllSelected = selectedApprovals.length > 0 && selectedApprovals.length === approvals.length;
     const isSomeSelected = selectedApprovals.length > 0 && selectedApprovals.length < approvals.length;
@@ -153,6 +174,7 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
                                     />
                                 </TableHead>
                                 <TableHead>User</TableHead>
+                                <TableHead>Flat Details</TableHead>
                                 <TableHead>Request Date</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -180,6 +202,9 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
                                                 </div>
                                             </div>
                                         </TableCell>
+                                        <TableCell>
+                                            <p className="font-medium">{formatFlatDetails(approval.flats)}</p>
+                                        </TableCell>
                                         <TableCell>{formatDistanceToNow(new Date(approval.created_at), { addSuffix: true })}</TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex items-center justify-end gap-2">
@@ -195,7 +220,7 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center h-24">
+                                    <TableCell colSpan={5} className="text-center h-24">
                                         No pending approvals.
                                     </TableCell>
                                 </TableRow>
