@@ -4,11 +4,52 @@
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
+async function findOrCreateFlat(supabase: any, buildingNumberId: number, flatNumber: string): Promise<number | null> {
+    const upperCaseFlatNumber = flatNumber.toUpperCase();
+
+    // Check if flat already exists
+    let { data: existingFlat, error: findError } = await supabase
+        .from('flats')
+        .select('id')
+        .eq('building_number_id', buildingNumberId)
+        .eq('flat_number', upperCaseFlatNumber)
+        .maybeSingle();
+
+    if (findError) {
+        console.error("Error finding flat:", findError);
+        return null;
+    }
+
+    if (existingFlat) {
+        return existingFlat.id;
+    }
+
+    // If not, create it
+    const { data: newFlat, error: createError } = await supabase
+        .from('flats')
+        .insert({
+            building_number_id: buildingNumberId,
+            flat_number: upperCaseFlatNumber,
+        })
+        .select('id')
+        .single();
+    
+    if (createError) {
+        console.error("Error creating flat:", createError);
+        return null;
+    }
+
+    return newFlat.id;
+}
+
+
 export async function approveRequest(formData: FormData) {
     const supabase = await createServer();
     const approvalId = Number(formData.get('approval_id'));
     const userId = Number(formData.get('user_id'));
     const organisationId = Number(formData.get('organisation_id'));
+    const buildingNumberId = formData.get('building_number_id') ? Number(formData.get('building_number_id')) : null;
+    const flatNumber = formData.get('flat') as string | null;
 
     if (!approvalId || !userId || !organisationId) {
         return { error: 'Missing required IDs for approval.' };
@@ -27,22 +68,34 @@ export async function approveRequest(formData: FormData) {
     }
     const memberRoleId = roleData.id;
 
-    // Step 2: Add the user to the user_organisations table.
-    // Using upsert to prevent errors if a relationship somehow already exists.
+    // Step 2: Find or create the flat if details are provided
+    let flatId = null;
+    if (buildingNumberId && flatNumber) {
+        flatId = await findOrCreateFlat(supabase, buildingNumberId, flatNumber);
+        if (!flatId) {
+            return { error: 'Could not find or create the specified flat.' };
+        }
+    }
+
+    // Step 3: Add the user to the user_organisations table with the flat_id
+    const userOrgPayload = {
+        user_id: userId,
+        organisation_id: organisationId,
+        role_id: memberRoleId,
+        flat_id: flatId,
+        building_number_id: null, // Per schema constraints, flat_id implies building
+    };
+
     const { error: userOrgError } = await supabase
         .from('user_organisations')
-        .upsert({
-            user_id: userId,
-            organisation_id: organisationId,
-            role_id: memberRoleId,
-        }, { onConflict: 'user_id, organisation_id' });
+        .upsert(userOrgPayload, { onConflict: 'user_id, organisation_id' }); // A user can only belong to one org in this context
 
     if (userOrgError) {
         console.error('Error adding user to organization:', userOrgError);
         return { error: `Failed to link user to organization: ${userOrgError.message}` };
     }
 
-    // Step 3: Delete the approval request as it's now been processed.
+    // Step 4: Delete the approval request as it's now been processed.
     const { error: approvalDeleteError } = await supabase
         .from('approvals')
         .delete()
@@ -51,11 +104,10 @@ export async function approveRequest(formData: FormData) {
     if (approvalDeleteError) {
         console.error('Error deleting approval request:', approvalDeleteError);
         // This isn't a critical failure, as the main action (linking user) succeeded.
-        // We can log this and proceed.
     }
     
     revalidatePath('/dashboard/approvals');
-    revalidatePath('/dashboard/users'); // Revalidate users page as their org has changed
+    revalidatePath('/dashboard/users');
 
     return { success: true, message: "User approved and linked to organization." };
 }
@@ -68,7 +120,6 @@ export async function rejectRequest(formData: FormData) {
         return { error: 'Approval ID is missing.' };
     }
 
-    // Simply delete the approval request row
     const { error } = await supabase
         .from('approvals')
         .delete()
@@ -87,7 +138,15 @@ export async function rejectRequest(formData: FormData) {
 
 // --- Bulk Actions ---
 
-export async function approveMultipleRequests(approvals: { approvalId: number, userId: number, organisationId: number }[]) {
+type ApprovalInfo = { 
+    approvalId: number; 
+    userId: number; 
+    organisationId: number;
+    buildingNumberId: number | null;
+    flat: string | null;
+};
+
+export async function approveMultipleRequests(approvals: ApprovalInfo[]) {
     const supabase = await createServer();
 
     if (!approvals || approvals.length === 0) {
@@ -107,11 +166,31 @@ export async function approveMultipleRequests(approvals: { approvalId: number, u
     }
     const memberRoleId = roleData.id;
 
-    const userOrgInserts = approvals.map(approval => ({
-        user_id: approval.userId,
-        organisation_id: approval.organisationId,
-        role_id: memberRoleId,
-    }));
+    // Process each approval: find/create flat, then create payload for user_org insert
+    const userOrgInserts = [];
+    for (const approval of approvals) {
+        let flatId = null;
+        if (approval.buildingNumberId && approval.flat) {
+            flatId = await findOrCreateFlat(supabase, approval.buildingNumberId, approval.flat);
+            if (!flatId) {
+                // Skip this approval if flat creation fails, but continue with others.
+                console.error(`Could not process flat for approval ID ${approval.approvalId}. Skipping.`);
+                continue;
+            }
+        }
+
+        userOrgInserts.push({
+            user_id: approval.userId,
+            organisation_id: approval.organisationId,
+            role_id: memberRoleId,
+            flat_id: flatId,
+            building_number_id: null,
+        });
+    }
+
+    if (userOrgInserts.length === 0) {
+        return { error: 'Could not process any of the selected approvals due to flat assignment errors.' };
+    }
     
     // Step 1: Bulk add users to the user_organisations table.
     const { error: userOrgError } = await supabase
@@ -133,13 +212,12 @@ export async function approveMultipleRequests(approvals: { approvalId: number, u
 
     if (approvalDeleteError) {
         console.error(`Bulk approve: Error deleting approvals`, approvalDeleteError);
-        // Continue even if this part fails, as the main action succeeded.
     }
     
     revalidatePath('/dashboard/approvals');
     revalidatePath('/dashboard/users');
 
-    return { success: true, message: `${approvals.length} request(s) approved.` };
+    return { success: true, message: `${approvals.length} request(s) processed.` };
 }
 
 export async function rejectMultipleRequests(approvalIds: number[]) {

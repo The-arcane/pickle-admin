@@ -23,6 +23,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 
 type BuildingDetails = {
+    id: number;
     number: string;
     building: {
         name: string;
@@ -82,6 +83,12 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
             formData.append('approval_id', selectedApproval.id.toString());
             formData.append('user_id', selectedApproval.user_id.toString());
             formData.append('organisation_id', selectedApproval.organisation_id.toString());
+            if (selectedApproval.building_details?.id) {
+                formData.append('building_number_id', selectedApproval.building_details.id.toString());
+            }
+            if (selectedApproval.flat) {
+                formData.append('flat', selectedApproval.flat);
+            }
             result = await approveRequest(formData);
         } else if (actionType === 'reject' && selectedApproval) {
             const formData = new FormData();
@@ -90,8 +97,14 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
         } else if (actionType === 'bulk_approve') {
             const approvalsToProcess = selectedApprovals.map(id => {
                 const approval = approvals.find(a => a.id === id);
-                return approval ? { approvalId: approval.id, userId: approval.user_id, organisationId: approval.organisation_id } : null;
-            }).filter(Boolean) as { approvalId: number, userId: number, organisationId: number }[];
+                return approval ? { 
+                    approvalId: approval.id, 
+                    userId: approval.user_id, 
+                    organisationId: approval.organisation_id,
+                    buildingNumberId: approval.building_details?.id ?? null,
+                    flat: approval.flat
+                } : null;
+            }).filter(Boolean) as { approvalId: number, userId: number, organisationId: number, buildingNumberId: number | null, flat: string | null }[];
             result = await approveMultipleRequests(approvalsToProcess);
         } else if (actionType === 'bulk_reject') {
             result = await rejectMultipleRequests(selectedApprovals);
