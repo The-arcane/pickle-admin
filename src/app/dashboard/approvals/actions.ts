@@ -88,7 +88,7 @@ export async function approveRequest(formData: FormData) {
 
     const { error: userOrgError } = await supabase
         .from('user_organisations')
-        .upsert(userOrgPayload, { onConflict: 'user_id, organisation_id' }); // A user can only belong to one org in this context
+        .upsert(userOrgPayload, { onConflict: 'user_id, flat_id' }); 
 
     if (userOrgError) {
         console.error('Error adding user to organization:', userOrgError);
@@ -195,7 +195,7 @@ export async function approveMultipleRequests(approvals: ApprovalInfo[]) {
     // Step 1: Bulk add users to the user_organisations table.
     const { error: userOrgError } = await supabase
         .from('user_organisations')
-        .upsert(userOrgInserts, { onConflict: 'user_id, organisation_id' });
+        .upsert(userOrgInserts, { onConflict: 'user_id, flat_id' });
     
     if (userOrgError) {
         console.error('Bulk approve: Error adding users to organization:', userOrgError);
