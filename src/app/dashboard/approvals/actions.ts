@@ -83,13 +83,12 @@ export async function approveRequest(formData: FormData) {
         organisation_id: organisationId,
         role_id: memberRoleId,
         flat_id: flatId,
-        // building_number_id should be null based on schema check `uo_scope_exactly_one_chk`
-        building_number_id: null,
+        building_number_id: null, // Per schema, flat_id and building_number_id are mutually exclusive
     };
 
     const { error: userOrgError } = await supabase
         .from('user_organisations')
-        .upsert(userOrgPayload, { onConflict: 'user_id, flat_id' }); 
+        .insert(userOrgPayload); 
 
     if (userOrgError) {
         console.error('Error adding user to organization:', userOrgError);
@@ -185,7 +184,6 @@ export async function approveMultipleRequests(approvals: ApprovalInfo[]) {
             organisation_id: approval.organisationId,
             role_id: memberRoleId,
             flat_id: flatId,
-            // building_number_id should be null based on schema check `uo_scope_exactly_one_chk`
             building_number_id: null,
         });
     }
@@ -197,11 +195,10 @@ export async function approveMultipleRequests(approvals: ApprovalInfo[]) {
     // Step 1: Bulk add users to the user_organisations table.
     const { error: userOrgError } = await supabase
         .from('user_organisations')
-        .upsert(userOrgInserts, { onConflict: 'user_id, flat_id' });
+        .insert(userOrgInserts);
     
     if (userOrgError) {
         console.error('Bulk approve: Error adding users to organization:', userOrgError);
-        // Partial success is hard to report here, so we'll report a general failure.
         return { error: `Failed to link users to organization: ${userOrgError.message}` };
     }
     
