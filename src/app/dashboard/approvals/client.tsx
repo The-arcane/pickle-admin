@@ -108,7 +108,8 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
             
             if(initialWingId) {
                 fetchFlats(initialWingId).then(() => {
-                    setSelectedFlat(selectedApproval.flat || '');
+                    // Pre-select the flat from the approval request if it exists
+                    setSelectedFlat(selectedApproval.flat?.toUpperCase().replace(/\s+/g, '') || '');
                 });
             } else {
                  setFlatsInWing([]);
@@ -121,11 +122,13 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
     
     // Fetch flats when wing selection changes
     useEffect(() => {
-        fetchFlats(selectedBuildingNumberId);
-        setSelectedFlat('');
+        if (!isAddingNewFlat) {
+            fetchFlats(selectedBuildingNumberId);
+            setSelectedFlat('');
+        }
         setNewFlatNumber('');
-        setIsAddingNewFlat(false);
-    }, [selectedBuildingNumberId, fetchFlats]);
+        // We don't reset isAddingNewFlat here to allow the user to continue adding
+    }, [selectedBuildingNumberId, fetchFlats, isAddingNewFlat]);
 
 
     const openConfirmation = (approval: Approval, type: 'approve' | 'reject') => {
@@ -157,7 +160,7 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
             const flatToApprove = isAddingNewFlat ? newFlatNumber : selectedFlat;
             if (flatToApprove) {
                 formData.append('flat', flatToApprove);
-            } else {
+            } else if (selectedBuildingNumberId) { // Only require flat if building is selected
                  toast({ variant: 'destructive', title: 'Error', description: 'Please select or add a flat number.' });
                  return;
             }
