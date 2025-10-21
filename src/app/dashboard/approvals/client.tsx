@@ -142,6 +142,12 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
         }
     }, [selectedBuildingNumberId, selectedApproval, actionType, fetchFlats]);
 
+    const handleOpenAddFlat = () => {
+        setIsAddingNewFlat(true);
+        // Pre-populate with the original request's flat number if available
+        const requestedFlat = selectedApproval?.flat?.toUpperCase().replace(/\s+/g, '') || '';
+        setNewFlatNumber(requestedFlat);
+    };
 
     const openConfirmation = (approval: Approval, type: 'approve' | 'reject') => {
         setSelectedApproval(approval);
@@ -291,7 +297,7 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
                                             {flatsInWing.length === 0 && !isLoadingFlats && <SelectItem value="none" disabled>No flats found</SelectItem>}
                                         </SelectContent>
                                     </Select>
-                                     <Button type="button" variant="outline" size="sm" onClick={() => setIsAddingNewFlat(true)} disabled={!selectedBuildingNumberId}>
+                                     <Button type="button" variant="outline" size="sm" onClick={handleOpenAddFlat} disabled={!selectedBuildingNumberId}>
                                         <PlusCircle className="mr-2 h-4 w-4" /> Add
                                     </Button>
                                 </div>
