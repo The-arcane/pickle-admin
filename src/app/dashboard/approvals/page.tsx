@@ -13,7 +13,6 @@ export default async function ApprovalsPage() {
         return redirect('/login');
     }
 
-    // Get the admin's own user record to find their organization
     const { data: userRecord } = await supabase
         .from('user')
         .select('id')
@@ -45,7 +44,7 @@ export default async function ApprovalsPage() {
     const organisationId = orgLink.organisation_id;
     
     // Fetch pending approvals for the admin's organization.
-    const { data: approvals, error } = await supabase
+    const { data: approvals, error: approvalsError } = await supabase
         .from('approvals')
         .select(`
             id,
@@ -54,22 +53,42 @@ export default async function ApprovalsPage() {
             created_at,
             flat,
             user:user_id ( name, email, profile_image_url ),
-            building_details:building_numbers (
+            building_details:building_number_id (
+                id,
                 number,
-                building:buildings ( name )
+                building:buildings ( id, name )
             )
         `)
         .eq('organisation_id', organisationId)
         .eq('is_approved', false)
         .order('created_at', { ascending: true });
     
-    if (error) {
-        console.error('Error fetching approvals:', error);
+    if (approvalsError) {
+        console.error('Error fetching approvals:', approvalsError);
     }
+
+    // Fetch all buildings and wings for the organization for the approval dialog
+    const { data: buildingsData, error: buildingsError } = await supabase
+        .from('buildings')
+        .select(`
+            id,
+            name,
+            building_numbers (
+                id,
+                number
+            )
+        `)
+        .eq('organisation_id', organisationId)
+        .order('name');
+    
+    if (buildingsError) {
+        console.error('Error fetching buildings for dropdown:', buildingsError);
+    }
+
 
     return (
         <div className="space-y-6">
-            <ApprovalsClientPage approvals={approvals || []} />
+            <ApprovalsClientPage approvals={approvals || []} buildings={buildingsData || []} />
         </div>
     );
 }

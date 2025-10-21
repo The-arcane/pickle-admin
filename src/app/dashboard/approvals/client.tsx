@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { approveRequest, rejectRequest, approveMultipleRequests, rejectMultipleRequests } from './actions';
 import { Button } from '@/components/ui/button';
@@ -21,15 +21,18 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type BuildingDetails = {
     id: number;
     number: string;
     building: {
+        id: number;
         name: string;
     } | null;
 } | null;
-
 
 type Approval = {
     id: number;
@@ -45,6 +48,12 @@ type Approval = {
     } | null;
 };
 
+type BuildingWithWings = {
+    id: number;
+    name: string;
+    building_numbers: { id: number; number: string; }[];
+}
+
 function getInitials(name: string | undefined | null) {
   if (!name) return '';
   const names = name.split(' ').filter(Boolean);
@@ -55,12 +64,29 @@ function getInitials(name: string | undefined | null) {
 };
 
 
-export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
+export function ApprovalsClientPage({ approvals, buildings }: { approvals: Approval[], buildings: BuildingWithWings[] }) {
     const { toast } = useToast();
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);
     const [actionType, setActionType] = useState<'approve' | 'reject' | 'bulk_approve' | 'bulk_reject' | null>(null);
     const [selectedApprovals, setSelectedApprovals] = useState<number[]>([]);
+    
+    // State for the approval dialog
+    const [selectedBuildingId, setSelectedBuildingId] = useState<string>('');
+    const [selectedBuildingNumberId, setSelectedBuildingNumberId] = useState<string>('');
+    const [flatNumber, setFlatNumber] = useState('');
+
+    const wingsForSelectedBuilding = buildings.find(b => b.id.toString() === selectedBuildingId)?.building_numbers || [];
+
+    useEffect(() => {
+        if (selectedApproval && actionType === 'approve') {
+            const initialBuildingId = selectedApproval.building_details?.building?.id.toString() || '';
+            const initialWingId = selectedApproval.building_details?.id.toString() || '';
+            setSelectedBuildingId(initialBuildingId);
+            setSelectedBuildingNumberId(initialWingId);
+            setFlatNumber(selectedApproval.flat || '');
+        }
+    }, [selectedApproval, actionType]);
 
     const openConfirmation = (approval: Approval, type: 'approve' | 'reject') => {
         setSelectedApproval(approval);
@@ -83,17 +109,21 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
             formData.append('approval_id', selectedApproval.id.toString());
             formData.append('user_id', selectedApproval.user_id.toString());
             formData.append('organisation_id', selectedApproval.organisation_id.toString());
-            if (selectedApproval.building_details?.id) {
-                formData.append('building_number_id', selectedApproval.building_details.id.toString());
+            
+            // Use the state values from the approval dialog
+            if (selectedBuildingNumberId) {
+                formData.append('building_number_id', selectedBuildingNumberId);
             }
-            if (selectedApproval.flat) {
-                formData.append('flat', selectedApproval.flat);
+            if (flatNumber) {
+                formData.append('flat', flatNumber);
             }
             result = await approveRequest(formData);
+
         } else if (actionType === 'reject' && selectedApproval) {
             const formData = new FormData();
             formData.append('approval_id', selectedApproval.id.toString());
             result = await rejectRequest(formData);
+
         } else if (actionType === 'bulk_approve') {
             const approvalsToProcess = selectedApprovals.map(id => {
                 const approval = approvals.find(a => a.id === id);
@@ -106,6 +136,7 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
                 } : null;
             }).filter(Boolean) as { approvalId: number, userId: number, organisationId: number, buildingNumberId: number | null, flat: string | null }[];
             result = await approveMultipleRequests(approvalsToProcess);
+
         } else if (actionType === 'bulk_reject') {
             result = await rejectMultipleRequests(selectedApprovals);
         }
@@ -146,6 +177,77 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
 
     const isAllSelected = selectedApprovals.length > 0 && selectedApprovals.length === approvals.length;
     const isSomeSelected = selectedApprovals.length > 0 && selectedApprovals.length < approvals.length;
+
+    const renderAlertDialogContent = () => {
+        if (actionType === 'approve' && selectedApproval) {
+            return (
+                <>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Approve Request</AlertDialogTitle>
+                        <AlertDialogDescription>
+                           Review and confirm the flat details for {selectedApproval.user?.name} before approving.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="building">Building</Label>
+                                <Select value={selectedBuildingId} onValueChange={setSelectedBuildingId}>
+                                    <SelectTrigger id="building"><SelectValue placeholder="Select Building" /></SelectTrigger>
+                                    <SelectContent>
+                                        {buildings.map(b => <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="wing">Wing/Block</Label>
+                                 <Select value={selectedBuildingNumberId} onValueChange={setSelectedBuildingNumberId} disabled={!selectedBuildingId}>
+                                    <SelectTrigger id="wing"><SelectValue placeholder="Select Wing/Block" /></SelectTrigger>
+                                    <SelectContent>
+                                        {wingsForSelectedBuilding.map(w => <SelectItem key={w.id} value={w.id.toString()}>{w.number}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="flat">Flat Number</Label>
+                            <Input id="flat" value={flatNumber} onChange={e => setFlatNumber(e.target.value)} />
+                        </div>
+                    </div>
+                     <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleAction}>Approve</AlertDialogAction>
+                    </AlertDialogFooter>
+                </>
+            );
+        }
+
+        // Default confirmation for reject and bulk actions
+        return (
+             <>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {actionType?.startsWith('bulk') 
+                            ? `You are about to ${actionType === 'bulk_approve' ? 'approve' : 'reject'} ${selectedApprovals.length} request(s).`
+                            : `You are about to ${actionType} the request for ${selectedApproval?.user?.name}.`
+                        }
+                        {(actionType === 'reject' || actionType === 'bulk_reject') && " This action cannot be undone."}
+                        {(actionType === 'approve' || actionType === 'bulk_approve') && " This will add the user(s) to your Living Space."}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                        onClick={handleAction} 
+                        className={(actionType === 'reject' || actionType === 'bulk_reject') ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+                    >
+                        {actionType?.includes('approve') ? 'Approve' : 'Reject'}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+             </>
+        );
+    }
 
     return (
         <>
@@ -242,26 +344,7 @@ export function ApprovalsClientPage({ approvals }: { approvals: Approval[] }) {
 
             <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
                 <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {actionType?.startsWith('bulk') 
-                             ? `You are about to ${actionType === 'bulk_approve' ? 'approve' : 'reject'} ${selectedApprovals.length} request(s).`
-                             : `You are about to ${actionType} the request for ${selectedApproval?.user?.name}.`
-                            }
-                            {(actionType === 'reject' || actionType === 'bulk_reject') && " This action cannot be undone."}
-                            {(actionType === 'approve' || actionType === 'bulk_approve') && " This will add the user(s) to your Living Space."}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={handleAction} 
-                          className={(actionType === 'reject' || actionType === 'bulk_reject') ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
-                        >
-                            {actionType?.includes('approve') ? 'Approve' : 'Reject'}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
+                   {renderAlertDialogContent()}
                 </AlertDialogContent>
             </AlertDialog>
         </>
