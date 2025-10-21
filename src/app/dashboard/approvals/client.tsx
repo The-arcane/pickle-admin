@@ -90,7 +90,7 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
     const fetchFlats = useCallback(async (wingId: string) => {
         if (!wingId) {
             setFlatsInWing([]);
-            return;
+            return [];
         }
         setIsLoadingFlats(true);
         try {
@@ -102,49 +102,48 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
         }
     }, []);
 
+    // This single useEffect now handles all logic for the approval dialog's state
     useEffect(() => {
+        // Only run when the dialog is open for an approval action
         if (selectedApproval && actionType === 'approve') {
-            const initialBuildingId = selectedApproval.building_details?.building?.id.toString() || '';
-            const initialWingId = selectedApproval.building_details?.id.toString() || '';
             const requestedFlat = selectedApproval.flat?.toUpperCase().replace(/\s+/g, '') || '';
             
-            setSelectedBuildingId(initialBuildingId);
-            setSelectedBuildingNumberId(initialWingId);
-            
-            // Reset states before fetching
-            setIsAddingNewFlat(false);
-            setNewFlatNumber('');
-            setSelectedFlat('');
+            // On initial dialog open, set the building and wing from the approval request.
+            if (selectedApproval.building_details?.id.toString() !== selectedBuildingNumberId) {
+                 const initialBuildingId = selectedApproval.building_details?.building?.id.toString() || '';
+                 const initialWingId = selectedApproval.building_details?.id.toString() || '';
+                 setSelectedBuildingId(initialBuildingId);
+                 setSelectedBuildingNumberId(initialWingId);
+                 return; // Let the effect re-run with the correct wingId
+            }
 
-            if(initialWingId) {
-                fetchFlats(initialWingId).then((fetchedFlats) => {
-                    if(!fetchedFlats) return;
-                    const flatExists = fetchedFlats.some(f => f.flat_number === requestedFlat);
+            // Once the wing is set (either initially or by user change), fetch flats
+            if(selectedBuildingNumberId) {
+                fetchFlats(selectedBuildingNumberId).then((fetchedFlats) => {
+                    const flats = fetchedFlats || [];
+                    const flatExists = flats.some(f => f.flat_number === requestedFlat);
+                    
+                    // Reset sub-states before setting them
+                    setIsAddingNewFlat(false);
+                    setNewFlatNumber('');
+                    setSelectedFlat('');
 
                     if (flatExists) {
                         setSelectedFlat(requestedFlat);
                     } else if (requestedFlat) {
-                        // If the requested flat doesn't exist, switch to add mode and pre-fill it.
                         setIsAddingNewFlat(true);
                         setNewFlatNumber(requestedFlat);
                     }
                 });
             } else {
                  setFlatsInWing([]);
+                 setIsAddingNewFlat(false);
+                 setNewFlatNumber('');
+                 setSelectedFlat('');
             }
         }
-    }, [selectedApproval, actionType, fetchFlats]);
-    
-    // Fetch flats when wing selection changes by the user
-    useEffect(() => {
-        if (selectedApproval && actionType === 'approve') {
-            fetchFlats(selectedBuildingNumberId).then(() => {
-                setSelectedFlat('');
-                setIsAddingNewFlat(false);
-                setNewFlatNumber('');
-            });
-        }
-    }, [selectedBuildingNumberId, selectedApproval, actionType, fetchFlats]);
+    }, [selectedApproval, actionType, selectedBuildingNumberId, fetchFlats]);
+
 
     const handleOpenAddFlat = () => {
         setIsAddingNewFlat(true);
@@ -438,7 +437,12 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
             </Card>
 
             <AlertDialog open={isAlertOpen} onOpenChange={(open) => {
-                if(!open) { setIsAddingNewFlat(false); }
+                if(!open) { 
+                    setIsAddingNewFlat(false); 
+                    setSelectedApproval(null);
+                    setSelectedBuildingId('');
+                    setSelectedBuildingNumberId('');
+                }
                 setIsAlertOpen(open)
             }}>
                 <AlertDialogContent>
