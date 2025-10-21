@@ -83,7 +83,7 @@ export async function approveRequest(formData: FormData) {
         organisation_id: organisationId,
         role_id: memberRoleId,
         flat_id: flatId,
-        building_number_id: null, // Per schema, flat_id and building_number_id are mutually exclusive
+        building_number_id: null, // Per schema, flat_id and building_number_id are mutually exclusive in this context
     };
 
     const { error: userOrgError } = await supabase
