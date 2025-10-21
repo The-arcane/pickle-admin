@@ -93,10 +93,13 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
             return;
         }
         setIsLoadingFlats(true);
-        const flats = await getFlatsForWing(Number(wingId));
-        setFlatsInWing(flats);
-        setIsLoadingFlats(false);
-        return flats;
+        try {
+            const flats = await getFlatsForWing(Number(wingId));
+            setFlatsInWing(flats);
+            return flats;
+        } finally {
+            setIsLoadingFlats(false);
+        }
     }, []);
 
     useEffect(() => {
@@ -115,6 +118,7 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
 
             if(initialWingId) {
                 fetchFlats(initialWingId).then((fetchedFlats) => {
+                    if(!fetchedFlats) return;
                     const flatExists = fetchedFlats.some(f => f.flat_number === requestedFlat);
 
                     if (flatExists) {
@@ -147,6 +151,7 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
         // Pre-populate with the original request's flat number if available
         const requestedFlat = selectedApproval?.flat?.toUpperCase().replace(/\s+/g, '') || '';
         setNewFlatNumber(requestedFlat);
+        setSelectedFlat('');
     };
 
     const openConfirmation = (approval: Approval, type: 'approve' | 'reject') => {
