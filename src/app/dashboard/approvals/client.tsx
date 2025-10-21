@@ -96,39 +96,51 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
         const flats = await getFlatsForWing(Number(wingId));
         setFlatsInWing(flats);
         setIsLoadingFlats(false);
+        return flats;
     }, []);
 
     useEffect(() => {
         if (selectedApproval && actionType === 'approve') {
             const initialBuildingId = selectedApproval.building_details?.building?.id.toString() || '';
             const initialWingId = selectedApproval.building_details?.id.toString() || '';
+            const requestedFlat = selectedApproval.flat?.toUpperCase().replace(/\s+/g, '') || '';
             
             setSelectedBuildingId(initialBuildingId);
             setSelectedBuildingNumberId(initialWingId);
             
+            // Reset states before fetching
+            setIsAddingNewFlat(false);
+            setNewFlatNumber('');
+            setSelectedFlat('');
+
             if(initialWingId) {
-                fetchFlats(initialWingId).then(() => {
-                    // Pre-select the flat from the approval request if it exists
-                    setSelectedFlat(selectedApproval.flat?.toUpperCase().replace(/\s+/g, '') || '');
+                fetchFlats(initialWingId).then((fetchedFlats) => {
+                    const flatExists = fetchedFlats.some(f => f.flat_number === requestedFlat);
+
+                    if (flatExists) {
+                        setSelectedFlat(requestedFlat);
+                    } else if (requestedFlat) {
+                        // If the requested flat doesn't exist, switch to add mode and pre-fill it.
+                        setIsAddingNewFlat(true);
+                        setNewFlatNumber(requestedFlat);
+                    }
                 });
             } else {
                  setFlatsInWing([]);
-                 setSelectedFlat('');
             }
-            setIsAddingNewFlat(false);
-            setNewFlatNumber('');
         }
     }, [selectedApproval, actionType, fetchFlats]);
     
-    // Fetch flats when wing selection changes
+    // Fetch flats when wing selection changes by the user
     useEffect(() => {
-        if (!isAddingNewFlat) {
-            fetchFlats(selectedBuildingNumberId);
-            setSelectedFlat('');
+        if (selectedApproval && actionType === 'approve') {
+            fetchFlats(selectedBuildingNumberId).then(() => {
+                setSelectedFlat('');
+                setIsAddingNewFlat(false);
+                setNewFlatNumber('');
+            });
         }
-        setNewFlatNumber('');
-        // We don't reset isAddingNewFlat here to allow the user to continue adding
-    }, [selectedBuildingNumberId, fetchFlats, isAddingNewFlat]);
+    }, [selectedBuildingNumberId, selectedApproval, actionType, fetchFlats]);
 
 
     const openConfirmation = (approval: Approval, type: 'approve' | 'reject') => {
