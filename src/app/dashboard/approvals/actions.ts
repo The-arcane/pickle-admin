@@ -83,6 +83,7 @@ export async function approveRequest(formData: FormData) {
         organisation_id: organisationId,
         role_id: memberRoleId,
         flat_id: flatId,
+        // building_number_id should be null based on schema check `uo_scope_exactly_one_chk`
         building_number_id: null,
     };
 
@@ -184,6 +185,7 @@ export async function approveMultipleRequests(approvals: ApprovalInfo[]) {
             organisation_id: approval.organisationId,
             role_id: memberRoleId,
             flat_id: flatId,
+            // building_number_id should be null based on schema check `uo_scope_exactly_one_chk`
             building_number_id: null,
         });
     }
@@ -217,7 +219,7 @@ export async function approveMultipleRequests(approvals: ApprovalInfo[]) {
     revalidatePath('/dashboard/approvals');
     revalidatePath('/dashboard/users');
 
-    return { success: true, message: `${approvals.length} request(s) processed.` };
+    return { success: true, message: `${userOrgInserts.length} request(s) processed.` };
 }
 
 export async function rejectMultipleRequests(approvalIds: number[]) {
