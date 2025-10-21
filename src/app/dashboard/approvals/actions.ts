@@ -5,7 +5,7 @@ import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 async function findOrCreateFlat(supabase: any, buildingNumberId: number, flatNumber: string): Promise<number | null> {
-    const upperCaseFlatNumber = flatNumber.toUpperCase();
+    const upperCaseFlatNumber = flatNumber.toUpperCase().replace(/\s+/g, '');
 
     // Check if flat already exists
     let { data: existingFlat, error: findError } = await supabase
@@ -83,7 +83,7 @@ export async function approveRequest(formData: FormData) {
         organisation_id: organisationId,
         role_id: memberRoleId,
         flat_id: flatId,
-        building_number_id: null, // Per schema constraints, flat_id implies building
+        building_number_id: null,
     };
 
     const { error: userOrgError } = await supabase
