@@ -25,17 +25,23 @@ async function findOrCreateFlat(supabase: any, buildingNumberId: number, flatNum
     }
 
     // If not, create it
-    const { data: newFlat, error: createError } = await supabase
+    const { data: newFlatData, error: createError } = await supabase
         .from('flats')
         .insert({
             building_number_id: buildingNumberId,
             flat_number: upperCaseFlatNumber,
         })
-        .select('id')
-        .single();
+        .select('id');
     
     if (createError) {
         console.error("Error creating flat:", createError);
+        return null;
+    }
+    
+    // Correctly access the id from the returned array
+    const newFlat = newFlatData?.[0];
+    if (!newFlat) {
+        console.error("Flat creation did not return the expected record.");
         return null;
     }
 
