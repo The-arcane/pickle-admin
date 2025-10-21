@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { approveRequest, rejectRequest, approveMultipleRequests, rejectMultipleRequests } from './actions';
+import { approveRequest, rejectRequest, approveMultipleRequests, rejectMultipleRequests, getFlatsForWing } from './actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Check, UserCheck, X } from 'lucide-react';
+import { Check, UserCheck, X, PlusCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import {
   AlertDialog,
@@ -54,6 +54,11 @@ type BuildingWithWings = {
     building_numbers: { id: number; number: string; }[];
 }
 
+type Flat = {
+    id: number;
+    flat_number: string;
+};
+
 function getInitials(name: string | undefined | null) {
   if (!name) return '';
   const names = name.split(' ').filter(Boolean);
@@ -74,19 +79,54 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
     // State for the approval dialog
     const [selectedBuildingId, setSelectedBuildingId] = useState<string>('');
     const [selectedBuildingNumberId, setSelectedBuildingNumberId] = useState<string>('');
-    const [flatNumber, setFlatNumber] = useState('');
+    const [flatsInWing, setFlatsInWing] = useState<Flat[]>([]);
+    const [isLoadingFlats, setIsLoadingFlats] = useState(false);
+    const [selectedFlat, setSelectedFlat] = useState('');
+    const [isAddingNewFlat, setIsAddingNewFlat] = useState(false);
+    const [newFlatNumber, setNewFlatNumber] = useState('');
 
     const wingsForSelectedBuilding = buildings.find(b => b.id.toString() === selectedBuildingId)?.building_numbers || [];
+
+    const fetchFlats = useCallback(async (wingId: string) => {
+        if (!wingId) {
+            setFlatsInWing([]);
+            return;
+        }
+        setIsLoadingFlats(true);
+        const flats = await getFlatsForWing(Number(wingId));
+        setFlatsInWing(flats);
+        setIsLoadingFlats(false);
+    }, []);
 
     useEffect(() => {
         if (selectedApproval && actionType === 'approve') {
             const initialBuildingId = selectedApproval.building_details?.building?.id.toString() || '';
             const initialWingId = selectedApproval.building_details?.id.toString() || '';
+            
             setSelectedBuildingId(initialBuildingId);
             setSelectedBuildingNumberId(initialWingId);
-            setFlatNumber(selectedApproval.flat || '');
+            
+            if(initialWingId) {
+                fetchFlats(initialWingId).then(() => {
+                    setSelectedFlat(selectedApproval.flat || '');
+                });
+            } else {
+                 setFlatsInWing([]);
+                 setSelectedFlat('');
+            }
+            setIsAddingNewFlat(false);
+            setNewFlatNumber('');
         }
-    }, [selectedApproval, actionType]);
+    }, [selectedApproval, actionType, fetchFlats]);
+    
+    // Fetch flats when wing selection changes
+    useEffect(() => {
+        fetchFlats(selectedBuildingNumberId);
+        setSelectedFlat('');
+        setNewFlatNumber('');
+        setIsAddingNewFlat(false);
+    }, [selectedBuildingNumberId, fetchFlats]);
+
 
     const openConfirmation = (approval: Approval, type: 'approve' | 'reject') => {
         setSelectedApproval(approval);
@@ -110,12 +150,16 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
             formData.append('user_id', selectedApproval.user_id.toString());
             formData.append('organisation_id', selectedApproval.organisation_id.toString());
             
-            // Use the state values from the approval dialog
             if (selectedBuildingNumberId) {
                 formData.append('building_number_id', selectedBuildingNumberId);
             }
-            if (flatNumber) {
-                formData.append('flat', flatNumber);
+            
+            const flatToApprove = isAddingNewFlat ? newFlatNumber : selectedFlat;
+            if (flatToApprove) {
+                formData.append('flat', flatToApprove);
+            } else {
+                 toast({ variant: 'destructive', title: 'Error', description: 'Please select or add a flat number.' });
+                 return;
             }
             result = await approveRequest(formData);
 
@@ -211,7 +255,32 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="flat">Flat Number</Label>
-                            <Input id="flat" value={flatNumber} onChange={e => setFlatNumber(e.target.value)} />
+                            {isAddingNewFlat ? (
+                                <div className="flex items-center gap-2">
+                                    <Input 
+                                        id="new-flat" 
+                                        value={newFlatNumber} 
+                                        onChange={e => setNewFlatNumber(e.target.value)} 
+                                        placeholder="Enter new flat number"
+                                    />
+                                    <Button type="button" variant="ghost" onClick={() => setIsAddingNewFlat(false)}>Cancel</Button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <Select value={selectedFlat} onValueChange={setSelectedFlat} disabled={!selectedBuildingNumberId || isLoadingFlats}>
+                                        <SelectTrigger id="flat">
+                                            <SelectValue placeholder={isLoadingFlats ? 'Loading...' : 'Select Flat'} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {flatsInWing.map(f => <SelectItem key={f.id} value={f.flat_number}>{f.flat_number}</SelectItem>)}
+                                            {flatsInWing.length === 0 && !isLoadingFlats && <SelectItem value="none" disabled>No flats found</SelectItem>}
+                                        </SelectContent>
+                                    </Select>
+                                     <Button type="button" variant="outline" size="sm" onClick={() => setIsAddingNewFlat(true)} disabled={!selectedBuildingNumberId}>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Add
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
                      <AlertDialogFooter>
@@ -286,7 +355,7 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
                                     />
                                 </TableHead>
                                 <TableHead>User</TableHead>
-                                <TableHead>Flat Details</TableHead>
+                                <TableHead>Requested Flat</TableHead>
                                 <TableHead>Request Date</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -342,7 +411,10 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
                 </CardContent>
             </Card>
 
-            <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+            <AlertDialog open={isAlertOpen} onOpenChange={(open) => {
+                if(!open) { setIsAddingNewFlat(false); }
+                setIsAlertOpen(open)
+            }}>
                 <AlertDialogContent>
                    {renderAlertDialogContent()}
                 </AlertDialogContent>

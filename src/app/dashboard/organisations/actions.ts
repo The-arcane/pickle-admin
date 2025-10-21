@@ -85,7 +85,7 @@ export async function addFlat(formData: FormData) {
 
     const { error } = await supabase
         .from('flats')
-        .insert({ building_number_id: Number(building_number_id), flat_number: flat_number as string });
+        .insert({ building_number_id: Number(building_number_id), flat_number: (flat_number as string).toUpperCase().replace(/\s+/g, '') });
 
     if (error) {
         if(error.code === '23505') return { error: 'A flat with this number already exists in this wing/block.' };

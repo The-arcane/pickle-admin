@@ -88,7 +88,7 @@ export async function approveRequest(formData: FormData) {
         organisation_id: organisationId,
         role_id: memberRoleId,
         flat_id: flatId,
-        building_number_id: null, // Explicitly set to null to avoid constraint violation
+        building_number_id: null, 
     };
 
     const { error: userOrgError } = await supabase
@@ -108,7 +108,6 @@ export async function approveRequest(formData: FormData) {
 
     if (approvalDeleteError) {
         console.error('Error deleting approval request:', approvalDeleteError);
-        // This isn't a critical failure, as the main action (linking user) succeeded.
     }
     
     revalidatePath('/dashboard/approvals');
@@ -178,7 +177,6 @@ export async function approveMultipleRequests(approvals: ApprovalInfo[]) {
         if (approval.buildingNumberId && approval.flat) {
             flatId = await findOrCreateFlat(supabase, approval.buildingNumberId, approval.flat);
             if (!flatId) {
-                // Skip this approval if flat creation fails, but continue with others.
                 console.error(`Could not process flat for approval ID ${approval.approvalId}. Skipping.`);
                 continue;
             }
@@ -189,7 +187,7 @@ export async function approveMultipleRequests(approvals: ApprovalInfo[]) {
             organisation_id: approval.organisationId,
             role_id: memberRoleId,
             flat_id: flatId,
-            building_number_id: null, // Explicitly set to null to avoid constraint violation
+            building_number_id: null,
         });
     }
 
@@ -243,4 +241,20 @@ export async function rejectMultipleRequests(approvalIds: number[]) {
 
     revalidatePath('/dashboard/approvals');
     return { success: true, message: `${approvalIds.length} request(s) rejected.` };
+}
+
+export async function getFlatsForWing(buildingNumberId: number) {
+    const supabase = await createServer();
+    const { data, error } = await supabase
+        .from('flats')
+        .select('id, flat_number')
+        .eq('building_number_id', buildingNumberId)
+        .order('flat_number', { ascending: true });
+    
+    if (error) {
+        console.error("Error fetching flats for wing:", error);
+        return [];
+    }
+    
+    return data;
 }
