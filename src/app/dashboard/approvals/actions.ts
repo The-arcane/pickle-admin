@@ -31,21 +31,20 @@ async function findOrCreateFlat(supabase: any, buildingNumberId: number, flatNum
             building_number_id: buildingNumberId,
             flat_number: upperCaseFlatNumber,
         })
-        .select('id');
+        .select('id')
+        .single();
     
     if (createError) {
         console.error("Error creating flat:", createError);
         return null;
     }
     
-    // Correctly access the id from the returned array
-    const newFlat = newFlatData?.[0];
-    if (!newFlat) {
+    if (!newFlatData) {
         console.error("Flat creation did not return the expected record.");
         return null;
     }
 
-    return newFlat.id;
+    return newFlatData.id;
 }
 
 
@@ -89,7 +88,7 @@ export async function approveRequest(formData: FormData) {
         organisation_id: organisationId,
         role_id: memberRoleId,
         flat_id: flatId,
-        building_number_id: null,
+        building_number_id: null, // Explicitly set to null to avoid constraint violation
     };
 
     const { error: userOrgError } = await supabase
@@ -190,7 +189,7 @@ export async function approveMultipleRequests(approvals: ApprovalInfo[]) {
             organisation_id: approval.organisationId,
             role_id: memberRoleId,
             flat_id: flatId,
-            building_number_id: null,
+            building_number_id: null, // Explicitly set to null to avoid constraint violation
         });
     }
 
