@@ -114,6 +114,10 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
                  const initialWingId = selectedApproval.building_details?.id.toString() || '';
                  setSelectedBuildingId(initialBuildingId);
                  setSelectedBuildingNumberId(initialWingId);
+                 // Clear flat selections until flats for the correct wing are loaded
+                 setSelectedFlat('');
+                 setIsAddingNewFlat(false);
+                 setNewFlatNumber('');
                  return; // Let the effect re-run with the correct wingId
             }
 
@@ -152,6 +156,18 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
         setNewFlatNumber(requestedFlat);
         setSelectedFlat('');
     };
+
+    const handleCancelAddFlat = () => {
+        setIsAddingNewFlat(false);
+        const requestedFlat = selectedApproval?.flat?.toUpperCase().replace(/\s+/g, '') || '';
+        const flatExists = flatsInWing.some(f => f.flat_number === requestedFlat);
+        if (flatExists) {
+            setSelectedFlat(requestedFlat);
+        } else {
+            setSelectedFlat('');
+        }
+    };
+
 
     const openConfirmation = (approval: Approval, type: 'approve' | 'reject') => {
         setSelectedApproval(approval);
@@ -288,7 +304,7 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
                                         onChange={e => setNewFlatNumber(e.target.value)} 
                                         placeholder="Enter new flat number"
                                     />
-                                    <Button type="button" variant="ghost" onClick={() => setIsAddingNewFlat(false)}>Cancel</Button>
+                                    <Button type="button" variant="ghost" onClick={handleCancelAddFlat}>Cancel</Button>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2">
