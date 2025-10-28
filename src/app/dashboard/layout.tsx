@@ -34,6 +34,7 @@ export default function DashboardLayout({
   const [user, setUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [organisationName, setOrganisationName] = useState('Lumen');
+  const [organisationType, setOrganisationType] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -70,11 +71,16 @@ export default function DashboardLayout({
     if (orgLink?.organisation_id) {
       const { data: organisation } = await supabase
         .from('organisations')
-        .select('name')
+        .select('name, organisation_types(type_name)')
         .eq('id', orgLink.organisation_id)
         .single();
+        
       if (organisation) {
           setOrganisationName(organisation.name);
+          const orgType = (organisation.organisation_types as any)?.type_name;
+          if (orgType) {
+            setOrganisationType(orgType);
+          }
       }
     }
     setLoading(false);
@@ -115,7 +121,9 @@ export default function DashboardLayout({
               <DashboardNav />
           </div>
           <div className="mt-auto p-4">
-              <p className="text-xs text-muted-foreground">Version 16.3.13</p>
+              <p className="text-xs text-muted-foreground capitalize">
+                {organisationType && `${organisationType} | `}Version 16.3.13
+              </p>
           </div>
         </aside>
         <div className="flex flex-col sm:pl-60 flex-1">
