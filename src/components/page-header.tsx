@@ -25,7 +25,7 @@ const pageConfig: PageConfig = {
   '/super-admin/courts': { icon: List, color: 'text-amber-500' },
   '/super-admin/bookings': { icon: Calendar, color: 'text-rose-500' },
   '/super-admin/events': { icon: PartyPopper, color: 'text-pink-500' },
-  '/super-admin/residences': { icon: Home, color: 'text-teal-500' },
+  '/super-admin/invitations': { icon: Home, color: 'text-teal-500' },
 };
 
 export function PageHeader({

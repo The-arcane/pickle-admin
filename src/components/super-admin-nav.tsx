@@ -15,7 +15,7 @@ const navItems = [
   { href: '/super-admin/users', label: 'Users', icon: Users, color: 'text-violet-500' },
   { href: '/super-admin/admins', label: 'Admins', icon: ShieldCheck, color: 'text-red-500' },
   { href: '/super-admin/sales', label: 'Sales', icon: TrendingUp, color: 'text-green-500' },
-  { href: '/super-admin/residences', label: 'Residences', icon: Home, color: 'text-teal-500' },
+  { href: '/super-admin/invitations', label: 'Invitations', icon: Home, color: 'text-teal-500' },
   { href: '/super-admin/courts', label: 'Courts', icon: List, color: 'text-amber-500' },
   { href: '/super-admin/bookings', label: 'Bookings', icon: Calendar, color: 'text-rose-500' },
   { href: '/super-admin/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
