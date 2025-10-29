@@ -232,7 +232,7 @@ export default async function DashboardPage() {
   const activityStats = [
     { label: 'Total Event Enrolments', value: stats.totalEnrolments, icon: Users, color: 'text-violet-500', description: 'Confirmed attendees for all events.'},
     { label: 'Total Courts', value: stats.totalCourts, icon: List, color: 'text-amber-500' },
-    { label: 'Total Events', value: stats.totalEventsCount, icon: PartyPopper, color: 'text-pink-500' },
+    { label: 'Total Events', value: stats.totalEventsCount, icon: PartyPopper, color: 'text-rose-500' },
   ];
 
   return (
@@ -283,7 +283,7 @@ export default async function DashboardPage() {
             <Button asChild className="flex-grow bg-cyan-100 text-cyan-800 hover:bg-cyan-200 dark:bg-cyan-900/50 dark:text-cyan-300 dark:hover:bg-cyan-900/80 focus-visible:ring-cyan-500"><Link href="/dashboard/approvals"><UserCheck className="mr-2 h-4 w-4" />Approvals</Link></Button>
             <Button asChild className="flex-grow bg-teal-100 text-teal-800 hover:bg-teal-200 dark:bg-teal-900/50 dark:text-teal-300 dark:hover:bg-teal-900/80 focus-visible:ring-teal-500"><Link href="/dashboard/invitations"><Home className="mr-2 h-4 w-4" />Invitations</Link></Button>
             <Button asChild className="flex-grow bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:hover:bg-amber-900/80 focus-visible:ring-amber-500"><Link href="/dashboard/courts"><List className="mr-2 h-4 w-4" />Courts</Link></Button>
-            <Button asChild className="flex-grow bg-pink-100 text-pink-800 hover:bg-pink-200 dark:bg-pink-900/50 dark:text-pink-300 dark:hover:bg-pink-900/80 focus-visible:ring-pink-500"><Link href="/dashboard/events"><PartyPopper className="mr-2 h-4 w-4" />Events</Link></Button>
+            <Button asChild className="flex-grow bg-rose-100 text-rose-800 hover:bg-rose-200 dark:bg-rose-900/50 dark:text-rose-300 dark:hover:bg-rose-900/80 focus-visible:ring-rose-500"><Link href="/dashboard/events"><PartyPopper className="mr-2 h-4 w-4" />Events</Link></Button>
             <Button asChild className="flex-grow bg-indigo-100 text-indigo-800 hover:bg-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-300 dark:hover:bg-indigo-900/80 focus-visible:ring-indigo-500"><Link href="/dashboard/channels"><Radio className="mr-2 h-4 w-4" />Channels</Link></Button>
             <Button asChild className="flex-grow bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:hover:bg-purple-900/80 focus-visible:ring-purple-500"><Link href="/dashboard/coaches"><Contact2 className="mr-2 h-4 w-4" />Coaches</Link></Button>
         </CardContent>
