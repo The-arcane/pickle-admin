@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { ResidencesClientPage as DashboardResidencesClientPage } from '@/app/dashboard/residences/client';
+import { ResidencesClientPage as DashboardResidencesClientPage } from '@/app/livingspace/residences/client';
 import { PageHeader } from '@/components/page-header';
 import type { Organization } from '@/types';
 import { useOrganization } from '@/hooks/use-organization';
