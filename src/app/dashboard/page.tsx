@@ -280,12 +280,12 @@ export default async function DashboardPage() {
             <CardDescription>Quickly jump to key management areas.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
-            <Button variant="outline" asChild><Link href="/dashboard/approvals"><UserCheck className="mr-2 h-4 w-4" />Approvals</Link></Button>
-            <Button variant="outline" asChild><Link href="/dashboard/invitations"><Home className="mr-2 h-4 w-4" />Invitations</Link></Button>
-            <Button variant="outline" asChild><Link href="/dashboard/courts"><List className="mr-2 h-4 w-4" />Courts</Link></Button>
-            <Button variant="outline" asChild><Link href="/dashboard/events"><PartyPopper className="mr-2 h-4 w-4" />Events</Link></Button>
-            <Button variant="outline" asChild><Link href="/dashboard/channels"><Radio className="mr-2 h-4 w-4" />Channels</Link></Button>
-            <Button variant="outline" asChild><Link href="/dashboard/coaches"><Contact2 className="mr-2 h-4 w-4" />Coaches</Link></Button>
+            <Button variant="secondary" asChild><Link href="/dashboard/approvals"><UserCheck className="mr-2 h-4 w-4" />Approvals</Link></Button>
+            <Button variant="secondary" asChild><Link href="/dashboard/invitations"><Home className="mr-2 h-4 w-4" />Invitations</Link></Button>
+            <Button variant="secondary" asChild><Link href="/dashboard/courts"><List className="mr-2 h-4 w-4" />Courts</Link></Button>
+            <Button variant="secondary" asChild><Link href="/dashboard/events"><PartyPopper className="mr-2 h-4 w-4" />Events</Link></Button>
+            <Button variant="secondary" asChild><Link href="/dashboard/channels"><Radio className="mr-2 h-4 w-4" />Channels</Link></Button>
+            <Button variant="secondary" asChild><Link href="/dashboard/coaches"><Contact2 className="mr-2 h-4 w-4" />Coaches</Link></Button>
         </CardContent>
       </Card>
       
