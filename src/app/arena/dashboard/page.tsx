@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Shield, PlusCircle, Calendar, Users } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 async function getArenaDashboardData(organisationId: number) {
     const supabase = await createServer();
@@ -56,6 +57,12 @@ export default async function ArenaDashboardPage() {
           </div>
       );
   }
+  
+  const { data: orgData } = await supabase
+    .from('organisations')
+    .select('logo')
+    .eq('id', orgLink.organisation_id)
+    .single();
 
   const { activeTournaments, totalBookings } = await getArenaDashboardData(orgLink.organisation_id);
 
@@ -67,9 +74,21 @@ export default async function ArenaDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Welcome, {userProfile.name ?? 'Admin'}!</h1>
-        <p className="text-muted-foreground">Here’s a snapshot of your arena's activities.</p>
+      <div className="flex items-center gap-4">
+        {orgData?.logo && (
+            <Image
+                src={orgData.logo}
+                alt="Arena Logo"
+                width={40}
+                height={40}
+                className="rounded-md object-cover"
+                data-ai-hint="logo"
+            />
+        )}
+        <div>
+          <h1 className="text-3xl font-bold">Welcome, {userProfile.name ?? 'Admin'}!</h1>
+          <p className="text-muted-foreground">Here’s a snapshot of your arena's activities.</p>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
