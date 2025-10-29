@@ -1,7 +1,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { OrganisationClientPage } from '@/app/livingspace/organisations/client';
+import { OrganisationClientPage } from './client';
 
 export const dynamic = 'force-dynamic';
 
