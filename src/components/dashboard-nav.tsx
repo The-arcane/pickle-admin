@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
     BarChart, Calendar, List, Settings, User, Users, PartyPopper, Home, Briefcase, 
-    Contact2, Radio, UserCheck, Building, ChevronDown 
+    Contact2, Radio, UserCheck, Building, ChevronDown, FolderKanban, Wrench, UsersRound 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
@@ -20,6 +20,7 @@ const topItems = [
 const navGroups = [
   {
     title: 'Management',
+    icon: FolderKanban,
     items: [
       { href: '/dashboard/bookings', label: 'Bookings', icon: Calendar, color: 'text-green-500' },
       { href: '/dashboard/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
@@ -29,6 +30,7 @@ const navGroups = [
   },
   {
     title: 'Operations',
+    icon: Wrench,
     items: [
       { href: '/dashboard/courts', label: 'Court List', icon: List, color: 'text-amber-500' },
       { href: '/dashboard/channels', label: 'Channels', icon: Radio, color: 'text-indigo-500' },
@@ -36,6 +38,7 @@ const navGroups = [
   },
   {
     title: 'Personnel',
+    icon: UsersRound,
     items: [
        { href: '/dashboard/users', label: 'Users', icon: Users, color: 'text-violet-500' },
        { href: '/dashboard/employees', label: 'Employees', icon: Briefcase, color: 'text-orange-500' },
@@ -87,6 +90,7 @@ export function DashboardNav() {
           <Collapsible key={group.title} open={openSections.includes(group.title)} onOpenChange={() => toggleSection(group.title)} className="mt-1">
             <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary [&[data-state=open]>div>svg]:rotate-180">
               <div className="flex items-center gap-3">
+                <group.icon className="h-4 w-4" />
                 <span className="font-semibold">{group.title}</span>
               </div>
               <div className="flex items-center gap-3">

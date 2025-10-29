@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, User, Users, PartyPopper, CalendarCheck, BookCopy, Megaphone, MessageSquare, LineChart, Trophy, Image as ImageIcon, Calendar as CalendarIcon, ShieldAlert, Box, Handshake, HeartPulse, ChevronDown } from 'lucide-react';
+import { BarChart, Settings, User, Users, PartyPopper, CalendarCheck, BookCopy, Megaphone, MessageSquare, LineChart, Trophy, Image as ImageIcon, Calendar as CalendarIcon, ShieldAlert, Box, Handshake, HeartPulse, ChevronDown, GraduationCap, Activity, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -13,6 +13,7 @@ import { Separator } from './ui/separator';
 const navGroups = [
   {
     title: 'Academics',
+    icon: GraduationCap,
     items: [
       { href: '/education/attendance', label: 'Attendance', icon: CalendarCheck, color: 'text-teal-500' },
       { href: '/education/skills', label: 'Skills', icon: Trophy, color: 'text-yellow-500' },
@@ -22,6 +23,7 @@ const navGroups = [
   },
   {
     title: 'Activities',
+    icon: Activity,
     items: [
       { href: '/education/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
       { href: '/education/season', label: 'Season', icon: Trophy, color: 'text-amber-500' },
@@ -31,6 +33,7 @@ const navGroups = [
   },
   {
     title: 'Administration',
+    icon: SlidersHorizontal,
     items: [
       { href: '/education/notifications', label: 'Notifications', icon: Megaphone, color: 'text-yellow-600' },
       { href: '/education/communication', label: 'Communication', icon: MessageSquare, color: 'text-purple-600' },
@@ -89,6 +92,7 @@ export function EducationNav() {
           <Collapsible key={group.title} open={openSections.includes(group.title)} onOpenChange={() => toggleSection(group.title)} className="mt-1">
               <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary [&[data-state=open]>div>svg]:rotate-180">
                 <div className="flex items-center gap-3">
+                  <group.icon className="h-4 w-4" />
                   <span className="font-semibold">{group.title}</span>
                 </div>
                 <div className="flex items-center gap-3">
