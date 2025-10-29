@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SheetContext } from '@/hooks/use-sheet-context';
 
 type UserProfile = {
+  id: number;
   name: string;
   email: string;
   profile_image_url: string | null;
@@ -27,6 +28,7 @@ export default function ArenaLayout({
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [organisationName, setOrganisationName] = useState('Arena');
   const [organisationType, setOrganisationType] = useState<string | null>(null);
 
   const supabase = useMemo(() => createClient(), []);
@@ -41,7 +43,7 @@ export default function ArenaLayout({
     
     const { data: profile } = await supabase
       .from('user')
-      .select('name, email, profile_image_url, user_type')
+      .select('id, name, email, profile_image_url, user_type')
       .eq('user_uuid', user.id)
       .single();
 
@@ -61,11 +63,12 @@ export default function ArenaLayout({
     if (orgLink?.organisation_id) {
         const { data: orgData } = await supabase
             .from('organisations')
-            .select('organisation_types(type_name)')
+            .select('name, organisation_types(type_name)')
             .eq('id', orgLink.organisation_id)
             .maybeSingle();
         
         if (orgData) {
+            setOrganisationName(orgData.name);
             setOrganisationType((orgData.organisation_types as any)?.type_name || null);
         }
     }
@@ -99,7 +102,7 @@ export default function ArenaLayout({
         <div className="flex h-16 shrink-0 items-center border-b px-6">
           <Link href="/arena/dashboard" className="flex items-center gap-2 font-semibold text-primary">
             <Shield className="h-6 w-6" />
-            <span>Arena</span>
+            <span className="truncate" title={organisationName}>{organisationName}</span>
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto py-4">
@@ -126,7 +129,7 @@ export default function ArenaLayout({
                   <div className="flex h-16 shrink-0 items-center px-6">
                       <Link href="/arena/dashboard" className="flex items-center gap-2 font-semibold text-primary">
                           <Shield className="h-6 w-6" />
-                          <span>Arena</span>
+                          <span className="truncate" title={organisationName}>{organisationName}</span>
                       </Link>
                   </div>
                 </SheetHeader>
