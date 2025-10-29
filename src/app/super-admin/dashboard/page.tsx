@@ -3,7 +3,7 @@ import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, List, PartyPopper, School, Hotel, Home, Building, Calendar, ShieldCheck, TrendingUp, Contact2, Briefcase } from 'lucide-react';
+import { Users, List, PartyPopper, School, Hotel, Home, Building, Calendar, ShieldCheck, TrendingUp, Contact2, Briefcase, Shield } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
@@ -26,6 +26,7 @@ async function getSuperAdminDashboardData() {
         schoolsRes,
         hospitalityRes,
         residencesRes,
+        arenaRes,
         usersRes,
         courtsRes,
         eventsRes,
@@ -41,6 +42,7 @@ async function getSuperAdminDashboardData() {
         supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 2),
         supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 3),
         supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 1),
+        supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 4), // Assuming 4 is Arena
         supabase.from('user').select('id', { count: 'exact', head: true }),
         supabase.from('courts').select('id', { count: 'exact', head: true }),
         supabase.from('events').select('id', { count: 'exact', head: true }),
@@ -68,6 +70,7 @@ async function getSuperAdminDashboardData() {
     if(schoolsRes.error) console.error("Error fetching schools count", schoolsRes.error);
     if(hospitalityRes.error) console.error("Error fetching hospitality count", hospitalityRes.error);
     if(residencesRes.error) console.error("Error fetching residences count", residencesRes.error);
+    if(arenaRes.error) console.error("Error fetching arena count", arenaRes.error);
     if(usersRes.error) console.error("Error fetching users count", usersRes.error);
     if(courtsRes.error) console.error("Error fetching courts count", courtsRes.error);
     if(eventsRes.error) console.error("Error fetching events count", eventsRes.error);
@@ -84,6 +87,7 @@ async function getSuperAdminDashboardData() {
         totalSchools: schoolsRes.count ?? 0,
         totalHospitality: hospitalityRes.count ?? 0,
         totalResidences: residencesRes.count ?? 0,
+        totalArenas: arenaRes.count ?? 0,
         totalUsers: usersRes.count ?? 0, 
         totalCourts: courtsRes.count ?? 0, 
         totalEvents: eventsRes.count ?? 0,
@@ -120,6 +124,7 @@ export default async function SuperAdminDashboardPage() {
       totalSchools,
       totalHospitality,
       totalResidences,
+      totalArenas,
       totalUsers, 
       totalCourts, 
       totalEvents,
@@ -137,6 +142,7 @@ export default async function SuperAdminDashboardPage() {
       { label: 'Total Schools', value: totalSchools, icon: School, href: '/super-admin/schools', color: 'text-blue-500' },
       { label: 'Total Hospitality', value: totalHospitality, icon: Hotel, href: '/super-admin/hospitality', color: 'text-purple-500' },
       { label: 'Total Residences', value: totalResidences, icon: Home, href: '/super-admin/residences', color: 'text-teal-500' },
+      { label: 'Total Arenas', value: totalArenas, icon: Shield, href: '/super-admin/arena', color: 'text-gray-500' },
       { label: 'Total Users', value: totalUsers, icon: Users, href: '/super-admin/users', color: 'text-violet-500' },
   ];
   
@@ -160,7 +166,7 @@ export default async function SuperAdminDashboardPage() {
         <p className="text-muted-foreground">A high-level overview of platform-wide activity.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {livingSpaceStats.map((stat, i) => (
           <Link href={stat.href} key={i}>
             <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">

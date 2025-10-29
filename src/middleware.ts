@@ -47,6 +47,7 @@ export async function middleware(request: NextRequest) {
       sales: '/sales',
       education: '/education',
       hospitality: '/hospitality',
+      arena: '/arena',
   };
 
   // If user is not logged in and is trying to access a protected route, redirect to login page at root
@@ -77,6 +78,7 @@ export async function middleware(request: NextRequest) {
       if (user_type === 6) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
       if (user_type === 7) return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
       if (user_type === 8) return NextResponse.redirect(new URL(protectedPaths.hospitality, siteUrl));
+      if (user_type === 9) return NextResponse.redirect(new URL(protectedPaths.arena, siteUrl));
     }
     
     // Role-based access control - redirect if they are in the wrong panel
@@ -97,6 +99,9 @@ export async function middleware(request: NextRequest) {
     }
     if (user_type === 8 && !pathname.startsWith(protectedPaths.hospitality) && !pathname.startsWith('/o/')) {
         return NextResponse.redirect(new URL(protectedPaths.hospitality, siteUrl));
+    }
+    if (user_type === 9 && !pathname.startsWith(protectedPaths.arena) && !pathname.startsWith('/o/')) {
+        return NextResponse.redirect(new URL(protectedPaths.arena, siteUrl));
     }
   }
 
