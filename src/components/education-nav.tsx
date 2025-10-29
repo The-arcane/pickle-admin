@@ -14,6 +14,7 @@ const navGroups = [
   {
     title: 'Academics',
     icon: GraduationCap,
+    color: 'text-blue-500',
     items: [
       { href: '/education/attendance', label: 'Attendance', icon: CalendarCheck, color: 'text-teal-500' },
       { href: '/education/skills', label: 'Skills', icon: Trophy, color: 'text-yellow-500' },
@@ -24,6 +25,7 @@ const navGroups = [
   {
     title: 'Activities',
     icon: Activity,
+    color: 'text-pink-500',
     items: [
       { href: '/education/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
       { href: '/education/season', label: 'Season', icon: Trophy, color: 'text-amber-500' },
@@ -34,6 +36,7 @@ const navGroups = [
   {
     title: 'Administration',
     icon: SlidersHorizontal,
+    color: 'text-orange-500',
     items: [
       { href: '/education/notifications', label: 'Notifications', icon: Megaphone, color: 'text-yellow-600' },
       { href: '/education/communication', label: 'Communication', icon: MessageSquare, color: 'text-purple-600' },
@@ -92,7 +95,7 @@ export function EducationNav() {
           <Collapsible key={group.title} open={openSections.includes(group.title)} onOpenChange={() => toggleSection(group.title)} className="mt-1">
               <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary [&[data-state=open]>div>svg]:rotate-180">
                 <div className="flex items-center gap-3">
-                  <group.icon className="h-4 w-4" />
+                  <group.icon className={cn("h-4 w-4", group.color)} />
                   <span className="font-semibold">{group.title}</span>
                 </div>
                 <div className="flex items-center gap-3">

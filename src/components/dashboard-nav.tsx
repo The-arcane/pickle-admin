@@ -21,6 +21,7 @@ const navGroups = [
   {
     title: 'Management',
     icon: FolderKanban,
+    color: 'text-blue-500',
     items: [
       { href: '/dashboard/bookings', label: 'Bookings', icon: Calendar, color: 'text-green-500' },
       { href: '/dashboard/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
@@ -31,6 +32,7 @@ const navGroups = [
   {
     title: 'Operations',
     icon: Wrench,
+    color: 'text-gray-500',
     items: [
       { href: '/dashboard/courts', label: 'Court List', icon: List, color: 'text-amber-500' },
       { href: '/dashboard/channels', label: 'Channels', icon: Radio, color: 'text-indigo-500' },
@@ -39,6 +41,7 @@ const navGroups = [
   {
     title: 'Personnel',
     icon: UsersRound,
+    color: 'text-purple-500',
     items: [
        { href: '/dashboard/users', label: 'Users', icon: Users, color: 'text-violet-500' },
        { href: '/dashboard/employees', label: 'Employees', icon: Briefcase, color: 'text-orange-500' },
@@ -90,7 +93,7 @@ export function DashboardNav() {
           <Collapsible key={group.title} open={openSections.includes(group.title)} onOpenChange={() => toggleSection(group.title)} className="mt-1">
             <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary [&[data-state=open]>div>svg]:rotate-180">
               <div className="flex items-center gap-3">
-                <group.icon className="h-4 w-4" />
+                <group.icon className={cn("h-4 w-4", group.color)} />
                 <span className="font-semibold">{group.title}</span>
               </div>
               <div className="flex items-center gap-3">
