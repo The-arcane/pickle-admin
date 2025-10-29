@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Home, ShieldCheck, TrendingUp, School, Hotel } from 'lucide-react';
+import { BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Home, ShieldCheck, TrendingUp, School, Hotel, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 

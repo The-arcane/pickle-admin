@@ -33,7 +33,7 @@ export default function DashboardLayout({
 }) {
   const [user, setUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [organisationName, setOrganisationName] = useState('Lumen');
+  const [organisationName, setOrganisationName] = useState('Living Space');
   const [organisationType, setOrganisationType] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -95,7 +95,7 @@ export default function DashboardLayout({
         <div className="flex h-screen w-full items-center justify-center">
             <div className="flex flex-col items-center gap-4">
                 <Skeleton className="h-10 w-48" />
-                <p className="text-muted-foreground">Loading Dashboard...</p>
+                <p className="text-muted-foreground">Loading Living Space...</p>
             </div>
         </div>
     );

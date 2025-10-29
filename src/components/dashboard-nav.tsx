@@ -51,7 +51,7 @@ const navGroups = [
 ];
 
 const bottomItems = [
-  { href: '/dashboard/organisations', label: 'My Space', icon: Building, color: 'text-orange-500' },
+  { href: '/dashboard/organisations', label: 'Living Space', icon: Building, color: 'text-orange-500' },
   { href: '/dashboard/profile', label: 'Admin Profile', icon: User, color: 'text-slate-500' },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings, color: 'text-gray-500' },
 ];
