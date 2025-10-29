@@ -65,7 +65,7 @@ export async function login(formData: FormData) {
 
     // Redirect based on the verified user_type
     switch (user_type) {
-        case 2: return redirect('/dashboard');
+        case 2: return redirect('/livingspace');
         case 3: return redirect('/super-admin/dashboard');
         case 4: return redirect('/employee/dashboard');
         case 6: return redirect('/sales/dashboard');

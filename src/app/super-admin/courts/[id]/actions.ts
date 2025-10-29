@@ -160,7 +160,7 @@ export async function addCourt(formData: FormData) {
   }
 
   revalidatePath('/super-admin/courts');
-  revalidatePath('/dashboard/courts');
+  revalidatePath('/livingspace/courts');
   return { success: true };
 }
 
@@ -285,9 +285,9 @@ export async function updateCourt(formData: FormData) {
   }
 
   revalidatePath('/super-admin/courts');
-  revalidatePath('/dashboard/courts');
+  revalidatePath('/livingspace/courts');
   revalidatePath(`/super-admin/courts/${id}`);
-  revalidatePath(`/dashboard/courts/${id}`);
+  revalidatePath(`/livingspace/courts/${id}`);
   return { success: true };
 }
 
@@ -362,7 +362,7 @@ export async function addCourtGalleryImages(formData: FormData) {
     }
 
     revalidatePath(`/super-admin/courts/${courtId}`);
-    revalidatePath(`/dashboard/courts/${courtId}`);
+    revalidatePath(`/livingspace/courts/${courtId}`);
     return { success: true };
 }
 
@@ -400,6 +400,6 @@ export async function deleteCourtGalleryImage(formData: FormData) {
     }
 
     revalidatePath(`/super-admin/courts/${courtId}`);
-    revalidatePath(`/dashboard/courts/${courtId}`);
+    revalidatePath(`/livingspace/courts/${courtId}`);
     return { success: true };
 }

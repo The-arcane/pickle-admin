@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
   const loginUrl = '/';
 
   const protectedPaths = {
-      dashboard: '/dashboard',
+      livingspace: '/livingspace',
       superAdmin: '/super-admin',
       employee: '/employee',
       sales: '/sales',
@@ -72,7 +72,7 @@ export async function middleware(request: NextRequest) {
     
     // If a logged-in user tries to access the root (login page), redirect them to their dashboard
     if (pathname === '/') {
-      if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
+      if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.livingspace, siteUrl));
       if (user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
       if (user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
       if (user_type === 6) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
@@ -82,8 +82,8 @@ export async function middleware(request: NextRequest) {
     }
     
     // Role-based access control - redirect if they are in the wrong panel
-    if (user_type === 2 && !pathname.startsWith(protectedPaths.dashboard) && !pathname.startsWith('/o/')) {
-        return NextResponse.redirect(new URL(protectedPaths.dashboard, siteUrl));
+    if (user_type === 2 && !pathname.startsWith(protectedPaths.livingspace) && !pathname.startsWith('/o/')) {
+        return NextResponse.redirect(new URL(protectedPaths.livingspace, siteUrl));
     }
     if (user_type === 3 && !pathname.startsWith(protectedPaths.superAdmin) && !pathname.startsWith('/o/')) {
         return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));

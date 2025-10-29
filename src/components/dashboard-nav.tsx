@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { Separator } from './ui/separator';
 
 const topItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: BarChart, color: 'text-sky-500' },
+  { href: '/livingspace', label: 'Dashboard', icon: BarChart, color: 'text-sky-500' },
 ];
 
 const navGroups = [
@@ -23,10 +23,10 @@ const navGroups = [
     icon: FolderKanban,
     color: 'text-blue-500',
     items: [
-      { href: '/dashboard/bookings', label: 'Bookings', icon: Calendar, color: 'text-green-500' },
-      { href: '/dashboard/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
-      { href: '/dashboard/approvals', label: 'Approvals', icon: UserCheck, color: 'text-cyan-500' },
-      { href: '/dashboard/invitations', label: 'Invitations', icon: Home, color: 'text-teal-500' },
+      { href: '/livingspace/bookings', label: 'Bookings', icon: Calendar, color: 'text-green-500' },
+      { href: '/livingspace/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
+      { href: '/livingspace/approvals', label: 'Approvals', icon: UserCheck, color: 'text-cyan-500' },
+      { href: '/livingspace/invitations', label: 'Invitations', icon: Home, color: 'text-teal-500' },
     ]
   },
   {
@@ -34,8 +34,8 @@ const navGroups = [
     icon: Wrench,
     color: 'text-gray-500',
     items: [
-      { href: '/dashboard/courts', label: 'Court List', icon: List, color: 'text-amber-500' },
-      { href: '/dashboard/channels', label: 'Channels', icon: Radio, color: 'text-indigo-500' },
+      { href: '/livingspace/courts', label: 'Court List', icon: List, color: 'text-amber-500' },
+      { href: '/livingspace/channels', label: 'Channels', icon: Radio, color: 'text-indigo-500' },
     ]
   },
   {
@@ -43,17 +43,17 @@ const navGroups = [
     icon: UsersRound,
     color: 'text-purple-500',
     items: [
-       { href: '/dashboard/users', label: 'Users', icon: Users, color: 'text-violet-500' },
-       { href: '/dashboard/employees', label: 'Employees', icon: Briefcase, color: 'text-orange-500' },
-       { href: '/dashboard/coaches', label: 'Coaches', icon: Contact2, color: 'text-rose-500' },
+       { href: '/livingspace/users', label: 'Users', icon: Users, color: 'text-violet-500' },
+       { href: '/livingspace/employees', label: 'Employees', icon: Briefcase, color: 'text-orange-500' },
+       { href: '/livingspace/coaches', label: 'Coaches', icon: Contact2, color: 'text-rose-500' },
     ]
   },
 ];
 
 const bottomItems = [
-  { href: '/dashboard/organisations', label: 'Living Space', icon: Building, color: 'text-orange-500' },
-  { href: '/dashboard/profile', label: 'Admin Profile', icon: User, color: 'text-slate-500' },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings, color: 'text-gray-500' },
+  { href: '/livingspace/organisations', label: 'Living Space', icon: Building, color: 'text-orange-500' },
+  { href: '/livingspace/profile', label: 'Admin Profile', icon: User, color: 'text-slate-500' },
+  { href: '/livingspace/settings', label: 'Settings', icon: Settings, color: 'text-gray-500' },
 ];
 
 export function DashboardNav() {
@@ -62,7 +62,7 @@ export function DashboardNav() {
   const [openSections, setOpenSections] = useState<string[]>(['Management', 'Operations', 'Personnel']);
 
   const isActive = (href: string) => {
-    return pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+    return pathname === href || (href !== '/livingspace' && pathname.startsWith(href));
   }
 
   const toggleSection = (title: string) => {
