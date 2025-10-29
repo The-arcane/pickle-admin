@@ -73,6 +73,8 @@ export default async function OrganisationPage() {
       <OrganisationClientPage 
         organisation={org} 
         initialBuildings={buildings || []} 
+        orgTypeName="Sports Venue"
+        orgTypePluralName="Sports Venues"
       />
     );
 }

@@ -38,7 +38,17 @@ function SubmitButton({ children }: { children: React.ReactNode }) {
     return <Button type="submit" disabled={pending}>{pending ? 'Saving...' : children}</Button>
 }
 
-export function OrganisationClientPage({ organisation, initialBuildings }: { organisation: Organisation, initialBuildings: Building[] }) {
+export function OrganisationClientPage({ 
+    organisation, 
+    initialBuildings,
+    orgTypeName = "Living Space",
+    orgTypePluralName = "Living Spaces" 
+}: { 
+    organisation: Organisation, 
+    initialBuildings: Building[],
+    orgTypeName?: string,
+    orgTypePluralName?: string
+}) {
     const { toast } = useToast();
     const [isBuildingDialogOpen, setIsBuildingDialogOpen] = useState(false);
     const [isBuildingNumberDialogOpen, setIsBuildingNumberDialogOpen] = useState(false);
@@ -90,8 +100,8 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                  <div className="flex items-center gap-3">
                     <Building className="h-8 w-8 text-primary" />
                     <div>
-                        <h1 className="text-3xl font-bold">Living Space Profile</h1>
-                        <p className="text-muted-foreground">Manage your Living Space's public information and structure.</p>
+                        <h1 className="text-3xl font-bold">{orgTypeName} Profile</h1>
+                        <p className="text-muted-foreground">Manage your {orgTypeName}'s public information and structure.</p>
                     </div>
                 </div>
                 <form action={(fd) => handleFormAction(updateOrganization, fd)}>
@@ -102,7 +112,7 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Living Space Name</Label>
+                                <Label htmlFor="name">{orgTypeName} Name</Label>
                                 <Input id="name" name="name" defaultValue={organisation.name || ''} />
                             </div>
                             <div className="space-y-2">
@@ -125,7 +135,7 @@ export function OrganisationClientPage({ organisation, initialBuildings }: { org
                         <div className="flex items-center justify-between">
                             <div>
                                 <CardTitle>Buildings & Flats</CardTitle>
-                                <CardDescription>Manage the structure of your Living Space.</CardDescription>
+                                <CardDescription>Manage the structure of your {orgTypeName}.</CardDescription>
                             </div>
                             <Dialog open={isBuildingDialogOpen} onOpenChange={setIsBuildingDialogOpen}>
                                 <DialogTrigger asChild>

@@ -15,7 +15,7 @@ const navItems = [
   { href: '/arena/courts', label: 'Courts', icon: List, color: 'text-amber-500' },
   { href: '/arena/coaches', label: 'Coaches', icon: Contact2, color: 'text-rose-500' },
   { href: '/arena/channels', label: 'Channels', icon: Radio, color: 'text-indigo-500' },
-  { href: '/arena/organisations', label: 'Living Space', icon: Building, color: 'text-orange-500' },
+  { href: '/arena/organisations', label: 'Sports Venue', icon: Building, color: 'text-orange-500' },
   { href: '/arena/profile', label: 'Profile', icon: User, color: 'text-slate-500' },
   { href: '/arena/settings', label: 'Settings', icon: Settings, color: 'text-gray-500' },
 ];
