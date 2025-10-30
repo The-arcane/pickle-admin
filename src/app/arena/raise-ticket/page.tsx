@@ -26,8 +26,8 @@ export default function RaiseTicketPage() {
             </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <Card className="lg:col-span-2">
+        <div className="space-y-8">
+            <Card>
                 <CardHeader>
                     <CardTitle>New Support Ticket</CardTitle>
                     <CardDescription>Describe your issue below and we'll get back to you as soon as possible.</CardDescription>
