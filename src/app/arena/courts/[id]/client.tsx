@@ -146,19 +146,27 @@ export function EditCourtClientPage({ court, organisations, sports, organisation
         formData.append('unavailability', JSON.stringify(unavailability.filter(u => u.day_of_week !== undefined && u.start_time && u.end_time)));
         formData.append('organisation_id', organisationId.toString());
 
-        const action = isAdding ? addCourt : updateCourt;
-        if (!isAdding && court) {
-            formData.append('id', court.id.toString());
-        }
-        
-        const result = await action(formData);
-
-        if (result?.error) {
-            toast({ variant: "destructive", title: "Error", description: result.error });
+        if (isAdding) {
+            const result = await addCourt(formData);
+            if (result?.error) {
+                toast({ variant: "destructive", title: "Error", description: result.error });
+            } else if (result?.success && result.newCourtId) {
+                toast({ title: "Success", description: "Court added successfully. You can now add gallery images." });
+                router.push(`/arena/courts/${result.newCourtId}`);
+                router.refresh();
+            }
         } else {
-            toast({ title: "Success", description: `Court ${isAdding ? 'added' : 'updated'} successfully.` });
-            router.push('/arena/courts');
-            router.refresh();
+            if (court) {
+                formData.append('id', court.id.toString());
+            }
+            const result = await updateCourt(formData);
+            if (result?.error) {
+                toast({ variant: "destructive", title: "Error", description: result.error });
+            } else {
+                toast({ title: "Success", description: `Court updated successfully.` });
+                router.push('/arena/courts');
+                router.refresh();
+            }
         }
     };
 
@@ -237,6 +245,7 @@ export function EditCourtClientPage({ court, organisations, sports, organisation
                     <h3 className="font-semibold text-sm text-muted-foreground px-2 mb-2">Page Sections</h3>
                      <nav className="flex flex-col gap-1">
                         {navSections.map(section => (
+                            (!isAdding || section.id !== 'court-gallery-section') && (
                              <Button
                                 key={section.id}
                                 type="button"
@@ -246,6 +255,7 @@ export function EditCourtClientPage({ court, organisations, sports, organisation
                             >
                                 {section.label}
                             </Button>
+                            )
                         ))}
                     </nav>
                 </div>

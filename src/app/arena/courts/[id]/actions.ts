@@ -71,6 +71,7 @@ function getCourtFields(formData: FormData) {
 
 export async function addCourt(formData: FormData) {
   const supabase = await createServer();
+  let newCourtId;
   
   try {
     const courtFields = getCourtFields(formData);
@@ -87,7 +88,7 @@ export async function addCourt(formData: FormData) {
     const { data: newCourt, error: courtError } = await supabase
       .from('courts')
       .insert({...courtFields, is_public: isPublic})
-      .select()
+      .select('id')
       .single();
 
     if (courtError || !newCourt) {
@@ -95,17 +96,17 @@ export async function addCourt(formData: FormData) {
       return { error: `Failed to add court. ${courtError?.message}` };
     }
     
-    const courtId = newCourt.id.toString();
+    newCourtId = newCourt.id;
     const courtUpdateData: { image?: string; cover_image?: string } = {};
 
     // --- 2. Upload images and prepare update payload ---
     const mainImageFile = formData.get('main_image_file') as File | null;
     const coverImageFile = formData.get('cover_image_file') as File | null;
     
-    const mainImageUrl = await handleImageUpload(supabase, mainImageFile, courtId, 'main');
+    const mainImageUrl = await handleImageUpload(supabase, mainImageFile, newCourtId.toString(), 'main');
     if (mainImageUrl) courtUpdateData.image = mainImageUrl;
     
-    const coverImageUrl = await handleImageUpload(supabase, coverImageFile, courtId, 'cover');
+    const coverImageUrl = await handleImageUpload(supabase, coverImageFile, newCourtId.toString(), 'cover');
     if (coverImageUrl) courtUpdateData.cover_image = coverImageUrl;
 
     // --- 3. Update court with image URLs if they were uploaded ---
@@ -113,10 +114,9 @@ export async function addCourt(formData: FormData) {
         const { error: imageUpdateError } = await supabase
             .from('courts')
             .update(courtUpdateData)
-            .eq('id', courtId);
+            .eq('id', newCourtId);
         if (imageUpdateError) {
             console.error('Error updating court with images:', imageUpdateError);
-            // Decide if we should return error or just log it
             return { error: `Court added, but failed to save images: ${imageUpdateError.message}` };
         }
     }
@@ -128,27 +128,27 @@ export async function addCourt(formData: FormData) {
     const unavailability = JSON.parse(formData.get('unavailability') as string) as Partial<RecurringUnavailability>[];
 
     if (rules.length > 0) {
-      const rulesToInsert = rules.filter(r => r.rule && r.rule.trim() !== '').map(r => ({ rule: r.rule, court_id: courtId }));
+      const rulesToInsert = rules.filter(r => r.rule && r.rule.trim() !== '').map(r => ({ rule: r.rule, court_id: newCourtId }));
       if (rulesToInsert.length > 0) {
         const { error } = await supabase.from('court_rules').insert(rulesToInsert);
         if(error) { console.error('Error adding rules:', error); return { error: `Failed to save rules: ${error.message}` }; }
       }
     }
     if (contact.phone || contact.email) {
-      const { error } = await supabase.from('court_contacts').insert({ ...contact, court_id: courtId });
+      const { error } = await supabase.from('court_contacts').insert({ ...contact, court_id: newCourtId });
       if(error) { console.error('Error adding contact:', error); return { error: `Failed to save contact info: ${error.message}` };}
     }
     
     const validAvailability = availability.filter(a => a.date);
     if (validAvailability.length > 0) {
-      const availabilityToInsert = validAvailability.map(a => ({ ...a, court_id: courtId }));
+      const availabilityToInsert = validAvailability.map(a => ({ ...a, court_id: newCourtId }));
       const { error } = await supabase.from('availability_blocks').insert(availabilityToInsert);
       if(error) { console.error('Error adding availability:', error); return { error: `Failed to save availability: ${error.message}` };}
     }
     
     const validUnavailability = unavailability.filter(u => u.day_of_week !== undefined && u.start_time && u.end_time);
     if (validUnavailability.length > 0) {
-      const unavailabilityToInsert = validUnavailability.map(u => ({ ...u, court_id: courtId }));
+      const unavailabilityToInsert = validUnavailability.map(u => ({ ...u, court_id: newCourtId }));
       const { error } = await supabase.from('recurring_unavailability').insert(unavailabilityToInsert);
       if(error) { console.error('Error adding unavailability:', error); return { error: `Failed to save recurring unavailability: ${error.message}` };}
     }
@@ -158,10 +158,8 @@ export async function addCourt(formData: FormData) {
     return { error: `An unexpected error occurred: ${e.message}` };
   }
 
-  revalidatePath('/super-admin/courts');
-  revalidatePath('/livingspace/courts');
   revalidatePath('/arena/courts');
-  return { success: true };
+  return { success: true, newCourtId };
 }
 
 export async function updateCourt(formData: FormData) {
