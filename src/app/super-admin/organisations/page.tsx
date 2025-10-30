@@ -11,13 +11,32 @@ export default async function OrganizationsPage() {
     if (!authUser) {
         return redirect('/login?type=super-admin');
     }
-
-    const { data: orgsData, error: orgsError } = await supabase.from('organisations').select('*').order('name');
-    if (orgsError) {
-        console.error("Error fetching orgs:", orgsError);
+    
+    // Find the ID for the 'residence' organization type.
+    const { data: residenceType } = await supabase
+        .from('organisation_types')
+        .select('id')
+        .eq('type_name', 'residence')
+        .single();
+    
+    let orgsData: any[] = [];
+    if (residenceType) {
+        const { data, error } = await supabase
+            .from('organisations')
+            .select('*')
+            .eq('type', residenceType.id)
+            .order('name');
+        
+        if (error) {
+            console.error("Error fetching residence orgs:", error);
+        } else {
+            orgsData = data || [];
+        }
+    } else {
+        console.error("Could not find 'residence' in organisation_types table.");
     }
     
-    // Fetch all users to populate the "owner" dropdown in the form
+    // Fetch all admin users to populate the "owner" dropdown in the form
     const { data: usersData, error: usersError } = await supabase.from('user').select('id, name').eq('user_type', 2).order('name');
     if(usersError) {
         console.error("Error fetching users:", usersError);
