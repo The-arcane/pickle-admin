@@ -1,7 +1,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { ChannelsClientPage } from '@/app/livingspace/channels/client';
+import { ChannelsClientPage } from './client';
 import { Radio } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
