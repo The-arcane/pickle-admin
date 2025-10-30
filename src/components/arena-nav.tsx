@@ -3,7 +3,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Radio, Contact2, FolderKanban, Wrench, UsersRound, ChevronDown } from 'lucide-react';
+import { 
+    BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Radio, Contact2, 
+    FolderKanban, Wrench, UsersRound, ChevronDown, Landmark, Receipt, ArrowRightLeft, Banknote 
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -43,6 +46,16 @@ const navGroups = [
        { href: '/arena/coaches', label: 'Coaches', icon: Contact2, color: 'text-rose-500' },
     ]
   },
+  {
+    title: 'Financials',
+    icon: Landmark,
+    color: 'text-green-500',
+    items: [
+      { href: '/arena/invoices', label: 'Invoices', icon: Receipt, color: 'text-gray-500' },
+      { href: '/arena/transactions', label: 'Transactions', icon: ArrowRightLeft, color: 'text-gray-500' },
+      { href: '/arena/transfers', label: 'Transfers', icon: Banknote, color: 'text-gray-500' },
+    ]
+  },
 ];
 
 const bottomItems = [
@@ -55,7 +68,7 @@ const bottomItems = [
 export function ArenaNav() {
   const pathname = usePathname();
   const { setOpen } = useSheetContext();
-  const [openSections, setOpenSections] = useState<string[]>(['Management', 'Operations', 'Personnel']);
+  const [openSections, setOpenSections] = useState<string[]>(['Management', 'Operations', 'Personnel', 'Financials']);
 
   const isActive = (href: string) => {
     return pathname === href || (href !== '/arena/dashboard' && pathname.startsWith(href));
