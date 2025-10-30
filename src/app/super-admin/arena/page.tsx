@@ -11,11 +11,11 @@ export default async function ArenaPage() {
     return redirect('/login?type=super-admin');
   }
 
-  // Find the ID for the 'arena' organization type
+  // Find the ID for the 'public arena' organization type
   const { data: arenaType } = await supabase
     .from('organisation_types')
     .select('id')
-    .eq('type_name', 'arena')
+    .eq('type_name', 'public arena')
     .single();
 
   let orgsData: any[] = [];
@@ -34,7 +34,7 @@ export default async function ArenaPage() {
       orgsData = data || [];
     }
   } else {
-    console.error("Could not find 'arena' in organisation_types table.");
+    console.error("Could not find 'public arena' in organisation_types table.");
   }
   
   return <ArenaClientPage orgs={orgsData} />;
