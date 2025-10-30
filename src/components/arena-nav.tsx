@@ -54,6 +54,7 @@ const navGroups = [
       { href: '/arena/invoices', label: 'Invoices', icon: Receipt, color: 'text-gray-500' },
       { href: '/arena/transactions', label: 'Transactions', icon: ArrowRightLeft, color: 'text-gray-500' },
       { href: '/arena/transfers', label: 'Transfers', icon: Banknote, color: 'text-gray-500' },
+      { href: '/arena/bank-details', label: 'Bank Details', icon: Landmark, color: 'text-gray-500' },
     ]
   },
 ];
