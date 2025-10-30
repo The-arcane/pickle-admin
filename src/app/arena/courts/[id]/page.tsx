@@ -78,6 +78,7 @@ export default async function ArenaEditCourtPage({ params }: { params: { id: str
       court={court}
       organisations={organisationData ? [organisationData] : []}
       sports={sportsData || []}
+      organisationId={organisationId}
     />
   );
 }
