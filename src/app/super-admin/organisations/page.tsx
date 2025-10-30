@@ -12,11 +12,11 @@ export default async function OrganizationsPage() {
         return redirect('/login?type=super-admin');
     }
     
-    // Find the ID for the 'residence' organization type.
+    // Find the ID for the 'residences' organization type.
     const { data: residenceType } = await supabase
         .from('organisation_types')
         .select('id')
-        .eq('type_name', 'residence')
+        .eq('type_name', 'residences')
         .single();
     
     let orgsData: any[] = [];
@@ -33,7 +33,7 @@ export default async function OrganizationsPage() {
             orgsData = data || [];
         }
     } else {
-        console.error("Could not find 'residence' in organisation_types table.");
+        console.error("Could not find 'residences' in organisation_types table.");
     }
     
     // Fetch all admin users to populate the "owner" dropdown in the form
