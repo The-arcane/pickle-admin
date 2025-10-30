@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
     BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Radio, Contact2, 
-    FolderKanban, Wrench, UsersRound, ChevronDown, Landmark, Receipt, ArrowRightLeft, Banknote 
+    FolderKanban, Wrench, UsersRound, ChevronDown, Landmark, Receipt, ArrowRightLeft, Banknote,
+    LifeBuoy, Phone, MessageSquare, Ticket
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
@@ -57,6 +58,16 @@ const navGroups = [
       { href: '/arena/bank-details', label: 'Bank Details', icon: Landmark, color: 'text-gray-500' },
     ]
   },
+  {
+    title: 'Support',
+    icon: LifeBuoy,
+    color: 'text-blue-500',
+    items: [
+      { href: '#', label: 'Phone', icon: Phone, color: 'text-gray-500' },
+      { href: '#', label: 'Chat', icon: MessageSquare, color: 'text-gray-500' },
+      { href: '#', label: 'Ticket', icon: Ticket, color: 'text-gray-500' },
+    ]
+  },
 ];
 
 const bottomItems = [
@@ -69,10 +80,10 @@ const bottomItems = [
 export function ArenaNav() {
   const pathname = usePathname();
   const { setOpen } = useSheetContext();
-  const [openSections, setOpenSections] = useState<string[]>(['Management', 'Operations', 'Personnel', 'Financials']);
+  const [openSections, setOpenSections] = useState<string[]>(['Management', 'Operations', 'Personnel', 'Financials', 'Support']);
 
   const isActive = (href: string) => {
-    return pathname === href || (href !== '/arena/dashboard' && pathname.startsWith(href));
+    return pathname === href || (href !== '/arena/dashboard' && href !== '#' && pathname.startsWith(href));
   }
   
   const toggleSection = (title: string) => {
