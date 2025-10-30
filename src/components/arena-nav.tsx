@@ -64,7 +64,7 @@ const navGroups = [
     color: 'text-blue-500',
     items: [
       { href: '/arena/support', label: 'Contact Us', icon: Phone, color: 'text-gray-500' },
-      { href: '#', label: 'Raise a Ticket', icon: Ticket, color: 'text-gray-500' },
+      { href: '/arena/raise-ticket', label: 'Raise a Ticket', icon: Ticket, color: 'text-gray-500' },
     ]
   },
 ];
