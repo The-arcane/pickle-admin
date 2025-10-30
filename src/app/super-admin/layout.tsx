@@ -88,6 +88,9 @@ export default function SuperAdminLayout({
             <div className="flex-1 overflow-y-auto py-4">
                 <SuperAdminNav />
             </div>
+             <div className="mt-auto p-4">
+                <p className="text-xs text-muted-foreground">Version 16.3.39</p>
+            </div>
           </aside>
           <div className="flex flex-col sm:pl-60 flex-1">
             <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-6 shrink-0">
@@ -110,6 +113,9 @@ export default function SuperAdminLayout({
                     </SheetHeader>
                     <div className="flex-1 overflow-y-auto py-4">
                         <SuperAdminNav />
+                    </div>
+                     <div className="mt-auto p-4">
+                        <p className="text-xs text-muted-foreground">Version 16.3.39</p>
                     </div>
                 </SheetContent>
               </Sheet>
