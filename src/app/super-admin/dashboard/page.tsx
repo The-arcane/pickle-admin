@@ -42,7 +42,7 @@ async function getSuperAdminDashboardData() {
         supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 2),
         supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 3),
         supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 1),
-        supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 4), // Assuming 4 is Arena
+        supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 4), // Arena
         supabase.from('user').select('id', { count: 'exact', head: true }),
         supabase.from('courts').select('id', { count: 'exact', head: true }),
         supabase.from('events').select('id', { count: 'exact', head: true }),
