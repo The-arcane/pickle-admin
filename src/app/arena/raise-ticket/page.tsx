@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Ticket, Paperclip } from "lucide-react";
+import { Ticket, MessagesSquare } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
+import Link from "next/link";
 
 const mockTickets = [
   { id: 'TKT-001', subject: 'Payout for July is incorrect', submitted: '2 days ago', status: 'In Progress' },
@@ -74,6 +75,7 @@ export default function RaiseTicketPage() {
                             <TableRow>
                                 <TableHead>Subject</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Conversation</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -85,6 +87,14 @@ export default function RaiseTicketPage() {
                                     </TableCell>
                                     <TableCell>
                                         <StatusBadge status={ticket.status} />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button asChild variant="outline" size="sm">
+                                            <Link href={`/arena/raise-ticket/${ticket.id}`}>
+                                                <MessagesSquare className="mr-2 h-4 w-4" />
+                                                View History
+                                            </Link>
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
