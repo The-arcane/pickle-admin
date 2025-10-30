@@ -1,6 +1,6 @@
 
 import { createServer } from '@/lib/supabase/server';
-import { CourtsClientPage } from '@/app/livingspace/courts/client';
+import { CourtsClientPage } from './client';
 import { redirect } from 'next/navigation';
 
 export default async function ArenaCourtsPage() {
