@@ -1,7 +1,9 @@
 
-import { EmployeeBookingsClientPage } from '@/app/employee/bookings/client';
 import { createServer } from '@/lib/supabase/server';
+import { BookingsClientPage } from '@/app/livingspace/bookings/client';
 import { redirect } from 'next/navigation';
+
+export const dynamic = 'force-dynamic';
 
 export default async function ArenaBookingsPage() {
   const supabase = await createServer();
@@ -11,79 +13,96 @@ export default async function ArenaBookingsPage() {
     return redirect('/login?type=arena');
   }
 
-  // Get user's internal ID from their auth UUID
-  const { data: userRecord, error: userRecordError } = await supabase
+  const { data: userProfile } = await supabase
     .from('user')
     .select('id')
     .eq('user_uuid', user.id)
     .single();
 
-  if (userRecordError || !userRecord) {
-     return <EmployeeBookingsClientPage 
-        initialCourtBookings={[]} 
-        courtBookingStatuses={[]} 
-        courts={[]} 
-        error="Could not find your user profile. Please contact an administrator." 
-    />;
+  if (!userProfile) {
+    return redirect('/login?type=arena&error=Your%20account%20is%20not%20found.');
   }
-  
-  // Get the organization ID from the join table
+
   const { data: orgLink } = await supabase
     .from('user_organisations')
     .select('organisation_id')
-    .eq('user_id', userRecord.id)
+    .eq('user_id', userProfile.id)
     .maybeSingle();
 
-  const organisationId = orgLink?.organisation_id;
-
-  if (!organisationId) {
-    return <EmployeeBookingsClientPage 
-        initialCourtBookings={[]} 
-        courtBookingStatuses={[]} 
-        courts={[]} 
-        error="You are not currently linked to any arena. Please contact your administrator." 
-    />;
+  if (!orgLink?.organisation_id) {
+    return redirect('/login?type=arena&error=Your%20account%20is%20not%20associated%20with%20an%20organization.');
   }
-  
-  // Fetch courts for the filter dropdown
-  const { data: courtsData, error: courtsError } = await supabase
-    .from('courts')
-    .select('id, name')
-    .eq('organisation_id', organisationId)
-    .order('name');
-    
-  const courts = courtsData || [];
-  let courtBookingsData: any[] | null = [];
-  let courtBookingsError: any = null;
+  const organisationId = orgLink.organisation_id;
 
-  if (courts.length > 0) {
-    const courtIds = courts.map(c => c.id);
-    // Fetch bookings for the courts found in this organization.
-    const { data, error } = await supabase
+  const [
+    courtBookingsRes,
+    eventBookingsRes,
+    courtsRes,
+    usersRes,
+    courtStatusesRes,
+    eventStatusesRes,
+  ] = await Promise.all([
+    supabase
       .from('bookings')
-      .select(
-        'id, booking_status, user:user_id(name), courts:court_id(name), timeslots:timeslot_id(date, start_time, end_time)'
-      )
-      .in('court_id', courtIds)
-      .order('id', { ascending: false });
+      .select('id, booking_status, court_id, timeslot_id, user:user_id(id, name), courts:court_id!inner(name, organisation_id), timeslots:timeslot_id(date, start_time, end_time)')
+      .eq('courts.organisation_id', organisationId)
+      .order('id', { ascending: false }),
+    supabase
+      .from('event_bookings')
+      .select('id, event_id, booking_time, quantity, status, user:user_id(name), events:event_id!inner(title, organiser_org_id)')
+      .eq('events.organiser_org_id', organisationId)
+      .order('booking_time', { ascending: false }),
+    supabase.from('courts').select('id, name, booking_window, one_booking_per_user_per_day, is_booking_rolling').eq('organisation_id', organisationId),
+    supabase
+        .from('user_organisations')
+        .select('user!inner(id, name)')
+        .eq('organisation_id', organisationId),
+    supabase.from('booking_status').select('id, label'),
+    supabase.from('event_booking_status').select('id, label'),
+  ]);
+
+  if (courtBookingsRes.error) console.error('Error fetching court bookings:', courtBookingsRes.error);
+  if (eventBookingsRes.error) console.error('Error fetching event bookings:', eventBookingsRes.error);
+  if (courtsRes.error) console.error('Error fetching courts:', courtsRes.error);
+  if (usersRes.error) console.error('Error fetching users:', usersRes.error);
+  if (courtStatusesRes.error) console.error('Error fetching court statuses:', courtStatusesRes.error);
+  if (eventStatusesRes.error) console.error('Error fetching event statuses:', eventStatusesRes.error);
+  
+  let eventBookings = eventBookingsRes.data || [];
+  const usersForDropdown = usersRes.data?.map(u => u.user).filter(Boolean) as {id: number, name: string}[] || [];
+
+  if (eventBookings.length > 0) {
+    const eventIdsWithBookings = [...new Set(eventBookings.map(b => b.event_id).filter(Boolean))];
     
-    courtBookingsData = data;
-    courtBookingsError = error;
+    if (eventIdsWithBookings.length > 0) {
+        const { data: allBookingsForEvents } = await supabase
+        .from('event_bookings')
+        .select('event_id, quantity')
+        .in('event_id', eventIdsWithBookings)
+        .eq('status', 1);
+
+        if (allBookingsForEvents) {
+            const totalsMap = allBookingsForEvents.reduce((acc, b) => {
+                if (b.event_id) {
+                    acc[b.event_id] = (acc[b.event_id] || 0) + (b.quantity || 1);
+                }
+                return acc;
+            }, {} as Record<number, number>);
+        
+            eventBookings = eventBookings.map(booking => ({
+                ...booking,
+                total_enrolled: totalsMap[booking.event_id!] || 0,
+            }));
+        }
+    }
   }
 
-  // Fetch only court booking statuses for the badge
-  const { data: courtBookingStatusesData, error: courtStatusesError } = await supabase.from('booking_status').select('id, label');
-
-  if (courtBookingsError || courtStatusesError || courtsError) {
-    console.error('Error fetching bookings data:', { courtBookingsError, courtStatusesError, courtsError });
-  }
-
-  const courtBookings = courtBookingsData || [];
-  const courtBookingStatuses = courtBookingStatusesData || [];
-
-  return <EmployeeBookingsClientPage
-    initialCourtBookings={courtBookings}
-    courtBookingStatuses={courtBookingStatuses}
-    courts={courts}
+  return <BookingsClientPage
+    initialCourtBookings={courtBookingsRes.data || []}
+    initialEventBookings={eventBookings}
+    courts={courtsRes.data || []}
+    users={usersForDropdown}
+    courtBookingStatuses={courtStatusesRes.data || []}
+    eventBookingStatuses={eventStatusesRes.data || []}
   />;
 }
