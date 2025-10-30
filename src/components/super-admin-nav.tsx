@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
     BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Home, ShieldCheck, 
-    TrendingUp, School, Hotel, Shield, ChevronDown, FolderKanban, UsersRound, Activity
+    TrendingUp, School, Hotel, Shield, ChevronDown, FolderKanban, UsersRound, Activity,
+    Landmark, ArrowRightLeft, Banknote, Receipt
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
@@ -50,6 +51,16 @@ const navGroups = [
       { href: '/super-admin/events', label: 'Events', icon: PartyPopper, color: 'text-pink-500' },
     ]
   },
+  {
+    title: 'Financials',
+    icon: Landmark,
+    color: 'text-green-500',
+    items: [
+      { href: '/super-admin/transactions', label: 'Transactions', icon: ArrowRightLeft, color: 'text-gray-500' },
+      { href: '/super-admin/payments', label: 'Payments', icon: Banknote, color: 'text-gray-500' },
+      { href: '/super-admin/invoices', label: 'Invoices', icon: Receipt, color: 'text-gray-500' },
+    ]
+  },
 ];
 
 const bottomItems = [
@@ -60,7 +71,7 @@ const bottomItems = [
 export function SuperAdminNav() {
   const pathname = usePathname();
   const { setOpen } = useSheetContext();
-  const [openSections, setOpenSections] = useState<string[]>(['Platform Management', 'User Management', 'Operational Data']);
+  const [openSections, setOpenSections] = useState<string[]>(['Platform Management', 'User Management', 'Operational Data', 'Financials']);
 
   const isActive = (href: string) => {
     return pathname === href || (href !== '/super-admin/dashboard' && pathname.startsWith(href));
