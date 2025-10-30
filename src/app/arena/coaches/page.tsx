@@ -1,7 +1,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { CoachesClientPage } from '@/app/livingspace/coaches/client';
+import { CoachesClientPage } from './client';
 
 export const dynamic = 'force-dynamic';
 
