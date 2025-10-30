@@ -63,9 +63,8 @@ const navGroups = [
     icon: LifeBuoy,
     color: 'text-blue-500',
     items: [
-      { href: '#', label: 'Phone', icon: Phone, color: 'text-gray-500' },
-      { href: '#', label: 'Chat', icon: MessageSquare, color: 'text-gray-500' },
-      { href: '#', label: 'Ticket', icon: Ticket, color: 'text-gray-500' },
+      { href: '/arena/support', label: 'Contact Us', icon: Phone, color: 'text-gray-500' },
+      { href: '#', label: 'Raise a Ticket', icon: Ticket, color: 'text-gray-500' },
     ]
   },
 ];
