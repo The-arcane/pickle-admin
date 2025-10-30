@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { 
     BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Home, ShieldCheck, 
     TrendingUp, School, Hotel, Shield, ChevronDown, FolderKanban, UsersRound, Activity,
-    Landmark, ArrowRightLeft, Banknote, Receipt
+    Landmark, ArrowRightLeft, Banknote, Receipt, LifeBuoy, Ticket, MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
@@ -61,6 +61,15 @@ const navGroups = [
       { href: '/super-admin/invoices', label: 'Invoices', icon: Receipt, color: 'text-gray-500' },
     ]
   },
+  {
+    title: 'Support',
+    icon: LifeBuoy,
+    color: 'text-blue-500',
+    items: [
+      { href: '/super-admin/tickets', label: 'Tickets', icon: Ticket, color: 'text-gray-500' },
+      { href: '/super-admin/chats', label: 'Chats', icon: MessageSquare, color: 'text-gray-500' },
+    ]
+  },
 ];
 
 const bottomItems = [
@@ -71,7 +80,7 @@ const bottomItems = [
 export function SuperAdminNav() {
   const pathname = usePathname();
   const { setOpen } = useSheetContext();
-  const [openSections, setOpenSections] = useState<string[]>(['Platform Management', 'User Management', 'Operational Data', 'Financials']);
+  const [openSections, setOpenSections] = useState<string[]>(['Platform Management', 'User Management', 'Operational Data', 'Financials', 'Support']);
 
   const isActive = (href: string) => {
     return pathname === href || (href !== '/super-admin/dashboard' && pathname.startsWith(href));
