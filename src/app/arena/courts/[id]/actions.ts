@@ -175,18 +175,20 @@ export async function updateCourt(formData: FormData) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
     }
     
+    const finalUpdatePayload: any = { ...courtUpdateData };
+    
     // --- Handle Image Uploads ---
     const mainImageFile = formData.get('main_image_file') as File | null;
     const coverImageFile = formData.get('cover_image_file') as File | null;
     
     const mainImageUrl = await handleImageUpload(supabase, mainImageFile, id, 'main');
-    if (mainImageUrl) (courtUpdateData as any).image = mainImageUrl;
+    if (mainImageUrl) finalUpdatePayload.image = mainImageUrl;
     
     const coverImageUrl = await handleImageUpload(supabase, coverImageFile, id, 'cover');
-    if (coverImageUrl) (courtUpdateData as any).cover_image = coverImageUrl;
+    if (coverImageUrl) finalUpdatePayload.cover_image = coverImageUrl;
 
     // --- 1. Update main court table ---
-    const { data, error: courtError } = await supabase.from('courts').update(courtUpdateData).eq('id', id).select().single();
+    const { data, error: courtError } = await supabase.from('courts').update(finalUpdatePayload).eq('id', id).select().single();
     if (courtError) { console.error('Error updating court:', courtError); return { error: `Failed to update court. ${courtError.message}` };}
     if (!data) { return { error: 'Failed to update court. No data was returned after update.' }; }
     
@@ -402,5 +404,3 @@ export async function deleteCourtGalleryImage(formData: FormData) {
     revalidatePath(`/arena/courts/${courtId}`);
     return { success: true };
 }
-
-    
