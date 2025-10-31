@@ -169,23 +169,21 @@ export async function updateCourt(formData: FormData) {
   try {
     if (!id) return { error: 'Court ID is missing.' };
     
-    const courtUpdateData = getCourtFields(formData);
+    const finalUpdatePayload = getCourtFields(formData);
 
-    if (!courtUpdateData.name || !courtUpdateData.organisation_id || !courtUpdateData.sport_id) {
+    if (!finalUpdatePayload.name || !finalUpdatePayload.organisation_id || !finalUpdatePayload.sport_id) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
     }
-    
-    const finalUpdatePayload: any = { ...courtUpdateData };
     
     // --- Handle Image Uploads ---
     const mainImageFile = formData.get('main_image_file') as File | null;
     const coverImageFile = formData.get('cover_image_file') as File | null;
     
     const mainImageUrl = await handleImageUpload(supabase, mainImageFile, id, 'main');
-    if (mainImageUrl) finalUpdatePayload.image = mainImageUrl;
+    if (mainImageUrl) (finalUpdatePayload as any).image = mainImageUrl;
     
     const coverImageUrl = await handleImageUpload(supabase, coverImageFile, id, 'cover');
-    if (coverImageUrl) finalUpdatePayload.cover_image = coverImageUrl;
+    if (coverImageUrl) (finalUpdatePayload as any).cover_image = coverImageUrl;
 
     // --- 1. Update main court table ---
     const { data, error: courtError } = await supabase.from('courts').update(finalUpdatePayload).eq('id', id).select().single();
