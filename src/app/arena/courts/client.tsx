@@ -10,6 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Eye, Pencil, MoreVertical, Search, Globe, ShieldOff, List } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusBadge } from '@/components/status-badge';
+import { Switch } from '@/components/ui/switch';
+import { toggleCourtPublicStatus } from '../courts/[id]/actions';
+import { useToast } from '@/hooks/use-toast';
 
 type Court = {
   id: number;
@@ -36,6 +39,7 @@ type Sport = {
 export function CourtsClientPage({ courts, organisations, sports }: { courts: Court[], organisations: Organisation[], sports: Sport[] }) {
     const [venueFilter, setVenueFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const { toast } = useToast();
 
     const filteredCourts = useMemo(() => {
         return courts.filter(court => {
@@ -44,6 +48,15 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
             return venueMatch && searchMatch;
         });
     }, [courts, venueFilter, searchQuery]);
+    
+    const handleStatusToggle = async (courtId: number, newStatus: boolean) => {
+        const result = await toggleCourtPublicStatus(courtId, newStatus);
+        if (result.error) {
+            toast({ variant: 'destructive', title: 'Error', description: result.error });
+        } else {
+            toast({ title: 'Success', description: `Court visibility updated to ${newStatus ? 'Public' : 'Private'}.` });
+        }
+    }
 
   return (
     <div className="space-y-6">
@@ -107,8 +120,13 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                         <TableCell className="hidden md:table-cell">{court.max_players || 'N/A'}</TableCell>
                         <TableCell>
                             <div className="flex items-center gap-2">
-                            {court.is_public ? <Globe className="h-4 w-4 text-green-500" /> : <ShieldOff className="h-4 w-4 text-red-500" />}
-                            <span className="capitalize hidden sm:inline">{court.is_public ? 'Public' : 'Private'}</span>
+                                <Switch
+                                    checked={court.is_public ?? false}
+                                    onCheckedChange={(checked) => handleStatusToggle(court.id, checked)}
+                                    aria-label={`Toggle visibility for ${court.name}`}
+                                />
+                                {court.is_public ? <Globe className="h-4 w-4 text-green-500" /> : <ShieldOff className="h-4 w-4 text-red-500" />}
+                                <span className="capitalize hidden sm:inline">{court.is_public ? 'Public' : 'Private'}</span>
                             </div>
                         </TableCell>
                         <TableCell>

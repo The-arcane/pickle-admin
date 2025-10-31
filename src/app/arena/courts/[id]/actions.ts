@@ -402,3 +402,22 @@ export async function deleteCourtGalleryImage(formData: FormData) {
     revalidatePath(`/arena/courts/${courtId}`);
     return { success: true };
 }
+
+export async function toggleCourtPublicStatus(courtId: number, isPublic: boolean) {
+    const supabase = await createServer();
+
+    const { error } = await supabase
+        .from('courts')
+        .update({ is_public: isPublic })
+        .eq('id', courtId);
+
+    if (error) {
+        console.error('Error toggling court status:', error);
+        return { error: `Failed to toggle court status: ${error.message}` };
+    }
+
+    revalidatePath('/arena/courts');
+    revalidatePath('/super-admin/courts');
+    revalidatePath('/livingspace/courts');
+    return { success: true };
+}
