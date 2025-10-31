@@ -65,6 +65,7 @@ function getCourtFields(formData: FormData) {
         one_booking_per_user_per_day: formData.get('one_booking_per_user_per_day') === 'true',
         is_booking_rolling: formData.get('is_booking_rolling') === 'true',
         booking_style: formData.get('booking_style') as 'calendar' | 'rolling_window',
+        is_public: formData.get('is_public') === 'true',
     };
 }
 
@@ -84,10 +85,9 @@ export async function addCourt(formData: FormData) {
     }
     
     // --- 1. Insert the main court record (without images first) ---
-    const isPublic = formData.get('is_public') === 'true';
     const { data: newCourt, error: courtError } = await supabase
       .from('courts')
-      .insert({...courtFields, is_public: isPublic})
+      .insert(courtFields)
       .select('id')
       .single();
 
@@ -175,8 +175,7 @@ export async function updateCourt(formData: FormData) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
     }
     
-    const isPublic = formData.get('is_public') === 'true';
-    const courtUpdateData: any = { ...courtFields, is_public: isPublic };
+    const courtUpdateData: any = { ...courtFields };
     
     // --- Handle Image Uploads ---
     const mainImageFile = formData.get('main_image_file') as File | null;
