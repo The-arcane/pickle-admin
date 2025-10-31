@@ -169,23 +169,21 @@ export async function updateCourt(formData: FormData) {
   try {
     if (!id) return { error: 'Court ID is missing.' };
     
-    const courtFields = getCourtFields(formData);
+    const courtUpdateData = getCourtFields(formData);
 
-    if (!courtFields.name || !courtFields.organisation_id || !courtFields.sport_id) {
+    if (!courtUpdateData.name || !courtUpdateData.organisation_id || !courtUpdateData.sport_id) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
     }
-    
-    const courtUpdateData: any = { ...courtFields };
     
     // --- Handle Image Uploads ---
     const mainImageFile = formData.get('main_image_file') as File | null;
     const coverImageFile = formData.get('cover_image_file') as File | null;
     
     const mainImageUrl = await handleImageUpload(supabase, mainImageFile, id, 'main');
-    if (mainImageUrl) courtUpdateData.image = mainImageUrl;
+    if (mainImageUrl) (courtUpdateData as any).image = mainImageUrl;
     
     const coverImageUrl = await handleImageUpload(supabase, coverImageFile, id, 'cover');
-    if (coverImageUrl) courtUpdateData.cover_image = coverImageUrl;
+    if (coverImageUrl) (courtUpdateData as any).cover_image = coverImageUrl;
 
     // --- 1. Update main court table ---
     const { data, error: courtError } = await supabase.from('courts').update(courtUpdateData).eq('id', id).select().single();
@@ -404,3 +402,5 @@ export async function deleteCourtGalleryImage(formData: FormData) {
     revalidatePath(`/arena/courts/${courtId}`);
     return { success: true };
 }
+
+    
