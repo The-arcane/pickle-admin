@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { MoreHorizontal, Pencil, Search, Trash2, Globe, ShieldOff, PartyPopper } from 'lucide-react';
+import { MoreHorizontal, Pencil, Search, Trash2, PartyPopper } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { deleteEvent } from './actions';
@@ -43,7 +43,7 @@ type Event = {
   is_public: boolean | null;
 };
 
-export function EventsClientPage({ events }: { events: Event[] }) {
+export function EventsClientPage({ events, basePath = '/livingspace' }: { events: Event[], basePath?: string }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [isClient, setIsClient] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -105,7 +105,7 @@ export function EventsClientPage({ events }: { events: Event[] }) {
                     />
                 </div>
                 <Button asChild className="w-full sm:w-auto">
-                    <Link href="/livingspace/events/add">+ Add Event</Link>
+                    <Link href={`${basePath}/events/add`}>+ Add Event</Link>
                 </Button>
             </div>
             
@@ -153,7 +153,7 @@ export function EventsClientPage({ events }: { events: Event[] }) {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/livingspace/events/${event.id}`}>
+                                            <Link href={`${basePath}/events/${event.id}`}>
                                                 <Pencil className="mr-2 h-4 w-4" />
                                                 <span>Edit</span>
                                             </Link>

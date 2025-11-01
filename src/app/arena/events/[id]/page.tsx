@@ -39,13 +39,15 @@ export default async function ArenaEditEventPage({ params }: { params: { id: str
     event = eventData as Event;
   }
   
+  // Arena admins can only create events for their own org and as themselves.
   return (
     <EditEventClientPage
       event={event}
-      organisations={[]} // Arena admins can only create events for their own org
-      users={[userProfile as User]} // Only the current admin can be an organizer
+      organisations={[]} 
+      users={[userProfile as User]}
       categories={[]}
       tags={[]}
+      basePath="/arena"
     />
   );
 }

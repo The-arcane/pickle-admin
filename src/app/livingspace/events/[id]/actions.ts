@@ -6,10 +6,17 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import type { SubEvent, WhatToBringItem } from './types';
 
+const MAX_FILE_SIZE_MB = 2;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 // Helper to upload a file to Supabase Storage for events
 async function handleEventImageUpload(supabase: any, file: File | null, eventId: string): Promise<string | null> {
     if (!file || file.size === 0) {
         return null;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+        throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
     }
 
     const fileExt = file.name.split('.').pop();
@@ -80,6 +87,7 @@ function getEventDataFromFormData(formData: FormData) {
 
 export async function addEvent(formData: FormData) {
   const supabase = await createServer();
+  const basePath = formData.get('basePath') as string || '/livingspace';
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -185,13 +193,14 @@ export async function addEvent(formData: FormData) {
     return { error: `An unexpected error occurred: ${e.message}` };
   }
 
-  revalidatePath('/livingspace/events');
-  return { success: true };
+  revalidatePath(`${basePath}/events`);
+  redirect(`${basePath}/events`);
 }
 
 export async function updateEvent(formData: FormData) {
   const supabase = await createServer();
   const id = Number(formData.get('id'));
+  const basePath = formData.get('basePath') as string || '/livingspace';
 
   try {
     if (!id) return { error: 'Event ID is missing.' };
@@ -281,9 +290,9 @@ export async function updateEvent(formData: FormData) {
     return { error: `An unexpected error occurred: ${e.message}` };
   }
 
-  revalidatePath('/livingspace/events');
-  revalidatePath(`/livingspace/events/${id}`);
-  redirect('/livingspace/events');
+  revalidatePath(`${basePath}/events`);
+  revalidatePath(`${basePath}/events/${id}`);
+  redirect(`${basePath}/events`);
 }
 
 
@@ -321,6 +330,7 @@ async function handleEventGalleryImageUpload(supabase: any, file: File, eventId:
 export async function addEventGalleryImages(formData: FormData) {
     const supabase = await createServer();
     const eventId = formData.get('event_id') as string;
+    const basePath = formData.get('basePath') as string || '/livingspace';
     const images = formData.getAll('images') as File[];
 
     if (!eventId || images.length === 0) {
@@ -354,7 +364,7 @@ export async function addEventGalleryImages(formData: FormData) {
         return { error: e.message };
     }
 
-    revalidatePath(`/livingspace/events/${eventId}`);
+    revalidatePath(`${basePath}/events/${eventId}`);
     return { success: true };
 }
 
@@ -364,6 +374,7 @@ export async function deleteEventGalleryImage(formData: FormData) {
     const eventId = formData.get('event_id') as string;
     const imageId = formData.get('image_id') as string;
     const imageUrl = formData.get('image_url') as string;
+    const basePath = formData.get('basePath') as string || '/livingspace';
 
     if (!imageId || !imageUrl || !eventId) {
         return { error: 'Missing required fields to delete image.' };
@@ -389,6 +400,28 @@ export async function deleteEventGalleryImage(formData: FormData) {
         return { error: e.message };
     }
 
-    revalidatePath(`/livingspace/events/${eventId}`);
+    revalidatePath(`${basePath}/events/${eventId}`);
+    return { success: true };
+}
+
+export async function deleteEvent(formData: FormData) {
+    const supabase = await createServer();
+    const id = formData.get('id') as string;
+    const basePath = formData.get('basePath') as string || '/livingspace';
+
+    if (!id) {
+        return { error: 'Event ID is missing.' };
+    }
+    
+    // Note: To be fully robust, this should also handle deleting related data
+    // (bookings, gallery images from storage, etc). For now, we'll just delete the main record.
+
+    const { error } = await supabase.from('events').delete().eq('id', id);
+    if(error) {
+        console.error('Error deleting event:', error);
+        return { error: `Failed to delete event: ${error.message}` };
+    }
+    
+    revalidatePath(`${basePath}/events`);
     return { success: true };
 }

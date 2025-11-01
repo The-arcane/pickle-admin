@@ -1,5 +1,5 @@
 
-import { EmployeeEventsClientPage } from '@/app/employee/events/client';
+import { EventsClientPage } from './client';
 import { createServer } from '@/lib/supabase/server';
 import { format } from 'date-fns';
 import { redirect } from 'next/navigation';
@@ -47,15 +47,19 @@ export default async function ArenaEventsPage() {
     console.error("Error fetching events:", eventsError);
   }
 
-  const events = eventsData?.map(event => ({
-    id: event.id,
-    title: event.title,
-    category: event.event_categories[0]?.name?.name ?? 'General',
-    dates: `${format(new Date(event.start_time), 'MMM d, yyyy')} - ${format(new Date(event.end_time), 'MMM d, yyyy')}`,
-    location: event.location_name ?? 'N/A',
-    price: event.is_free ? 'Free' : `₹${event.amount}`,
-    status: new Date(event.end_time) < new Date() ? 'Completed' : 'Upcoming',
-  })) || [];
+  const events = eventsData?.map(event => {
+    if(event.title === null) return null;
+    return {
+        id: event.id,
+        title: event.title,
+        category: event.event_categories[0]?.name?.name ?? 'General',
+        dates: `${format(new Date(event.start_time), 'MMM d, yyyy')} - ${format(new Date(event.end_time), 'MMM d, yyyy')}`,
+        location: event.location_name ?? 'N/A',
+        price: event.is_free ? 'Free' : `₹${event.amount}`,
+        status: new Date(event.end_time) < new Date() ? 'Completed' : 'Upcoming',
+        is_public: event.is_public
+    };
+  }).filter(Boolean) as any[] || [];
 
-  return <EmployeeEventsClientPage events={events} />;
+  return <EventsClientPage events={events} basePath="/arena" />;
 }
