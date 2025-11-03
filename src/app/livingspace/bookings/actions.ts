@@ -199,109 +199,78 @@ export async function updateEventBookingStatus(formData: FormData) {
 
 export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number, targetUserId?: number) {
     const supabase = await createServer();
-    
+
     if (!dateString) {
         console.error("[getTimeslots] Date string is missing.");
         return [];
     }
-    const selectedDate = parseISO(dateString);
 
-    // 1. Fetch court rules and all timeslots for the court and date
-    const { data: courtRules, error: courtRulesError } = await supabase
-        .from('courts')
-        .select('booking_window, one_booking_per_user_per_day, is_booking_rolling')
-        .eq('id', courtId)
-        .single();
-
-    const { data: allTimeslots, error: timeslotsError } = await supabase
+    // 1. Get all possible timeslots for the court
+    const { data: allTimeslots, error: allTimeslotsError } = await supabase
         .from('timeslots')
         .select('id, start_time, end_time')
         .eq('court_id', courtId)
         .eq('date', dateString)
         .order('start_time');
 
-    if (courtRulesError || timeslotsError) {
-        console.error('Error fetching court rules or timeslots:', courtRulesError || timeslotsError);
+    if (allTimeslotsError) {
+        console.error('Error fetching all timeslots:', allTimeslotsError);
         return [];
     }
+    if (!allTimeslots) return [];
+    
+    // 2. Get already booked timeslots for that day using the DB function
+    const { data: bookedTimeslotIds, error: bookedError } = await supabase
+        .rpc('get_booked_timeslots_for_court_and_date', {
+            p_court_id: courtId,
+            p_date: dateString
+        });
 
-    if (!allTimeslots || !courtRules) {
+    if (bookedError) {
+        console.error('Error calling get_booked_timeslots_for_court_and_date:', bookedError);
         return [];
-    }
-
-    // --- Apply Advanced Booking Rules ---
-    // Rule: Booking window (e.g., cannot book more than X days in advance)
-    const bookingWindow = courtRules.booking_window ?? 1; // Default to 1 day if not set
-    const maxBookingDate = addDays(new Date(), bookingWindow -1);
-    if (isBefore(maxBookingDate, selectedDate)) {
-        return []; // Selected date is outside the booking window
     }
     
-    let filteredTimeslots = allTimeslots;
+    const bookedSet = new Set(bookedTimeslotIds.map((item: any) => item.timeslot_id));
 
-    // Rule: Rolling 24-hour booking window
-    if (courtRules.is_booking_rolling) {
-        const now = new Date();
-        filteredTimeslots = filteredTimeslots.filter(slot => {
-            if (!slot.start_time) return false;
-            // Assuming start_time is timestamptz from DB
-            const slotStartTime = parseISO(slot.start_time);
-            return isBefore(now, slotStartTime) && isBefore(slotStartTime, addDays(now, 1));
-        });
+    // 3. Filter out the booked timeslots
+    let availableTimeslots = allTimeslots.filter(slot => !bookedSet.has(slot.id));
+
+    // 4. If we are editing a booking, add its original timeslot back to the list
+    if (bookingIdToExclude) {
+        const { data: currentBooking } = await supabase
+            .from('bookings')
+            .select('timeslot_id')
+            .eq('id', bookingIdToExclude)
+            .single();
+
+        if (currentBooking?.timeslot_id) {
+            const originalTimeslot = allTimeslots.find(t => t.id === currentBooking.timeslot_id);
+            if (originalTimeslot && !availableTimeslots.some(t => t.id === originalTimeslot.id)) {
+                 availableTimeslots.push(originalTimeslot);
+                 // Sort again to ensure correct order
+                 availableTimeslots.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+            }
+        }
     }
-
-    // Rule: One booking per user per day
-    if (courtRules.one_booking_per_user_per_day && targetUserId) {
-        const { data: userBookings, error: userBookingsError } = await supabase
+    
+    // 5. Potentially filter based on user's daily limit (optional, as per original logic)
+    const { data: courtRules } = await supabase
+        .from('courts')
+        .select('one_booking_per_user_per_day')
+        .eq('id', courtId)
+        .single();
+        
+    if (courtRules?.one_booking_per_user_per_day && targetUserId) {
+         const { data: userBookings, error: userBookingsError } = await supabase
             .rpc('get_user_bookings_for_date', { p_user_id: targetUserId, p_date: dateString });
         
         if (userBookingsError) {
             console.error('Error fetching user bookings:', userBookingsError);
         } else if (userBookings && userBookings.length > 0) {
-             // Check if the user's booking is the one we are currently editing
             const isEditingOwnBooking = userBookings.length === 1 && bookingIdToExclude && userBookings[0].id === bookingIdToExclude;
             if (!isEditingOwnBooking) {
-                return []; // User already has a booking for this day, return no slots.
-            }
-        }
-    }
-
-    // --- Check for existing bookings on the court ---
-    const timeslotIds = filteredTimeslots.map(t => t.id);
-    if (timeslotIds.length === 0) {
-        return [];
-    }
-
-    const { data: bookedTimeslots, error: bookingsError } = await supabase
-        .from('bookings')
-        .select('timeslot_id')
-        .in('timeslot_id', timeslotIds)
-        .in('booking_status', [1, 2]); // Confirmed or Pending
-
-    if (bookingsError) {
-        console.error('Error fetching booked timeslots:', bookingsError);
-        return filteredTimeslots; // Return all slots on error
-    }
-
-    const bookedSet = new Set(bookedTimeslots.map(b => b.timeslot_id));
-    
-    const availableTimeslots = filteredTimeslots.filter(slot => !bookedSet.has(slot.id));
-
-    // If editing a booking, we need to add its original timeslot back to the list so it can be re-selected.
-    if (bookingIdToExclude) {
-        const { data: currentBooking } = await supabase
-            .from('bookings')
-            .select('timeslot_id, timeslots(id, start_time, end_time)')
-            .eq('id', bookingIdToExclude)
-            .single();
-
-        if (currentBooking?.timeslots) {
-            const originalTimeslot = currentBooking.timeslots;
-            // Check if it's not already in the list (e.g. if it was never booked by someone else)
-            if (!availableTimeslots.some(t => t.id === originalTimeslot.id)) {
-                 availableTimeslots.push({ id: originalTimeslot.id, start_time: originalTimeslot.start_time, end_time: originalTimeslot.end_time });
-                 // Sort again to ensure correct order
-                 availableTimeslots.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+                return []; // User already has a booking, return no slots.
             }
         }
     }
