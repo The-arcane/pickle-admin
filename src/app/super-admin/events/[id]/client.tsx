@@ -45,12 +45,15 @@ function DeleteButton() {
     )
 }
 
-export function EditEventClientPage({ event, organisations, users, categories, tags }: { event: Event | null, organisations: Organisation[], users: User[], categories: EventCategory[], tags: EventTag[] }) {
+export function EditEventClientPage({ event, organisations, users, categories, tags, basePath = '/super-admin', organisationId: initialOrganisationId }: { event: Event | null, organisations: Organisation[], users: User[], categories: EventCategory[], tags: EventTag[], basePath?: string, organisationId?: number }) {
     const router = useRouter();
     const { toast } = useToast();
     const isAdding = !event;
     const [isClient, setIsClient] = useState(false);
-    const { selectedOrgId } = useOrganization();
+    const { selectedOrgId: orgIdFromHook } = useOrganization();
+    
+    // Determine the org ID to use: initial prop for arena/livingspace, or hook for super-admin
+    const selectedOrgId = basePath === '/super-admin' ? orgIdFromHook : initialOrganisationId;
 
     // Form State
     const [isFree, setIsFree] = useState(true);
@@ -106,6 +109,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         formData.append('is_public', String(isPublic));
         formData.append('sub_events', JSON.stringify(subEvents.filter(s => s.title)));
         formData.append('what_to_bring', JSON.stringify(whatToBring.filter(s => s.item)));
+        formData.append('basePath', basePath);
         
         // Based on the toggle, set the access_type
         formData.append('access_type', isPublic ? 'public' : 'private');
@@ -113,9 +117,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         const action = isAdding ? addEvent : updateEvent;
         if (!isAdding && event) {
             formData.append('id', event.id.toString());
-        } else if (isAdding && selectedOrgId && organiserType === 'organisation') {
-            formData.append('organiser_org_id', selectedOrgId.toString());
-        }
+        } 
         
         const result = await action(formData);
 
@@ -123,12 +125,13 @@ export function EditEventClientPage({ event, organisations, users, categories, t
             toast({ variant: "destructive", title: "Error", description: result.error });
         } else {
             toast({ title: "Success", description: `Event ${isAdding ? 'added' : 'updated'} successfully.` });
-            router.push('/super-admin/events');
+            router.push(`${basePath}/events`);
             router.refresh();
         }
     };
     
     const handleGallerySubmit = async (formData: FormData) => {
+        formData.append('basePath', basePath);
         const result = await addEventGalleryImages(formData);
         if (result?.error) {
             toast({ variant: "destructive", title: "Error", description: result.error });
@@ -179,7 +182,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         setWhatToBring(newItems);
     };
 
-    const selectedOrganisation = organisations.find(o => o.id === selectedOrgId);
+    const selectedOrganisation = organisations.find(o => o.id === (event?.organiser_org_id ?? selectedOrgId));
 
     return (
         <>
@@ -188,7 +191,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                     <div className="flex items-center justify-between">
                         <h1 className="text-3xl font-bold">{isAdding ? 'Add New Event' : 'Edit Event'}</h1>
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" type="button" asChild><Link href="/super-admin/events">Cancel</Link></Button>
+                            <Button variant="outline" type="button" asChild><Link href={`${basePath}/events`}>Cancel</Link></Button>
                             <Button type="submit">Save Changes</Button>
                         </div>
                     </div>
@@ -272,8 +275,14 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                             {organiserType === 'organisation' ? (
                                 <div className="space-y-2">
                                     <Label htmlFor="organiser_org_id">Organiser Organisation</Label>
-                                    <Input value={selectedOrganisation?.name || ''} disabled />
-                                    <input type="hidden" name="organiser_org_id" value={selectedOrgId || event?.organiser_org_id || ''} />
+                                     {basePath === '/super-admin' ? (
+                                        <Select name="organiser_org_id" defaultValue={event?.organiser_org_id?.toString() || selectedOrgId?.toString()}><SelectTrigger><SelectValue placeholder="Select an organization" /></SelectTrigger><SelectContent>{organisations.map(org => <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>)}</SelectContent></Select>
+                                     ) : (
+                                        <>
+                                            <Input value={selectedOrganisation?.name || 'Loading...'} disabled />
+                                            <input type="hidden" name="organiser_org_id" value={selectedOrganisation?.id || ''} />
+                                        </>
+                                     )}
                                 </div>
                             ) : (
                                 <div className="space-y-2"><Label htmlFor="organiser_user_id">Organiser User</Label><Select name="organiser_user_id" defaultValue={event?.organiser_user_id?.toString() || ''}><SelectTrigger><SelectValue placeholder="Select a user" /></SelectTrigger><SelectContent>{users.map(user => <SelectItem key={user.id} value={user.id.toString()}>{user.name}</SelectItem>)}</SelectContent></Select></div>
@@ -387,7 +396,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                     </Card>
 
                     <div className="flex items-center justify-end gap-2 sticky bottom-0 bg-background py-4">
-                        <Button variant="outline" type="button" asChild><Link href="/super-admin/events">Cancel</Link></Button>
+                        <Button variant="outline" type="button" asChild><Link href={`${basePath}/events`}>Cancel</Link></Button>
                         <Button type="submit">Save Changes</Button>
                     </div>
                 </form>
@@ -445,6 +454,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                                     <input type="hidden" name="event_id" value={event.id} />
                                                     <input type="hidden" name="image_id" value={image.id} />
                                                     <input type="hidden" name="image_url" value={image.image_url} />
+                                                     <input type="hidden" name="basePath" value={basePath} />
                                                     <DeleteButton />
                                                 </form>
                                             </div>

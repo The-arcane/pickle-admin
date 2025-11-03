@@ -1,7 +1,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
-import { EditEventClientPage } from '@/app/livingspace/events/[id]/client';
+import { EditEventClientPage } from '@/app/super-admin/events/[id]/client';
 import type { Event, Organisation, User } from './types';
 
 export default async function LivingspaceEditEventPage({ params }: { params: { id: string } }) {
@@ -24,6 +24,9 @@ export default async function LivingspaceEditEventPage({ params }: { params: { i
     return <p>You are not associated with any organization.</p>;
   }
   const organisationId = orgLink.organisation_id;
+  
+  const { data: organisationData } = await supabase.from('organisations').select('id, name').eq('id', organisationId).single();
+
 
   let event: Event | null = null;
   if (!isAdding) {
@@ -50,7 +53,7 @@ export default async function LivingspaceEditEventPage({ params }: { params: { i
   return (
     <EditEventClientPage
       event={event}
-      organisations={[]} 
+      organisations={organisationData ? [organisationData] : []}
       users={[userProfile as User]}
       categories={[]}
       tags={[]}
