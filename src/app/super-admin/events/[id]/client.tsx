@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -126,7 +127,6 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         } else {
             toast({ title: "Success", description: `Event ${isAdding ? 'added' : 'updated'} successfully.` });
             router.push(`${basePath}/events`);
-            router.refresh();
         }
     };
     

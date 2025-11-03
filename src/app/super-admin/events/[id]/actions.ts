@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
@@ -89,6 +90,7 @@ function getEventDataFromFormData(formData: FormData) {
 
 export async function addEvent(formData: FormData) {
   const supabase = await createServer();
+  const basePath = formData.get('basePath') as string || '/livingspace';
   
   try {
     const eventData = getEventDataFromFormData(formData);
@@ -166,13 +168,14 @@ export async function addEvent(formData: FormData) {
     return { error: `An unexpected error occurred: ${e.message}` };
   }
 
-  revalidatePath('/super-admin/events');
-  redirect('/super-admin/events');
+  revalidatePath(`${basePath}/events`);
+  return { success: true };
 }
 
 export async function updateEvent(formData: FormData) {
   const supabase = await createServer();
   const id = Number(formData.get('id'));
+  const basePath = formData.get('basePath') as string || '/livingspace';
 
   try {
     if (!id) return { error: 'Event ID is missing.' };
@@ -245,9 +248,9 @@ export async function updateEvent(formData: FormData) {
     return { error: `An unexpected error occurred: ${e.message}` };
   }
 
-  revalidatePath('/super-admin/events');
-  revalidatePath(`/super-admin/events/${id}`);
-  redirect('/super-admin/events');
+  revalidatePath(`${basePath}/events`);
+  revalidatePath(`${basePath}/events/${id}`);
+  return { success: true };
 }
 
 
@@ -257,7 +260,8 @@ async function handleEventGalleryImageUpload(supabase: any, file: File, eventId:
     if (!file || file.size === 0) {
         return null;
     }
-     if (file.size > MAX_FILE_SIZE_BYTES) {
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
         throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
     }
 
@@ -284,6 +288,7 @@ async function handleEventGalleryImageUpload(supabase: any, file: File, eventId:
 export async function addEventGalleryImages(formData: FormData) {
     const supabase = await createServer();
     const eventId = formData.get('event_id') as string;
+    const basePath = formData.get('basePath') as string || '/livingspace';
     const images = formData.getAll('images') as File[];
 
     if (!eventId || images.length === 0) {
@@ -317,7 +322,7 @@ export async function addEventGalleryImages(formData: FormData) {
         return { error: e.message };
     }
 
-    revalidatePath(`/super-admin/events/${eventId}`);
+    revalidatePath(`${basePath}/events/${eventId}`);
     return { success: true };
 }
 
@@ -327,6 +332,7 @@ export async function deleteEventGalleryImage(formData: FormData) {
     const eventId = formData.get('event_id') as string;
     const imageId = formData.get('image_id') as string;
     const imageUrl = formData.get('image_url') as string;
+    const basePath = formData.get('basePath') as string || '/livingspace';
 
     if (!imageId || !imageUrl || !eventId) {
         return { error: 'Missing required fields to delete image.' };
@@ -339,20 +345,75 @@ export async function deleteEventGalleryImage(formData: FormData) {
         
         const { error: storageError } = await supabase.storage.from('event-gallery').remove([filePath]);
         if (storageError) {
-            // Non-fatal error
-            console.error('Failed to delete image from storage, but continuing to delete DB record:', storageError.message);
+            return { error: `Failed to delete image from storage: ${storageError.message}`};
         }
 
         // 2. Delete from database
         const { error: dbError } = await supabase.from('event_gallery_images').delete().eq('id', imageId);
         if (dbError) {
-            return { error: `Failed to remove image from gallery: ${dbError.message}`};
+            return { error: `Image deleted from storage, but failed to remove from gallery: ${dbError.message}`};
         }
 
     } catch (e: any) {
         return { error: e.message };
     }
 
-    revalidatePath(`/super-admin/events/${eventId}`);
+    revalidatePath(`${basePath}/events/${eventId}`);
     return { success: true };
+}
+
+export async function deleteEvent(formData: FormData) {
+    const supabase = await createServer();
+    const id = formData.get('id') as string;
+    const basePath = formData.get('basePath') as string || '/livingspace';
+
+    if (!id) {
+        return { error: 'Event ID is missing.' };
+    }
+    
+    // Note: To be fully robust, this should also handle deleting related data
+    // (bookings, gallery images from storage, etc). For now, we'll just delete the main record.
+
+    const { error } = await supabase.from('events').delete().eq('id', id);
+    if(error) {
+        console.error('Error deleting event:', error);
+        return { error: `Failed to delete event: ${error.message}` };
+    }
+    
+    revalidatePath(`${basePath}/events`);
+    return { success: true };
+}
+
+export async function cancelEventBooking(formData: FormData) {
+    const supabase = await createServer();
+    const id = formData.get('id') as string;
+
+    if (!id) {
+        return { error: 'Booking ID is missing.' };
+    }
+    
+    const { data: cancelledStatus } = await supabase
+        .from('event_booking_status')
+        .select('id')
+        .eq('label', 'Cancelled')
+        .single();
+        
+    if (!cancelledStatus) {
+        return { error: 'System configuration error: "Cancelled" status not found.' };
+    }
+
+    const { error } = await supabase
+        .from('event_bookings')
+        .update({ status: cancelledStatus.id })
+        .eq('id', id);
+    
+    if (error) {
+        console.error('Error cancelling event booking:', error);
+        return { error: `Failed to cancel event booking: ${error.message}` };
+    }
+
+    revalidatePath('/livingspace/bookings');
+    revalidatePath('/arena/bookings');
+    revalidatePath('/livingspace');
+    return { success: true, message: 'Event booking has been cancelled.' };
 }
