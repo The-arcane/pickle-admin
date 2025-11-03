@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -12,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { StatusBadge } from '@/components/status-badge';
 import { Calendar as CalendarIcon, Pencil, Search, X, PartyPopper, Info, Trash2 } from 'lucide-react';
 import { addBooking, updateBooking, getTimeslots, cancelBooking } from './actions';
+import { cancelEventBooking } from '../events/actions';
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, formatISO, isEqual, startOfDay } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -84,7 +84,7 @@ export function BookingsClientPage({
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-    const [bookingToCancel, setBookingToCancel] = useState<ProcessedCourtBooking | null>(null);
+    const [bookingToCancel, setBookingToCancel] = useState<{id: number, type: 'court' | 'event', user: string, item: string} | null>(null);
     
     // Toasts
     const { toast } = useToast();
@@ -184,16 +184,26 @@ export function BookingsClientPage({
         setIsEditDialogOpen(true);
     };
 
-    const handleCancelClick = (booking: ProcessedCourtBooking) => {
-        setBookingToCancel(booking);
+    const handleCancelClick = (booking: ProcessedCourtBooking | ProcessedEventBooking) => {
+        const type = 'court' in booking ? 'court' : 'event';
+        setBookingToCancel({
+            id: booking.id,
+            type: type,
+            user: booking.user,
+            item: type === 'court' ? (booking as ProcessedCourtBooking).court : (booking as ProcessedEventBooking).event,
+        });
         setIsCancelDialogOpen(true);
     };
 
     const handleConfirmCancel = async () => {
         if (!bookingToCancel) return;
+        
         const formData = new FormData();
         formData.append('id', bookingToCancel.id.toString());
-        const result = await cancelBooking(formData);
+
+        const action = bookingToCancel.type === 'court' ? cancelBooking : cancelEventBooking;
+        const result = await action(formData);
+        
         if (result.error) {
             toast({ variant: "destructive", title: "Error", description: result.error });
         } else {
@@ -360,6 +370,7 @@ export function BookingsClientPage({
                                     <TableHeader><TableRow>
                                         <TableHead>Event</TableHead><TableHead>User</TableHead><TableHead>Attendees</TableHead>
                                         <TableHead>Total Enrolled</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow></TableHeader>
                                     <TableBody>
                                         {!isClient ? Array.from({ length: 3 }).map((_, i) => (
@@ -367,14 +378,23 @@ export function BookingsClientPage({
                                                 <TableCell><Skeleton className="h-5 w-32" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell>
                                                 <TableCell><Skeleton className="h-5 w-16" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell>
                                                 <TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                                                <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                                             </TableRow>
                                         )) : filteredEventBookings.length === 0 ? (
-                                            <TableRow><TableCell colSpan={6} className="text-center h-24">No event bookings found.</TableCell></TableRow>
+                                            <TableRow><TableCell colSpan={7} className="text-center h-24">No event bookings found.</TableCell></TableRow>
                                         ) : (
                                             filteredEventBookings.map(b => (
                                                 <TableRow key={b.id}>
                                                     <TableCell className="font-medium">{b.event}</TableCell><TableCell>{b.user}</TableCell><TableCell>{b.quantity}</TableCell>
                                                     <TableCell>{b.total_enrolled}</TableCell><TableCell>{b.date}</TableCell><TableCell><StatusBadge status={b.status} /></TableCell>
+                                                    <TableCell className="text-right">
+                                                         <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onSelect={() => handleCancelClick(b)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" />Cancel</DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </TableCell>
                                                 </TableRow>
                                             ))
                                         )}
@@ -413,7 +433,24 @@ export function BookingsClientPage({
                             )}
                             <div className="space-y-2">
                                 <Label>Date</Label>
-                                <Input type="date" name="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn("w-full justify-start text-left font-normal", !selectedBooking.raw_date && "text-muted-foreground")}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {editDate ? format(parseISO(editDate), 'PPP') : <span>Pick a date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar
+                                            mode="single"
+                                            selected={selectedBooking.raw_date}
+                                            onSelect={(d) => d && setEditDate(formatISO(d, { representation: 'date' }))}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>
@@ -440,6 +477,7 @@ export function BookingsClientPage({
                 <DialogContent><DialogHeader><DialogTitle>Add New Court Booking</DialogTitle></DialogHeader>
                     <form onSubmit={(e) => { e.preventDefault(); 
                         const formData = new FormData(e.currentTarget);
+                        if(addDate) formData.append('date', addDate);
                         handleFormSubmit(addBooking(formData), "Booking added.", "Add Failed");
                     }}>
                         <div className="space-y-4 py-4">
@@ -467,7 +505,25 @@ export function BookingsClientPage({
                             )}
                             <div className="space-y-2">
                                 <Label>Date</Label>
-                                <Input type="date" name="date" value={addDate} onChange={(e) => setAddDate(e.target.value)} min={formatISO(new Date(), { representation: 'date'})} />
+                                 <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn("w-full justify-start text-left font-normal", !addDate && "text-muted-foreground")}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {addDate ? format(parseISO(addDate), 'PPP') : <span>Pick a date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar
+                                            mode="single"
+                                            selected={addDate ? parseISO(addDate) : undefined}
+                                            onSelect={(d) => d && setAddDate(formatISO(d, { representation: 'date' }))}
+                                            disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>
@@ -492,7 +548,7 @@ export function BookingsClientPage({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will cancel the booking for <span className="font-bold">{bookingToCancel?.user}</span> on <span className="font-bold">{bookingToCancel?.court}</span>. This action cannot be undone.
+                            This will cancel the {bookingToCancel?.type} booking for <span className="font-bold">{bookingToCancel?.user}</span> on <span className="font-bold">{bookingToCancel?.item}</span>. This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
