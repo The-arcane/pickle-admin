@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 
 // Types
@@ -74,8 +75,12 @@ export function BookingsClientPage({
     initialCourtBookings: CourtBookingFromDb[], initialEventBookings: EventBookingFromDb[],
     courts: Court[], users: User[], courtBookingStatuses: BookingStatus[], eventBookingStatuses: BookingStatus[],
 }) {
+    const pathname = usePathname();
     const [isClient, setIsClient] = useState(false);
     useEffect(() => setIsClient(true), []);
+    
+    const basePath = pathname.startsWith('/arena') ? '/arena' : '/livingspace';
+
 
     // Tabs
     const [activeTab, setActiveTab] = useState('courts');
@@ -257,7 +262,7 @@ export function BookingsClientPage({
                 </div>
                  <div className="w-full sm:w-auto">
                     {activeTab === 'courts' && <Button className="w-full" onClick={() => setIsAddDialogOpen(true)}>+ Add Court Booking</Button>}
-                    {activeTab === 'events' && <Button className="w-full" asChild><Link href="/livingspace/events/add">+ Add Event Booking</Link></Button>}
+                    {activeTab === 'events' && <Button className="w-full" asChild><Link href={`${basePath}/events/add`}>+ Add Event Booking</Link></Button>}
                 </div>
             </header>
 
