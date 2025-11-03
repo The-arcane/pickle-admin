@@ -15,6 +15,12 @@ const statusMapToDb: { [key: string]: number } = {
   'Ongoing': 6
 };
 
+const eventStatusMapToDb: { [key: string]: number } = {
+  'Pending': 1,
+  'Confirmed': 2,
+  'Cancelled': 3,
+};
+
 
 async function findOrCreateTimeslot(supabase: any, court_id: number, date: string, start_time: string, end_time: string): Promise<number | null> {
     let { data: existingTimeslot, error: findError } = await supabase
@@ -158,6 +164,35 @@ export async function cancelBooking(formData: FormData) {
     revalidatePath('/arena/bookings');
     revalidatePath('/livingspace');
     return { success: true, message: 'Booking has been cancelled.' };
+}
+
+export async function updateEventBookingStatus(formData: FormData) {
+  const supabase = await createServer();
+  const id = formData.get('id') as string;
+  const status = formData.get('status') as string;
+
+  if (!id || !status) {
+    return { error: 'Booking ID and status are required.' };
+  }
+
+  const statusId = eventStatusMapToDb[status];
+  if (statusId === undefined) {
+    return { error: 'Invalid event booking status provided.' };
+  }
+
+  const { error } = await supabase
+    .from('event_bookings')
+    .update({ status: statusId })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error updating event booking status:', error);
+    return { error: `Failed to update event booking status: ${error.message}` };
+  }
+
+  revalidatePath('/livingspace/bookings');
+  revalidatePath('/arena/bookings');
+  return { success: true, message: 'Event booking status updated.' };
 }
 
 export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number, targetUserId?: number) {

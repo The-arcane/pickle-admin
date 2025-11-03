@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
 import { Calendar as CalendarIcon, Pencil, Search, X, PartyPopper, Info, Trash2 } from 'lucide-react';
-import { addBooking, updateBooking, getTimeslots, cancelBooking } from './actions';
+import { addBooking, updateBooking, getTimeslots, cancelBooking, updateEventBookingStatus } from './actions';
 import { cancelEventBooking } from '../events/actions';
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, formatISO, isEqual, startOfDay } from 'date-fns';
@@ -81,7 +81,8 @@ export function BookingsClientPage({
     const [activeTab, setActiveTab] = useState('courts');
 
     // Dialogs
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isCourtEditDialogOpen, setIsCourtEditDialogOpen] = useState(false);
+    const [isEventEditDialogOpen, setIsEventEditDialogOpen] = useState(false);
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
     const [bookingToCancel, setBookingToCancel] = useState<{id: number, type: 'court' | 'event', user: string, item: string} | null>(null);
@@ -92,6 +93,7 @@ export function BookingsClientPage({
     // Data processing
     const courtStatusMap = useMemo(() => Object.fromEntries(courtBookingStatuses.map(s => [s.id, s.label])), [courtBookingStatuses]);
     const eventStatusMap = useMemo(() => Object.fromEntries(eventBookingStatuses.map(s => [s.id, s.label])), [eventBookingStatuses]);
+    const eventStatusMapReverse = useMemo(() => Object.fromEntries(eventBookingStatuses.map(s => [s.label, s.id])), [eventBookingStatuses]);
 
     const processedCourtBookings = useMemo(() => initialCourtBookings.map(b => {
         const date = b.timeslots?.date ? parseISO(b.timeslots.date) : undefined;
@@ -133,7 +135,8 @@ export function BookingsClientPage({
     ), [processedEventBookings, eventSearch, eventStatusFilter]);
 
     // Dialog state
-    const [selectedBooking, setSelectedBooking] = useState<ProcessedCourtBooking | null>(null);
+    const [selectedCourtBooking, setSelectedCourtBooking] = useState<ProcessedCourtBooking | null>(null);
+    const [selectedEventBooking, setSelectedEventBooking] = useState<ProcessedEventBooking | null>(null);
     const [editCourtId, setEditCourtId] = useState<string>('');
     const [editDate, setEditDate] = useState<string>('');
     const [editTimeslotId, setEditTimeslotId] = useState<string>('');
@@ -150,17 +153,17 @@ export function BookingsClientPage({
 
     // Fetch available timeslots for Edit Dialog
     useEffect(() => {
-        if (editCourtId && editDate && isEditDialogOpen && selectedBooking) {
+        if (editCourtId && editDate && isCourtEditDialogOpen && selectedCourtBooking) {
             setIsEditLoadingSlots(true);
             setEditCourtRules(allCourts.find(c => c.id.toString() === editCourtId) ?? null);
-            getTimeslots(Number(editCourtId), editDate, selectedBooking.id, selectedBooking.user_id)
+            getTimeslots(Number(editCourtId), editDate, selectedCourtBooking.id, selectedCourtBooking.user_id)
                 .then(slots => {
                     setEditAvailableSlots(slots);
                     if (!slots.some(s => s.id.toString() === editTimeslotId)) setEditTimeslotId('');
                 })
                 .finally(() => setIsEditLoadingSlots(false));
         }
-    }, [editCourtId, editDate, isEditDialogOpen, selectedBooking, editTimeslotId, allCourts]);
+    }, [editCourtId, editDate, isCourtEditDialogOpen, selectedCourtBooking, editTimeslotId, allCourts]);
 
     // Fetch available timeslots for Add Dialog
     useEffect(() => {
@@ -176,12 +179,17 @@ export function BookingsClientPage({
         }
     }, [addCourtId, addDate, addUserId, allCourts]);
 
-    const handleEditClick = (booking: ProcessedCourtBooking) => {
-        setSelectedBooking(booking);
+    const handleCourtEditClick = (booking: ProcessedCourtBooking) => {
+        setSelectedCourtBooking(booking);
         setEditCourtId(booking.court_id.toString());
         setEditDate(booking.raw_date ? format(booking.raw_date, 'yyyy-MM-dd') : '');
         setEditTimeslotId(booking.timeslot_id.toString());
-        setIsEditDialogOpen(true);
+        setIsCourtEditDialogOpen(true);
+    };
+
+    const handleEventEditClick = (booking: ProcessedEventBooking) => {
+        setSelectedEventBooking(booking);
+        setIsEventEditDialogOpen(true);
     };
 
     const handleCancelClick = (booking: ProcessedCourtBooking | ProcessedEventBooking) => {
@@ -232,7 +240,8 @@ export function BookingsClientPage({
         } else {
             toast({ title: "Success", description: successMsg });
             setIsAddDialogOpen(false);
-            setIsEditDialogOpen(false);
+            setIsCourtEditDialogOpen(false);
+            setIsEventEditDialogOpen(false);
         }
     }, [toast]);
     
@@ -329,7 +338,7 @@ export function BookingsClientPage({
                                                          <DropdownMenu>
                                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onSelect={() => handleEditClick(b)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => handleCourtEditClick(b)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
                                                                 <DropdownMenuSeparator />
                                                                 <DropdownMenuItem onSelect={() => handleCancelClick(b)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" />Cancel</DropdownMenuItem>
                                                             </DropdownMenuContent>
@@ -391,6 +400,8 @@ export function BookingsClientPage({
                                                          <DropdownMenu>
                                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onSelect={() => handleEventEditClick(b)}><Pencil className="mr-2 h-4 w-4" />Manage</DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
                                                                 <DropdownMenuItem onSelect={() => handleCancelClick(b)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" />Cancel</DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
@@ -406,11 +417,11 @@ export function BookingsClientPage({
                 </TabsContent>
             </Tabs>
 
-            {/* Edit Dialog */}
-            {selectedBooking && <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            {/* Edit Court Booking Dialog */}
+            {selectedCourtBooking && <Dialog open={isCourtEditDialogOpen} onOpenChange={setIsCourtEditDialogOpen}>
                 <DialogContent><DialogHeader><DialogTitle>Edit Court Booking</DialogTitle></DialogHeader>
                     <form onSubmit={(e) => { e.preventDefault(); handleFormSubmit(updateBooking(new FormData(e.currentTarget)), "Booking updated.", "Update Failed"); }}>
-                        <input type="hidden" name="id" value={selectedBooking.id} />
+                        <input type="hidden" name="id" value={selectedCourtBooking.id} />
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
                                 <Label>Court</Label>
@@ -437,7 +448,7 @@ export function BookingsClientPage({
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
-                                            className={cn("w-full justify-start text-left font-normal", !selectedBooking.raw_date && "text-muted-foreground")}
+                                            className={cn("w-full justify-start text-left font-normal", !selectedCourtBooking.raw_date && "text-muted-foreground")}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {editDate ? format(parseISO(editDate), 'PPP') : <span>Pick a date</span>}
@@ -446,7 +457,7 @@ export function BookingsClientPage({
                                     <PopoverContent className="w-auto p-0">
                                         <Calendar
                                             mode="single"
-                                            selected={selectedBooking.raw_date}
+                                            selected={selectedCourtBooking.raw_date}
                                             onSelect={(d) => d && setEditDate(formatISO(d, { representation: 'date' }))}
                                         />
                                     </PopoverContent>
@@ -461,7 +472,7 @@ export function BookingsClientPage({
                             </div>
                             <div className="space-y-2">
                                 <Label>Status</Label>
-                                <Select name="status" defaultValue={selectedBooking.status}>
+                                <Select name="status" defaultValue={selectedCourtBooking.status}>
                                     <SelectTrigger><SelectValue/></SelectTrigger>
                                     <SelectContent>{courtBookingStatuses.map(s => <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>)}</SelectContent>
                                 </Select>
@@ -472,7 +483,7 @@ export function BookingsClientPage({
                 </DialogContent>
             </Dialog>}
 
-            {/* Add Dialog */}
+             {/* Add Dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogChange}>
                 <DialogContent><DialogHeader><DialogTitle>Add New Court Booking</DialogTitle></DialogHeader>
                     <form onSubmit={(e) => { e.preventDefault(); 
@@ -542,6 +553,42 @@ export function BookingsClientPage({
                     </form>
                 </DialogContent>
             </Dialog>
+            
+            {/* Edit Event Booking Dialog */}
+            {selectedEventBooking && (
+                 <Dialog open={isEventEditDialogOpen} onOpenChange={setIsEventEditDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Manage Event Booking</DialogTitle>
+                            <DialogDescription>Update the status for this booking.</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={(e) => { e.preventDefault(); handleFormSubmit(updateEventBookingStatus(new FormData(e.currentTarget)), "Event booking updated.", "Update Failed"); }}>
+                            <input type="hidden" name="id" value={selectedEventBooking.id} />
+                            <div className="space-y-4 py-4">
+                                <div className="font-medium">
+                                    <p>User: <span className="font-normal">{selectedEventBooking.user}</span></p>
+                                    <p>Event: <span className="font-normal">{selectedEventBooking.event}</span></p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="event_status">Status</Label>
+                                    <Select name="status" defaultValue={selectedEventBooking.status}>
+                                        <SelectTrigger id="event_status"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            {eventBookingStatuses.map(s => (
+                                                <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                             <DialogFooter>
+                                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                                <Button type="submit">Save Status</Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+            )}
 
              <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
                 <AlertDialogContent>
