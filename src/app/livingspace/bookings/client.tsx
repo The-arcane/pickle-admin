@@ -471,8 +471,8 @@ export function BookingsClientPage({
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>
-                                <Select name="timeslot_id" disabled={isAddLoadingTimeslots || !addDate || !addCourtId || !addUserId}>
-                                    <SelectTrigger><SelectValue placeholder={isAddLoadingTimeslots ? "Loading..." : "Select user, court, and date first"} /></SelectTrigger>
+                                <Select name="timeslot_id" disabled={isAddLoadingSlots || !addDate || !addCourtId || !addUserId}>
+                                    <SelectTrigger><SelectValue placeholder={isAddLoadingSlots ? "Loading..." : "Select user, court, and date first"} /></SelectTrigger>
                                     <SelectContent>{addAvailableSlots.length > 0 ? addAvailableSlots.map(s => <SelectItem key={s.id} value={s.id.toString()}>{formatTime(s.start_time)} - {formatTime(s.end_time)}</SelectItem>) : <SelectItem value="none" disabled>No slots available</SelectItem>}</SelectContent>
                                 </Select>
                             </div>
