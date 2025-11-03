@@ -1,7 +1,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
-import { EditEventClientPage } from './client';
+import { EditEventClientPage } from '@/app/livingspace/events/[id]/client';
 import type { Event, Organisation, User } from './types';
 
 export default async function ArenaEditEventPage({ params }: { params: { id: string } }) {
@@ -18,6 +18,12 @@ export default async function ArenaEditEventPage({ params }: { params: { id: str
   if (!userProfile) {
     notFound();
   }
+  
+  const { data: orgLink } = await supabase.from('user_organisations').select('organisation_id').eq('user_id', userProfile.id).single();
+  if (!orgLink) {
+    return <p>You are not associated with any organization.</p>;
+  }
+  const organisationId = orgLink.organisation_id;
 
   let event: Event | null = null;
   if (!isAdding) {
@@ -30,6 +36,7 @@ export default async function ArenaEditEventPage({ params }: { params: { id: str
         event_gallery_images(*)
       `)
       .eq('id', id)
+      .eq('organiser_org_id', organisationId)
       .single();
     
     if (eventError || !eventData) {
@@ -48,6 +55,7 @@ export default async function ArenaEditEventPage({ params }: { params: { id: str
       categories={[]}
       tags={[]}
       basePath="/arena"
+      organisationId={organisationId}
     />
   );
 }

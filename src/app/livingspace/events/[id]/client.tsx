@@ -25,7 +25,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useFormStatus } from 'react-dom';
-import { useOrganization } from '@/hooks/use-organization';
 
 function GalleryUploadButton() {
     const { pending } = useFormStatus();
@@ -45,12 +44,11 @@ function DeleteButton() {
     )
 }
 
-export function EditEventClientPage({ event, organisations, users, categories, tags, basePath = '/livingspace' }: { event: Event | null, organisations: Organisation[], users: User[], categories: EventCategory[], tags: EventTag[], basePath?: string }) {
+export function EditEventClientPage({ event, organisations, users, categories, tags, basePath = '/livingspace', organisationId }: { event: Event | null, organisations: Organisation[], users: User[], categories: EventCategory[], tags: EventTag[], basePath?: string, organisationId?: number }) {
     const router = useRouter();
     const { toast } = useToast();
     const isAdding = !event;
     const [isClient, setIsClient] = useState(false);
-    const { selectedOrgId } = useOrganization();
 
     // Form State
     const [isFree, setIsFree] = useState(true);
@@ -177,7 +175,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
         setWhatToBring(newItems);
     };
 
-    const selectedOrganisation = organisations.find(o => o.id === selectedOrgId);
+    const selectedOrganisation = organisations.find(o => o.id === organisationId);
 
     return (
         <>
