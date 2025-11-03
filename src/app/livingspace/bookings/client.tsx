@@ -4,13 +4,14 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { StatusBadge } from '@/components/status-badge';
-import { Calendar as CalendarIcon, Pencil, Search, X, PartyPopper, Info } from 'lucide-react';
-import { addBooking, updateBooking, getTimeslots } from './actions';
+import { Calendar as CalendarIcon, Pencil, Search, X, PartyPopper, Info, Trash2 } from 'lucide-react';
+import { addBooking, updateBooking, getTimeslots, cancelBooking } from './actions';
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, formatISO, isEqual, startOfDay } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -21,6 +22,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
+
 
 // Types
 type CourtBookingFromDb = {
@@ -79,6 +83,8 @@ export function BookingsClientPage({
     // Dialogs
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+    const [bookingToCancel, setBookingToCancel] = useState<ProcessedCourtBooking | null>(null);
     
     // Toasts
     const { toast } = useToast();
@@ -178,6 +184,25 @@ export function BookingsClientPage({
         setIsEditDialogOpen(true);
     };
 
+    const handleCancelClick = (booking: ProcessedCourtBooking) => {
+        setBookingToCancel(booking);
+        setIsCancelDialogOpen(true);
+    };
+
+    const handleConfirmCancel = async () => {
+        if (!bookingToCancel) return;
+        const formData = new FormData();
+        formData.append('id', bookingToCancel.id.toString());
+        const result = await cancelBooking(formData);
+        if (result.error) {
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        } else {
+            toast({ title: "Success", description: result.message });
+        }
+        setIsCancelDialogOpen(false);
+        setBookingToCancel(null);
+    };
+
     const handleAddDialogChange = (open: boolean) => {
         if (!open) {
             // Reset form state when dialog closes
@@ -202,7 +227,7 @@ export function BookingsClientPage({
     }, [toast]);
     
     return (
-        <div className="space-y-6">
+        <>
             <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <CalendarIcon className="h-8 w-8 text-primary" />
@@ -290,7 +315,16 @@ export function BookingsClientPage({
                                                 <TableRow key={b.id}>
                                                     <TableCell className="font-medium">{b.user}</TableCell><TableCell>{b.court}</TableCell><TableCell>{b.date}</TableCell>
                                                     <TableCell>{b.time}</TableCell><TableCell><StatusBadge status={b.status} /></TableCell>
-                                                    <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => handleEditClick(b)}><Pencil className="h-4 w-4" /><span className="sr-only">Edit</span></Button></TableCell>
+                                                    <TableCell className="text-right">
+                                                         <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onSelect={() => handleEditClick(b)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onSelect={() => handleCancelClick(b)} className="text-destructive focus:text-destructive"><Trash2 className="mr-2 h-4 w-4" />Cancel</DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </TableCell>
                                                 </TableRow>
                                             ))
                                         )}
@@ -437,8 +471,8 @@ export function BookingsClientPage({
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>
-                                <Select name="timeslot_id" disabled={isAddLoadingSlots || !addDate || !addCourtId || !addUserId}>
-                                    <SelectTrigger><SelectValue placeholder={isAddLoadingSlots ? "Loading..." : "Select user, court, and date first"} /></SelectTrigger>
+                                <Select name="timeslot_id" disabled={isAddLoadingTimeslots || !addDate || !addCourtId || !addUserId}>
+                                    <SelectTrigger><SelectValue placeholder={isAddLoadingTimeslots ? "Loading..." : "Select user, court, and date first"} /></SelectTrigger>
                                     <SelectContent>{addAvailableSlots.length > 0 ? addAvailableSlots.map(s => <SelectItem key={s.id} value={s.id.toString()}>{formatTime(s.start_time)} - {formatTime(s.end_time)}</SelectItem>) : <SelectItem value="none" disabled>No slots available</SelectItem>}</SelectContent>
                                 </Select>
                             </div>
@@ -452,6 +486,21 @@ export function BookingsClientPage({
                     </form>
                 </DialogContent>
             </Dialog>
-        </div>
+
+             <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will cancel the booking for <span className="font-bold">{bookingToCancel?.user}</span> on <span className="font-bold">{bookingToCancel?.court}</span>. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Close</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmCancel} className="bg-destructive hover:bg-destructive/90">Confirm Cancellation</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }

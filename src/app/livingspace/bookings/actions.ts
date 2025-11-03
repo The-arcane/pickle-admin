@@ -7,10 +7,14 @@ import { parseISO, getDay, format, addDays, isBefore, startOfDecade } from 'date
 import { randomUUID } from 'crypto';
 
 const statusMapToDb: { [key: string]: number } = {
-  'Cancelled': 0,
-  'Confirmed': 1,
-  'Pending': 2,
+  'Pending': 1,
+  'Confirmed': 2,
+  'Cancelled': 3,
+  'Completed': 4,
+  'No-show': 5,
+  'Ongoing': 6
 };
+
 
 async function findOrCreateTimeslot(supabase: any, court_id: number, date: string, start_time: string, end_time: string): Promise<number | null> {
     let { data: existingTimeslot, error: findError } = await supabase
@@ -130,6 +134,30 @@ export async function updateBooking(formData: FormData) {
   revalidatePath('/livingspace/bookings');
   revalidatePath('/livingspace');
   return { success: true };
+}
+
+export async function cancelBooking(formData: FormData) {
+    const supabase = await createServer();
+    const id = formData.get('id') as string;
+
+    if (!id) {
+        return { error: 'Booking ID is missing.' };
+    }
+
+    const { error } = await supabase
+        .from('bookings')
+        .update({ booking_status: 3 }) // 3 is for Cancelled
+        .eq('id', id);
+    
+    if (error) {
+        console.error('Error cancelling booking:', error);
+        return { error: `Failed to cancel booking: ${error.message}` };
+    }
+
+    revalidatePath('/livingspace/bookings');
+    revalidatePath('/arena/bookings');
+    revalidatePath('/livingspace');
+    return { success: true, message: 'Booking has been cancelled.' };
 }
 
 export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number, targetUserId?: number) {
