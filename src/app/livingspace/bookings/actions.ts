@@ -203,8 +203,8 @@ export async function updateEventBookingStatus(formData: FormData) {
 export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number, targetUserId?: number) {
     const supabase = await createServer();
 
-    if (!dateString) {
-        console.error("[getTimeslots] Date string is missing.");
+    if (!dateString || !courtId) {
+        console.error("[getTimeslots] Court ID or Date string is missing.");
         return [];
     }
 
@@ -212,7 +212,8 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
     const { data: availableTimeslots, error } = await supabase.rpc('get_available_time_slots', {
       p_court_id: courtId,
       p_date: dateString,
-      p_user_id: targetUserId // Pass user_id if you need to check user-specific rules within the function
+      p_user_id: targetUserId,
+      p_is_admin_booking: true // Add this parameter to bypass user-specific checks on admin side
     });
     
     if (error) {
@@ -220,15 +221,6 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         return [];
     }
     
-    // The RPC function should handle all the logic for availability, including:
-    // - Existing bookings
-    // - One-off unavailability
-    // - Recurring unavailability
-    // - Court's business hours (if applicable in the function)
-    // - User-specific rules like one booking per day (if user_id is passed and handled)
-
-    // The frontend code you shared implies a simple return of slots, so we'll do the same.
-    // The 'id', 'startTime', and 'endTime' properties seem to be what the client expects.
     return availableTimeslots.map((slot: any) => ({
         id: slot.id,
         start_time: slot.starttime,
