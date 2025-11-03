@@ -97,6 +97,7 @@ export async function addBooking(formData: FormData) {
 
   revalidatePath('/livingspace/bookings');
   revalidatePath('/livingspace');
+  revalidatePath('/arena/bookings');
   return { success: true };
 }
 
@@ -139,6 +140,7 @@ export async function updateBooking(formData: FormData) {
 
   revalidatePath('/livingspace/bookings');
   revalidatePath('/livingspace');
+  revalidatePath('/arena/bookings');
   return { success: true };
 }
 
