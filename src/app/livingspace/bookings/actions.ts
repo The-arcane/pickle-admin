@@ -112,10 +112,13 @@ export async function updateBooking(formData: FormData) {
     return { error: 'Booking ID is missing.' };
   }
   
-  const statusValue = statusMapToDb[status];
-  if (statusValue === undefined) {
-      return { error: 'Invalid status value.' };
+  // Find the correct numeric value for the status label
+  const statusObject = await supabase.from('booking_status').select('id').eq('label', status).single();
+  if (!statusObject.data) {
+    return { error: 'Invalid status value.' };
   }
+  const statusValue = statusObject.data.id;
+
 
   if (!court_id || !timeslot_id) {
     return { error: 'Court and Timeslot are required.' };
@@ -205,75 +208,33 @@ export async function getTimeslots(courtId: number, dateString: string, bookingI
         return [];
     }
 
-    // 1. Get all possible timeslots for the court
-    const { data: allTimeslots, error: allTimeslotsError } = await supabase
-        .from('timeslots')
-        .select('id, start_time, end_time')
-        .eq('court_id', courtId)
-        .eq('date', dateString)
-        .order('start_time');
-
-    if (allTimeslotsError) {
-        console.error('Error fetching all timeslots:', allTimeslotsError);
-        return [];
-    }
-    if (!allTimeslots) return [];
+    // Call the database function to get available time slots.
+    const { data: availableTimeslots, error } = await supabase.rpc('get_available_time_slots', {
+      p_court_id: courtId,
+      p_date: dateString,
+      p_user_id: targetUserId // Pass user_id if you need to check user-specific rules within the function
+    });
     
-    // 2. Get already booked timeslots for that day using the DB function
-    const { data: bookedTimeslotIds, error: bookedError } = await supabase
-        .rpc('get_booked_timeslots_for_court_and_date', {
-            p_court_id: courtId,
-            p_date: dateString
-        });
-
-    if (bookedError) {
-        console.error('Error calling get_booked_timeslots_for_court_and_date:', bookedError);
+    if (error) {
+        console.error('Error calling get_available_time_slots RPC:', error);
         return [];
     }
     
-    const bookedSet = new Set(bookedTimeslotIds.map((item: any) => item.timeslot_id));
+    // The RPC function should handle all the logic for availability, including:
+    // - Existing bookings
+    // - One-off unavailability
+    // - Recurring unavailability
+    // - Court's business hours (if applicable in the function)
+    // - User-specific rules like one booking per day (if user_id is passed and handled)
 
-    // 3. Filter out the booked timeslots
-    let availableTimeslots = allTimeslots.filter(slot => !bookedSet.has(slot.id));
-
-    // 4. If we are editing a booking, add its original timeslot back to the list
-    if (bookingIdToExclude) {
-        const { data: currentBooking } = await supabase
-            .from('bookings')
-            .select('timeslot_id')
-            .eq('id', bookingIdToExclude)
-            .single();
-
-        if (currentBooking?.timeslot_id) {
-            const originalTimeslot = allTimeslots.find(t => t.id === currentBooking.timeslot_id);
-            if (originalTimeslot && !availableTimeslots.some(t => t.id === originalTimeslot.id)) {
-                 availableTimeslots.push(originalTimeslot);
-                 // Sort again to ensure correct order
-                 availableTimeslots.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
-            }
-        }
-    }
-    
-    // 5. Potentially filter based on user's daily limit (optional, as per original logic)
-    const { data: courtRules } = await supabase
-        .from('courts')
-        .select('one_booking_per_user_per_day')
-        .eq('id', courtId)
-        .single();
-        
-    if (courtRules?.one_booking_per_user_per_day && targetUserId) {
-         const { data: userBookings, error: userBookingsError } = await supabase
-            .rpc('get_user_bookings_for_date', { p_user_id: targetUserId, p_date: dateString });
-        
-        if (userBookingsError) {
-            console.error('Error fetching user bookings:', userBookingsError);
-        } else if (userBookings && userBookings.length > 0) {
-            const isEditingOwnBooking = userBookings.length === 1 && bookingIdToExclude && userBookings[0].id === bookingIdToExclude;
-            if (!isEditingOwnBooking) {
-                return []; // User already has a booking, return no slots.
-            }
-        }
-    }
-
-    return availableTimeslots;
+    // The frontend code you shared implies a simple return of slots, so we'll do the same.
+    // The 'id', 'startTime', and 'endTime' properties seem to be what the client expects.
+    return availableTimeslots.map((slot: any) => ({
+        id: slot.id,
+        start_time: slot.starttime,
+        end_time: slot.endtime,
+        isDisable: slot.isdisable,
+        reasonDesc: slot.reasondesc,
+        color: slot.color
+    }));
 }
