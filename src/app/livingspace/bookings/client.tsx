@@ -14,7 +14,7 @@ import { Calendar as CalendarIcon, Pencil, Search, X, PartyPopper, Info, Trash2 
 import { addBooking, updateBooking, getTimeslots, cancelBooking, updateEventBookingStatus } from './actions';
 import { cancelEventBooking } from '../events/actions';
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, formatISO, isEqual, startOfDay } from 'date-fns';
+import { format, parseISO, formatISO, isEqual, startOfDay, addDays } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -257,6 +257,9 @@ export function BookingsClientPage({
         }
     }, [toast]);
     
+    const bookingWindow = addCourtRules?.booking_window || 7;
+    const maxBookableDate = addDays(new Date(), bookingWindow - 1);
+
     return (
         <>
             <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -540,31 +543,21 @@ export function BookingsClientPage({
                                     </CardContent>
                                 </Card>
                             )}
-                            <div className="space-y-2">
-                                <Label>Date</Label>
-                                 <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={cn("w-full justify-start text-left font-normal", !addDate && "text-muted-foreground")}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {addDate ? format(addDate, 'PPP') : <span>Pick a date</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <Calendar
-                                            mode="single"
-                                            selected={addDate}
-                                            onSelect={setAddDate}
-                                            disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                            <div className="flex justify-center">
+                                <Calendar
+                                    mode="single"
+                                    selected={addDate}
+                                    onSelect={setAddDate}
+                                    className="rounded-md border"
+                                    disabled={(date) =>
+                                        date < new Date(new Date().setDate(new Date().getDate() - 1)) || date > maxBookableDate
+                                    }
+                                />
                             </div>
                             <div className="space-y-2">
-                                <Label>Timeslot</Label>
+                                <h4 className="mb-2 text-sm font-medium text-center">
+                                    Available Slots for {addDate ? format(addDate, "PPP") : "..."}
+                                </h4>
                                 <div className="grid grid-cols-3 gap-2">
                                     {isAddLoadingSlots ? (
                                         [...Array(6)].map((_, i) => <Skeleton key={i} className="h-9 w-full" />)

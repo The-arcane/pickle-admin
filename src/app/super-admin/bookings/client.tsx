@@ -12,9 +12,9 @@ import { StatusBadge } from '@/components/status-badge';
 import { Calendar as CalendarIcon, Pencil } from 'lucide-react';
 import { addBooking, updateBooking, getTimeslots } from './actions';
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, formatISO } from 'date-fns';
-import { Calendar } from '@/components/ui/calendar';
+import { format, parseISO, formatISO, addDays } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -25,7 +25,7 @@ type CourtBookingFromDb = {
   court_id: number;
   timeslot_id: number;
   user: { name: string } | null;
-  courts: { name: string } | null;
+  courts: { name: string, booking_window: number } | null;
   timeslots: { date: string | null; start_time: string | null, end_time: string | null } | null;
 };
 
@@ -44,6 +44,7 @@ type ProcessedCourtBooking = {
 type Court = {
     id: number;
     name: string;
+    booking_window: number;
 }
 
 type User = {
@@ -266,6 +267,9 @@ export function BookingsClientPage({
         ));
     }, [loading, processedCourtBookings]);
 
+    const selectedCourtForAdd = allCourts.find(c => c.id.toString() === addCourtId);
+    const bookingWindow = selectedCourtForAdd?.booking_window || 7;
+    const maxBookableDate = addDays(new Date(), bookingWindow - 1);
 
   return (
     <>
@@ -350,7 +354,7 @@ export function BookingsClientPage({
                                 <SelectContent>
                                     {availableTimeslots.length > 0 ? (
                                         availableTimeslots.map((slot) => (
-                                            <SelectItem key={slot.id} value={slot.id.toString()}>{formatTime(slot.start_time)} - {formatTime(slot.end_time)}</SelectItem>
+                                            <SelectItem key={slot.id} value={slot.id.toString()}>{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</SelectItem>
                                         ))
                                     ) : (
                                         <SelectItem value="none" disabled>
@@ -419,35 +423,22 @@ export function BookingsClientPage({
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
-                             <Label htmlFor="add_date">Date</Label>
-                             <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-full justify-start text-left font-normal",
-                                        !addDate && "text-muted-foreground"
-                                    )}
-                                    >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {addDate ? format(addDate, "PPP") : <span>Pick a date</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                    mode="single"
-                                    selected={addDate}
-                                    onSelect={setAddDate}
-                                    initialFocus
-                                    disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
-                                    />
-                                </PopoverContent>
-                            </Popover>
+                        <div className="flex justify-center">
+                            <Calendar
+                                mode="single"
+                                selected={addDate}
+                                onSelect={setAddDate}
+                                className="rounded-md border"
+                                disabled={(date) =>
+                                    date < new Date(new Date().setDate(new Date().getDate() - 1)) || date > maxBookableDate
+                                }
+                            />
                         </div>
                          <div className="space-y-2">
-                            <Label>Timeslot</Label>
-                             <div className="grid grid-cols-3 gap-2">
+                             <h4 className="mb-2 text-sm font-medium text-center">
+                                Available Slots for {addDate ? format(addDate, "PPP") : "..."}
+                            </h4>
+                            <div className="grid grid-cols-3 gap-2">
                                 {isAddLoadingTimeslots ? (
                                     [...Array(6)].map((_, i) => <Skeleton key={i} className="h-9 w-full" />)
                                 ) : addAvailableTimeslots.length > 0 ? (
