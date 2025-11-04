@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -510,28 +511,33 @@ export function BookingsClientPage({
                 </DialogContent>
             </Dialog>}
 
-             {/* Add Dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogChange}>
                 <DialogContent className="max-h-[90vh] flex flex-col">
-                <DialogHeader><DialogTitle>Add New Court Booking</DialogTitle></DialogHeader>
+                    <DialogHeader>
+                        <DialogTitle>Add New Court Booking</DialogTitle>
+                    </DialogHeader>
                     <form onSubmit={(e) => { e.preventDefault(); 
                         const formData = new FormData(e.currentTarget);
-                        if (addDate) formData.set('date', formatISO(addDate, { representation: 'date'}));
-                        if (addSelectedTimeSlot) formData.set('timeslot_id', addSelectedTimeSlot.startTime); // Use start time as ID
+                        if (addDate) formData.set('date', formatISO(addDate, { representation: 'date' }));
+                        if (addSelectedTimeSlot) formData.set('timeslot_id', addSelectedTimeSlot.startTime);
                         handleFormSubmit(addBooking(formData), "Booking added.", "Add Failed");
                     }}>
                         <div className="space-y-4 py-4 overflow-y-auto pr-4">
                             <div className="space-y-2">
                                 <Label>User</Label>
-                                <Select name="user_id" onValueChange={setAddUserId} value={addUserId}><SelectTrigger><SelectValue placeholder="Select user"/></SelectTrigger>
-                                <SelectContent>{allUsers.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>)}</SelectContent></Select>
+                                <Select name="user_id" onValueChange={setAddUserId} value={addUserId}>
+                                    <SelectTrigger><SelectValue placeholder="Select user"/></SelectTrigger>
+                                    <SelectContent>{allUsers.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>)}</SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-2">
                                 <Label>Court</Label>
-                                <Select name="court_id" onValueChange={setAddCourtId} value={addCourtId}><SelectTrigger><SelectValue placeholder="Select court"/></SelectTrigger>
-                                <SelectContent>{allCourts.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}</SelectContent></Select>
+                                <Select name="court_id" onValueChange={setAddCourtId} value={addCourtId}>
+                                    <SelectTrigger><SelectValue placeholder="Select court"/></SelectTrigger>
+                                    <SelectContent>{allCourts.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}</SelectContent>
+                                </Select>
                             </div>
-                             {addCourtRules && (
+                            {addCourtRules && (
                                 <Card className="bg-muted/50 text-sm">
                                     <CardHeader className="p-3">
                                         <CardTitle className="text-base flex items-center gap-2"><Info className="h-4 w-4"/> Court Rules</CardTitle>

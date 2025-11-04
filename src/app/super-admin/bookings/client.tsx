@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -133,7 +134,7 @@ export function BookingsClientPage({
     // State for Edit Dialog
     const [selectedCourtId, setSelectedCourtId] = useState<string>('');
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-    const [availableTimeslots, setAvailableTimeslots] = useState<Timeslot[]>([]);
+    const [availableTimeslots, setAvailableTimeslots] = useState<any[]>([]);
     const [isLoadingTimeslots, setIsLoadingTimeslots] = useState(false);
     const [selectedTimeslotId, setSelectedTimeslotId] = useState<string>('');
 
@@ -354,7 +355,7 @@ export function BookingsClientPage({
                                 <SelectContent>
                                     {availableTimeslots.length > 0 ? (
                                         availableTimeslots.map((slot) => (
-                                            <SelectItem key={slot.id} value={slot.id.toString()}>{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</SelectItem>
+                                            <SelectItem key={slot.id} value={slot.id.toString()}>{formatTime(slot.start_time)} - {formatTime(slot.end_time)}</SelectItem>
                                         ))
                                     ) : (
                                         <SelectItem value="none" disabled>
