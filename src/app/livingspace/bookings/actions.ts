@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
@@ -40,7 +41,7 @@ export async function addBooking(formData: FormData) {
   const startTimeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   const endTimeString = `${(hour + 1).toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   
-  const { data, error } = await supabase.rpc('book_timeslot', {
+  const { data, error } = await supabase.rpc('book_court_timeslot', {
     p_court_id: Number(court_id),
     p_user_id: Number(user_id),
     p_date: date_string,
@@ -192,22 +193,43 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
     }
    
     let userHasBooking = false;
-    // Admins can bypass user-specific booking limits
-    if (targetUserId && courtRules.one_booking_per_user_per_day) {
-        const { data: userBookings, error: userBookingsError } = await supabase.rpc(
-            "get_user_bookings_for_date",
-            { p_user_id: targetUserId, p_date: date }
-        );
+    let flatHasBooking = false;
 
-        if (userBookingsError) {
-            console.error("Error fetching user bookings for admin:", userBookingsError);
-        } else if (userBookings && userBookings.length > 0) {
-            const isEditingOwnBooking = userBookings.length === 1 && bookingIdToExclude && userBookings[0].id === bookingIdToExclude;
-            if (!isEditingOwnBooking) {
-                userHasBooking = true;
+    if (targetUserId) {
+        // Rule 1: Check if user already booked today
+        if (courtRules.one_booking_per_user_per_day) {
+            const { data: userBookings, error: userBookingsError } = await supabase.rpc(
+                "get_user_bookings_for_date",
+                { p_user_id: targetUserId, p_date: date }
+            );
+
+            if (userBookingsError) {
+                console.error("Error fetching user bookings:", userBookingsError);
+            } else if (userBookings && userBookings.length > 0) {
+                const isEditingOwnBooking = userBookings.length === 1 && bookingIdToExclude && userBookings[0].id === bookingIdToExclude;
+                if (!isEditingOwnBooking) {
+                    userHasBooking = true;
+                }
+            }
+        }
+        
+        // Rule 2: For residential app, check if flat has booked today
+        // This is a stand-in for app type detection.
+        const isResidentialApp = true; 
+        if (isResidentialApp) {
+            const { data: hasBooked, error: flatBookingError } = await supabase.rpc(
+                'has_flat_booked_for_date',
+                { p_user_id: targetUserId, p_booking_date: date }
+            );
+
+            if (flatBookingError) {
+                console.error('Error checking flat booking status:', flatBookingError);
+            } else {
+                flatHasBooking = hasBooked;
             }
         }
     }
+
 
     const { data: bookingsData, error: bookingsError } = await supabase
       .rpc("get_booked_timeslots_for_court_and_date", {
@@ -248,7 +270,7 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
       const isBooked = bookedSlotsMap.has(slot.startTime);
       const isPastSlot = slotDateTime < now;
       
-      let isDisable = isBooked || isPastSlot || userHasBooking;
+      let isDisable = isBooked || isPastSlot || userHasBooking || flatHasBooking;
       let reasonDesc = "Available";
       let color = "bg-background";
 
@@ -261,6 +283,9 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
       } else if (userHasBooking) {
         reasonDesc = "Target user already has a booking for this day";
         color = "bg-blue-100";
+      } else if (flatHasBooking) {
+        reasonDesc = "A booking for today already exists for this user's flat.";
+        color = "bg-orange-100";
       } else if (courtRules.is_booking_rolling) {
           const hoursFromNow = differenceInHours(slotDateTime, now);
           if (hoursFromNow > 24) {
@@ -281,3 +306,4 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
       };
     });
   }
+
