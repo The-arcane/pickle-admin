@@ -4,20 +4,20 @@
 
 @layer base {
   :root {
-    --background: 0 0% 96%;
-    --foreground: 224 71% 4%;
+    --background: 255 60% 98%;
+    --foreground: 224 71% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    --card-foreground: 224 71% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
+    --popover-foreground: 224 71% 10%;
     --primary: 231 48% 48%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 224 71% 4%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 42 100% 50%;
-    --accent-foreground: 240 5% 10%;
+    --secondary: 240 10% 97%;
+    --secondary-foreground: 224 71% 10%;
+    --muted: 240 10% 97%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 10% 90%;
+    --accent-foreground: 224 71% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
@@ -28,13 +28,13 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 240 4.8% 95.9%;
-    --sidebar-foreground: 224 71% 4%;
+    --radius: 0.75rem;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 224 71% 10%;
     --sidebar-primary: 231 48% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 5.9% 90%;
-    --sidebar-accent-foreground: 224 71% 4%;
+    --sidebar-accent: 240 10% 97%;
+    --sidebar-accent-foreground: 224 71% 10%;
     --sidebar-border: 240 5.9% 88%;
     --sidebar-ring: 231 48% 48%;
   }
@@ -51,8 +51,8 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 220 13% 15%;
     --muted-foreground: 220 9% 63%;
-    --accent: 42 100% 50%;
-    --accent-foreground: 240 5% 10%;
+    --accent: 220 13% 18%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 220 13% 18%;
@@ -63,7 +63,7 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --sidebar-background: 224 71% 6%;
+    --sidebar-background: 224 71% 4%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 231 48% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
