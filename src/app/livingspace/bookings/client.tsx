@@ -145,18 +145,19 @@ export function BookingsClientPage({
     const [selectedEventBooking, setSelectedEventBooking] = useState<ProcessedEventBooking | null>(null);
     const [editCourtId, setEditCourtId] = useState<string>('');
     const [editDate, setEditDate] = useState<string>('');
-    const [editTimeslotId, setEditTimeslotId] = useState<string>('');
-    const [editAvailableSlots, setEditAvailableSlots] = useState<any[]>([]);
+    const [editTimeslot, setEditTimeslot] = useState<Timeslot | null>(null);
+    const [editAvailableSlots, setEditAvailableSlots] = useState<Timeslot[]>([]);
     const [isEditLoadingSlots, setIsEditLoadingSlots] = useState(false);
     const [editCourtRules, setEditCourtRules] = useState<Partial<Court> | null>(null);
 
     const [addUserId, setAddUserId] = useState<string>('');
     const [addCourtId, setAddCourtId] = useState<string>('');
-    const [addDate, setAddDate] = useState<string>(formatISO(new Date(), { representation: 'date'}));
+    const [addDate, setAddDate] = useState<Date | undefined>(new Date());
+    const [addSelectedTimeSlot, setAddSelectedTimeSlot] = useState<Timeslot | null>(null);
     const [addAvailableSlots, setAddAvailableSlots] = useState<Timeslot[]>([]);
     const [isAddLoadingSlots, setIsAddLoadingSlots] = useState(false);
     const [addCourtRules, setAddCourtRules] = useState<Partial<Court> | null>(null);
-
+    
     // Fetch available timeslots for Edit Dialog
     useEffect(() => {
         if (editCourtId && editDate && isCourtEditDialogOpen && selectedCourtBooking) {
@@ -165,20 +166,23 @@ export function BookingsClientPage({
             getTimeslots(Number(editCourtId), editDate, selectedCourtBooking.user_id, selectedCourtBooking.id)
                 .then(slots => {
                     setEditAvailableSlots(slots);
-                    // This logic might need adjustment if timeslot IDs change
-                    // if (!slots.some(s => s.id.toString() === editTimeslotId)) setEditTimeslotId('');
+                    if (!slots.some(s => s.id === editTimeslot?.id)) {
+                        setEditTimeslot(null);
+                    }
                 })
                 .finally(() => setIsEditLoadingSlots(false));
         }
-    }, [editCourtId, editDate, isCourtEditDialogOpen, selectedCourtBooking, editTimeslotId, allCourts]);
+    }, [editCourtId, editDate, isCourtEditDialogOpen, selectedCourtBooking, allCourts, editTimeslot]);
+
 
     // Fetch available timeslots for Add Dialog
     useEffect(() => {
         if (addCourtId && addDate && addUserId) {
             setIsAddLoadingSlots(true);
             setAddAvailableSlots([]); // Clear old slots
+            setAddSelectedTimeSlot(null);
             setAddCourtRules(allCourts.find(c => c.id.toString() === addCourtId) ?? null);
-            getTimeslots(Number(addCourtId), addDate, Number(addUserId))
+            getTimeslots(Number(addCourtId), formatISO(addDate, { representation: 'date'}), Number(addUserId))
                 .then(setAddAvailableSlots)
                 .finally(() => setIsAddLoadingSlots(false));
         } else {
@@ -190,7 +194,7 @@ export function BookingsClientPage({
         setSelectedCourtBooking(booking);
         setEditCourtId(booking.court_id.toString());
         setEditDate(booking.raw_date ? format(booking.raw_date, 'yyyy-MM-dd') : '');
-        setEditTimeslotId(booking.timeslot_id.toString());
+        setEditTimeslot(null); // Will be set from available slots
         setIsCourtEditDialogOpen(true);
     };
 
@@ -233,9 +237,10 @@ export function BookingsClientPage({
             // Reset form state when dialog closes
             setAddUserId('');
             setAddCourtId('');
-            setAddDate(formatISO(new Date(), { representation: 'date'}));
+            setAddDate(new Date());
             setAddAvailableSlots([]);
             setAddCourtRules(null);
+            setAddSelectedTimeSlot(null);
         }
         setIsAddDialogOpen(open);
     }
@@ -427,7 +432,11 @@ export function BookingsClientPage({
             {/* Edit Court Booking Dialog */}
             {selectedCourtBooking && <Dialog open={isCourtEditDialogOpen} onOpenChange={setIsCourtEditDialogOpen}>
                 <DialogContent><DialogHeader><DialogTitle>Edit Court Booking</DialogTitle></DialogHeader>
-                    <form onSubmit={(e) => { e.preventDefault(); handleFormSubmit(updateBooking(new FormData(e.currentTarget)), "Booking updated.", "Update Failed"); }}>
+                    <form onSubmit={(e) => { e.preventDefault(); 
+                        const formData = new FormData(e.currentTarget);
+                        if(editTimeslot) formData.set('timeslot_id', editTimeslot.id);
+                        handleFormSubmit(updateBooking(formData), "Booking updated.", "Update Failed"); 
+                    }}>
                         <input type="hidden" name="id" value={selectedCourtBooking.id} />
                         <div className="space-y-4 py-4">
                             <div className="space-y-2">
@@ -460,10 +469,30 @@ export function BookingsClientPage({
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>
-                                <Select name="timeslot_id" value={editTimeslotId} onValueChange={setEditTimeslotId} disabled={isEditLoadingSlots || !editDate}>
-                                    <SelectTrigger><SelectValue placeholder={isEditLoadingSlots ? "Loading..." : "Select timeslot"} /></SelectTrigger>
-                                    <SelectContent>{editAvailableSlots.length > 0 ? editAvailableSlots.map(s => <SelectItem key={s.id} value={s.id.toString()}>{formatTime(s.start_time)} - {formatTime(s.end_time)}</SelectItem>) : <SelectItem value="none" disabled>No slots</SelectItem>}</SelectContent>
-                                </Select>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {isEditLoadingSlots ? (
+                                        [...Array(3)].map((_, i) => <Skeleton key={i} className="h-9 w-full" />)
+                                    ) : editAvailableSlots.length > 0 ? (
+                                        editAvailableSlots.map((slot) => (
+                                            <div title={slot.reasonDesc} key={slot.id}>
+                                                <Button
+                                                    type="button"
+                                                    variant={editTimeslot?.id === slot.id ? "default" : "outline"}
+                                                    onClick={() => setEditTimeslot(slot)}
+                                                    disabled={slot.isDisable}
+                                                    className={cn("w-full", slot.isDisable && "text-muted-foreground line-through")}
+                                                    style={{ backgroundColor: slot.isDisable ? slot.color : '' }}
+                                                >
+                                                    {slot.startTime}
+                                                </Button>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="col-span-3 text-center text-sm text-muted-foreground">
+                                            No available slots.
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <Label>Status</Label>
@@ -480,14 +509,15 @@ export function BookingsClientPage({
 
              {/* Add Dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogChange}>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] flex flex-col">
                 <DialogHeader><DialogTitle>Add New Court Booking</DialogTitle></DialogHeader>
                     <form onSubmit={(e) => { e.preventDefault(); 
                         const formData = new FormData(e.currentTarget);
-                        if(addDate) formData.append('date', addDate);
+                        if (addDate) formData.set('date', formatISO(addDate, { representation: 'date'}));
+                        if (addSelectedTimeSlot) formData.set('timeslot_id', addSelectedTimeSlot.startTime); // Use start time as ID
                         handleFormSubmit(addBooking(formData), "Booking added.", "Add Failed");
                     }}>
-                        <div className="space-y-4 py-4">
+                        <div className="space-y-4 py-4 overflow-y-auto pr-4">
                             <div className="space-y-2">
                                 <Label>User</Label>
                                 <Select name="user_id" onValueChange={setAddUserId} value={addUserId}><SelectTrigger><SelectValue placeholder="Select user"/></SelectTrigger>
@@ -519,31 +549,46 @@ export function BookingsClientPage({
                                             className={cn("w-full justify-start text-left font-normal", !addDate && "text-muted-foreground")}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {addDate ? format(parseISO(addDate), 'PPP') : <span>Pick a date</span>}
+                                            {addDate ? format(addDate, 'PPP') : <span>Pick a date</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0">
                                         <Calendar
                                             mode="single"
-                                            selected={addDate ? parseISO(addDate) : undefined}
-                                            onSelect={(d) => d && setAddDate(formatISO(d, { representation: 'date' }))}
+                                            selected={addDate}
+                                            onSelect={setAddDate}
                                             disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                                            initialFocus
                                         />
                                     </PopoverContent>
                                 </Popover>
                             </div>
                             <div className="space-y-2">
                                 <Label>Timeslot</Label>
-                                <Select name="timeslot_id" disabled={isAddLoadingSlots || !addDate || !addCourtId || !addUserId}>
-                                    <SelectTrigger><SelectValue placeholder={isAddLoadingSlots ? "Loading..." : "Select user, court, and date first"} /></SelectTrigger>
-                                    <SelectContent>
-                                        {addAvailableSlots.length > 0 ? addAvailableSlots.map(s => (
-                                            <SelectItem key={s.id} value={s.id} disabled={s.isDisable}>
-                                                {s.startTime} - {s.endTime} {s.isDisable ? `(${s.reasonDesc})` : ''}
-                                            </SelectItem>
-                                        )) : <SelectItem value="none" disabled>No slots available</SelectItem>}
-                                    </SelectContent>
-                                </Select>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {isAddLoadingSlots ? (
+                                        [...Array(6)].map((_, i) => <Skeleton key={i} className="h-9 w-full" />)
+                                    ) : addAvailableSlots.length > 0 ? (
+                                        addAvailableSlots.map((slot) => (
+                                            <div title={slot.reasonDesc} key={slot.id}>
+                                                <Button
+                                                    type="button"
+                                                    variant={addSelectedTimeSlot?.id === slot.id ? "default" : "outline"}
+                                                    onClick={() => setAddSelectedTimeSlot(slot)}
+                                                    disabled={slot.isDisable}
+                                                    className={cn("w-full", slot.isDisable && "text-muted-foreground line-through")}
+                                                    style={{ backgroundColor: slot.isDisable ? slot.color : '' }}
+                                                >
+                                                    {slot.startTime}
+                                                </Button>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="col-span-3 text-center text-sm text-muted-foreground">
+                                            No available slots.
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <Label>Status</Label>
@@ -551,7 +596,7 @@ export function BookingsClientPage({
                                 <SelectContent>{courtBookingStatuses.map(s => <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>)}</SelectContent></Select>
                             </div>
                         </div>
-                        <DialogFooter><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit">Add Booking</Button></DialogFooter>
+                        <DialogFooter className="pt-4 border-t"><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={!addSelectedTimeSlot}>Add Booking</Button></DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
