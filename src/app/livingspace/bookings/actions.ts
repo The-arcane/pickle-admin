@@ -40,7 +40,7 @@ export async function addBooking(formData: FormData) {
   const startTimeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   const endTimeString = `${(hour + 1).toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   
-  const { data, error } = await supabase.rpc('book_court_timeslot', {
+  const { data, error } = await supabase.rpc('book_timeslot', {
     p_court_id: Number(court_id),
     p_user_id: Number(user_id),
     p_date: date_string,
