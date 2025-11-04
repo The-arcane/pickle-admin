@@ -512,7 +512,7 @@ export function BookingsClientPage({
             </Dialog>}
 
             <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogChange}>
-                <DialogContent className="max-h-[90vh] flex flex-col">
+                <DialogContent className="max-h-[90vh] flex flex-col sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>Add New Court Booking</DialogTitle>
                     </DialogHeader>
@@ -522,34 +522,34 @@ export function BookingsClientPage({
                         if (addSelectedTimeSlot) formData.set('timeslot_id', addSelectedTimeSlot.startTime);
                         handleFormSubmit(addBooking(formData), "Booking added.", "Add Failed");
                     }}>
-                        <div className="space-y-4 py-4 overflow-y-auto pr-4">
-                            <div className="space-y-2">
-                                <Label>User</Label>
+                        <div className="space-y-3 py-4 overflow-y-auto pr-2">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs">User</Label>
                                 <Select name="user_id" onValueChange={setAddUserId} value={addUserId}>
-                                    <SelectTrigger><SelectValue placeholder="Select user"/></SelectTrigger>
+                                    <SelectTrigger className="h-9"><SelectValue placeholder="Select user"/></SelectTrigger>
                                     <SelectContent>{allUsers.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label>Court</Label>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs">Court</Label>
                                 <Select name="court_id" onValueChange={setAddCourtId} value={addCourtId}>
-                                    <SelectTrigger><SelectValue placeholder="Select court"/></SelectTrigger>
+                                    <SelectTrigger className="h-9"><SelectValue placeholder="Select court"/></SelectTrigger>
                                     <SelectContent>{allCourts.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
                             {addCourtRules && (
-                                <Card className="bg-muted/50 text-sm">
-                                    <CardHeader className="p-3">
-                                        <CardTitle className="text-base flex items-center gap-2"><Info className="h-4 w-4"/> Court Rules</CardTitle>
+                                <Card className="bg-muted/50 text-xs">
+                                    <CardHeader className="p-2">
+                                        <CardTitle className="text-sm flex items-center gap-2"><Info className="h-3 w-3"/> Court Rules</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="p-3 pt-0 text-muted-foreground space-y-1">
+                                    <CardContent className="p-2 pt-0 text-muted-foreground space-y-0.5">
                                         <p><strong>Booking Window:</strong> {addCourtRules.booking_window} day(s)</p>
-                                        <div className="flex items-center gap-2"><strong>One per day:</strong> <Badge variant={addCourtRules.one_booking_per_user_per_day ? 'default' : 'secondary'}>{addCourtRules.one_booking_per_user_per_day ? 'Yes' : 'No'}</Badge></div>
-                                        <div className="flex items-center gap-2"><strong>Rolling 24hr:</strong> <Badge variant={addCourtRules.is_booking_rolling ? 'default' : 'secondary'}>{addCourtRules.is_booking_rolling ? 'Yes' : 'No'}</Badge></div>
+                                        <div className="flex items-center gap-1.5"><strong>One per day:</strong> <Badge variant={addCourtRules.one_booking_per_user_per_day ? 'default' : 'secondary'} className="px-1.5 py-0 text-[10px]">{addCourtRules.one_booking_per_user_per_day ? 'Yes' : 'No'}</Badge></div>
+                                        <div className="flex items-center gap-1.5"><strong>Rolling 24hr:</strong> <Badge variant={addCourtRules.is_booking_rolling ? 'default' : 'secondary'} className="px-1.5 py-0 text-[10px]">{addCourtRules.is_booking_rolling ? 'Yes' : 'No'}</Badge></div>
                                     </CardContent>
                                 </Card>
                             )}
-                            <div className="flex justify-center">
+                            <div className="flex justify-center pt-2">
                                 <Calendar
                                     mode="single"
                                     selected={addDate}
@@ -560,13 +560,13 @@ export function BookingsClientPage({
                                     }
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <h4 className="mb-2 text-sm font-medium text-center">
+                             <div className="space-y-1.5 pt-2">
+                                <h4 className="mb-1 text-xs font-medium text-center text-muted-foreground">
                                     Available Slots for {addDate ? format(addDate, "PPP") : "..."}
                                 </h4>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-4 gap-1.5">
                                     {isAddLoadingSlots ? (
-                                        [...Array(6)].map((_, i) => <Skeleton key={i} className="h-9 w-full" />)
+                                        [...Array(8)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)
                                     ) : addAvailableSlots.length > 0 ? (
                                         addAvailableSlots.map((slot) => (
                                             <div title={slot.reasonDesc} key={slot.id}>
@@ -575,7 +575,7 @@ export function BookingsClientPage({
                                                     variant={addSelectedTimeSlot?.id === slot.id ? "default" : "outline"}
                                                     onClick={() => setAddSelectedTimeSlot(slot)}
                                                     disabled={slot.isDisable}
-                                                    className={cn("w-full", slot.isDisable && "text-muted-foreground line-through")}
+                                                    className={cn("w-full h-8 text-xs", slot.isDisable && "text-muted-foreground line-through")}
                                                     style={{ backgroundColor: slot.isDisable ? slot.color : '' }}
                                                 >
                                                     {slot.startTime}
@@ -583,15 +583,15 @@ export function BookingsClientPage({
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="col-span-3 text-center text-sm text-muted-foreground">
+                                        <p className="col-span-4 text-center text-xs text-muted-foreground pt-2">
                                             No available slots.
                                         </p>
                                     )}
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label>Status</Label>
-                                <Select name="status" defaultValue="Pending"><SelectTrigger><SelectValue/></SelectTrigger>
+                            <div className="space-y-1.5 pt-2">
+                                <Label className="text-xs">Status</Label>
+                                <Select name="status" defaultValue="Pending"><SelectTrigger className="h-9"><SelectValue/></SelectTrigger>
                                 <SelectContent>{courtBookingStatuses.map(s => <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>)}</SelectContent></Select>
                             </div>
                         </div>
@@ -653,3 +653,4 @@ export function BookingsClientPage({
         </>
     );
 }
+
