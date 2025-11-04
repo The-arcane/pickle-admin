@@ -3,7 +3,7 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { parseISO, getDay, format, addDays, isBefore, startOfDecade } from 'date-fns';
+import { parseISO, format, differenceInHours } from 'date-fns';
 import { randomUUID } from 'crypto';
 
 const statusMapToDb: { [key: string]: number } = {
@@ -22,50 +22,11 @@ const eventStatusMapToDb: { [key: string]: number } = {
 };
 
 
-async function findOrCreateTimeslot(supabase: any, court_id: number, date: string, start_time: string, end_time: string): Promise<number | null> {
-    let { data: existingTimeslot, error: findError } = await supabase
-        .from('timeslots')
-        .select('id')
-        .eq('court_id', court_id)
-        .eq('date', date)
-        .eq('start_time', start_time)
-        .eq('end_time', end_time)
-        .maybeSingle();
-
-    if (findError) {
-        console.error("Error finding timeslot:", findError);
-        return null;
-    }
-
-    if (existingTimeslot) {
-        return existingTimeslot.id;
-    }
-
-    const { data: newTimeslot, error: createError } = await supabase
-        .from('timeslots')
-        .insert({
-            court_id,
-            date,
-            start_time,
-            end_time
-        })
-        .select('id')
-        .single();
-    
-    if (createError) {
-        console.error("Error creating timeslot:", createError);
-        return null;
-    }
-
-    return newTimeslot.id;
-}
-
-
 export async function addBooking(formData: FormData) {
   const supabase = await createServer();
   const user_id = formData.get('user_id') as string;
   const court_id = formData.get('court_id') as string;
-  const timeslot_id = formData.get('timeslot_id') as string;
+  const timeslot_id = formData.get('timeslot_id') as string; // This will now be the start time e.g., "09:00"
   const status = formData.get('status') as string;
   const date_string = formData.get('date') as string;
 
@@ -75,25 +36,35 @@ export async function addBooking(formData: FormData) {
     return { error: 'All fields are required.' };
   }
   
-  const qr_content_id = `C${randomUUID()}`;
-
-  const { error } = await supabase
-    .from('bookings')
-    .insert({ 
-      user_id: Number(user_id),
-      court_id: Number(court_id),
-      timeslot_id: Number(timeslot_id),
-      booking_status: statusValue,
-      qr_content_id: qr_content_id,
-     });
+  const [hour, minute] = timeslot_id.split(':').map(Number);
+  const startTimeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  const endTimeString = `${(hour + 1).toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  
+  const { data, error } = await supabase.rpc('book_court_timeslot', {
+    p_court_id: Number(court_id),
+    p_user_id: Number(user_id),
+    p_date: date_string,
+    p_start_time: startTimeString,
+    p_end_time: endTimeString,
+  });
 
   if (error) {
-    console.error('Error adding booking:', error);
-    if (error.code === '23505') {
-        return { error: 'This timeslot is already booked. Please choose another.' };
+    console.error('Error adding booking via RPC:', error);
+    if (error.message.includes('already booked')) {
+        return { error: 'This timeslot has already been booked. Please select another.' };
+    }
+    if (error.message.includes('User already has a booking')) {
+        return { error: 'This user already has a booking on this court for today.' };
     }
     return { error: `Failed to add booking: ${error.message}` };
   }
+
+  const bookingData = data;
+  const qrContentId = `C${bookingData.id}`;
+  await supabase
+      .from('bookings')
+      .update({ qr_content_id: qrContentId, booking_status: statusValue }) // Also update status here
+      .eq('id', bookingData.id);
 
   revalidatePath('/livingspace/bookings');
   revalidatePath('/livingspace');
@@ -200,33 +171,113 @@ export async function updateEventBookingStatus(formData: FormData) {
   return { success: true, message: 'Event booking status updated.' };
 }
 
-export async function getTimeslots(courtId: number, dateString: string, bookingIdToExclude?: number, targetUserId?: number) {
+export async function getTimeslots(courtId: number, date: string, targetUserId?: number, bookingIdToExclude?: number) {
     const supabase = await createServer();
+    if (!courtId || !date) {
+      throw new Error("Court ID and date are required.");
+    }
+  
+    const selectedDateObj = parseISO(date);
+    const now = new Date();
+  
+    const { data: courtRules, error: courtError } = await supabase
+      .from("courts")
+      .select("is_booking_rolling, booking_window, one_booking_per_user_per_day, c_start_time, c_end_time")
+      .eq("id", courtId)
+      .single();
+  
+    if (courtError || !courtRules) {
+      console.error("Error fetching court details:", courtError);
+      throw new Error("Could not fetch court booking rules.");
+    }
+   
+    let userHasBooking = false;
+    // Admins can bypass user-specific booking limits
+    if (targetUserId && courtRules.one_booking_per_user_per_day) {
+        const { data: userBookings, error: userBookingsError } = await supabase.rpc(
+            "get_user_bookings_for_date",
+            { p_user_id: targetUserId, p_date: date }
+        );
 
-    if (!dateString || !courtId) {
-        console.error("[getTimeslots] Court ID or Date string is missing.");
-        return [];
+        if (userBookingsError) {
+            console.error("Error fetching user bookings for admin:", userBookingsError);
+        } else if (userBookings && userBookings.length > 0) {
+            const isEditingOwnBooking = userBookings.length === 1 && bookingIdToExclude && userBookings[0].id === bookingIdToExclude;
+            if (!isEditingOwnBooking) {
+                userHasBooking = true;
+            }
+        }
     }
 
-    // Call the database function to get available time slots.
-    const { data: availableTimeslots, error } = await supabase.rpc('get_available_time_slots', {
-      p_court_id: courtId,
-      p_date: dateString,
-      p_user_id: targetUserId,
-      p_is_admin_booking: true // Add this parameter to bypass user-specific checks on admin side
+    const { data: bookingsData, error: bookingsError } = await supabase
+      .rpc("get_booked_timeslots_for_court_and_date", {
+        p_court_id: courtId,
+        p_date: date,
+      });
+  
+    if (bookingsError) {
+      console.error("Error fetching bookings:", bookingsError);
+      throw new Error("Could not check court availability.");
+    }
+    
+    const bookedSlotsMap = new Map<string, { name: string; phone: string } | null>();
+    (bookingsData || []).forEach((b: any) => {
+        const startTimeStr = format(parseISO(b.start_time), 'HH:mm');
+        bookedSlotsMap.set(startTimeStr, {
+            name: b.user_name || "Unknown",
+            phone: b.user_phone || "N/A",
+        });
     });
-    
-    if (error) {
-        console.error('Error calling get_available_time_slots RPC:', error);
-        return [];
+  
+    const allPossibleSlots: { startTime: string; endTime: string }[] = [];
+    const courtStartTime = courtRules.c_start_time ? parseInt(courtRules.c_start_time.split(':')[0], 10) : 6;
+    const courtEndTime = courtRules.c_end_time ? parseInt(courtRules.c_end_time.split(':')[0], 10) : 22;
+
+    for (let i = courtStartTime; i < courtEndTime; i++) {
+      allPossibleSlots.push({
+        startTime: `${i}:00`.padStart(5, "0"),
+        endTime: `${i + 1}:00`.padStart(5, "0"),
+      });
     }
-    
-    return availableTimeslots.map((slot: any) => ({
-        id: slot.id,
-        start_time: slot.starttime,
-        end_time: slot.endtime,
-        isDisable: slot.isdisable,
-        reasonDesc: slot.reasondesc,
-        color: slot.color
-    }));
-}
+
+    return allPossibleSlots.map((slot, index) => {
+      const [slotHour, slotMinute] = slot.startTime.split(":").map(Number);
+      const slotDateTime = new Date(selectedDateObj);
+      slotDateTime.setHours(slotHour, slotMinute, 0, 0);
+
+      const isBooked = bookedSlotsMap.has(slot.startTime);
+      const isPastSlot = slotDateTime < now;
+      
+      let isDisable = isBooked || isPastSlot || userHasBooking;
+      let reasonDesc = "Available";
+      let color = "bg-background";
+
+      if (isBooked) {
+        reasonDesc = `Booked by ${bookedSlotsMap.get(slot.startTime)?.name || 'someone'}`;
+        color = "bg-red-100";
+      } else if (isPastSlot) {
+        reasonDesc = "Time has passed";
+        color = "bg-muted";
+      } else if (userHasBooking) {
+        reasonDesc = "Target user already has a booking for this day";
+        color = "bg-blue-100";
+      } else if (courtRules.is_booking_rolling) {
+          const hoursFromNow = differenceInHours(slotDateTime, now);
+          if (hoursFromNow > 24) {
+              isDisable = true;
+              reasonDesc = "Booking opens 24h before";
+              color = "bg-yellow-100";
+          }
+      }
+      
+      return {
+        // Use the start time as a temporary ID for the UI
+        id: slot.startTime, 
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        isDisable: isDisable,
+        reasonDesc: reasonDesc,
+        color: color,
+      };
+    });
+  }

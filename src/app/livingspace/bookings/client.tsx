@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -55,7 +56,7 @@ type Court = {
     is_booking_rolling: boolean;
 };
 type User = { id: number; name: string; };
-type Timeslot = { id: number; start_time: string | null; end_time: string | null; };
+type Timeslot = { id: string; startTime: string; endTime: string; isDisable: boolean; reasonDesc: string; color: string; };
 type BookingStatus = { id: number; label: string; };
 
 const formatTime = (timeString: string | null) => {
@@ -145,7 +146,7 @@ export function BookingsClientPage({
     const [editCourtId, setEditCourtId] = useState<string>('');
     const [editDate, setEditDate] = useState<string>('');
     const [editTimeslotId, setEditTimeslotId] = useState<string>('');
-    const [editAvailableSlots, setEditAvailableSlots] = useState<Timeslot[]>([]);
+    const [editAvailableSlots, setEditAvailableSlots] = useState<any[]>([]);
     const [isEditLoadingSlots, setIsEditLoadingSlots] = useState(false);
     const [editCourtRules, setEditCourtRules] = useState<Partial<Court> | null>(null);
 
@@ -161,10 +162,11 @@ export function BookingsClientPage({
         if (editCourtId && editDate && isCourtEditDialogOpen && selectedCourtBooking) {
             setIsEditLoadingSlots(true);
             setEditCourtRules(allCourts.find(c => c.id.toString() === editCourtId) ?? null);
-            getTimeslots(Number(editCourtId), editDate, selectedCourtBooking.id, selectedCourtBooking.user_id)
+            getTimeslots(Number(editCourtId), editDate, selectedCourtBooking.user_id, selectedCourtBooking.id)
                 .then(slots => {
                     setEditAvailableSlots(slots);
-                    if (!slots.some(s => s.id.toString() === editTimeslotId)) setEditTimeslotId('');
+                    // This logic might need adjustment if timeslot IDs change
+                    // if (!slots.some(s => s.id.toString() === editTimeslotId)) setEditTimeslotId('');
                 })
                 .finally(() => setIsEditLoadingSlots(false));
         }
@@ -176,7 +178,7 @@ export function BookingsClientPage({
             setIsAddLoadingSlots(true);
             setAddAvailableSlots([]); // Clear old slots
             setAddCourtRules(allCourts.find(c => c.id.toString() === addCourtId) ?? null);
-            getTimeslots(Number(addCourtId), addDate, undefined, Number(addUserId))
+            getTimeslots(Number(addCourtId), addDate, Number(addUserId))
                 .then(setAddAvailableSlots)
                 .finally(() => setIsAddLoadingSlots(false));
         } else {
@@ -435,18 +437,6 @@ export function BookingsClientPage({
                                     <SelectContent>{allCourts.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
-                             {editCourtRules && (
-                                <Card className="bg-muted/50 text-sm">
-                                    <CardHeader className="p-3">
-                                        <CardTitle className="text-base flex items-center gap-2"><Info className="h-4 w-4"/> Court Rules</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-3 pt-0 text-muted-foreground space-y-1">
-                                        <p><strong>Booking Window:</strong> {editCourtRules.booking_window} day(s)</p>
-                                        <div className="flex items-center gap-2"><strong>One per day:</strong> <Badge variant={editCourtRules.one_booking_per_user_per_day ? 'default' : 'secondary'}>{editCourtRules.one_booking_per_user_per_day ? 'Yes' : 'No'}</Badge></div>
-                                        <div className="flex items-center gap-2"><strong>Rolling 24hr:</strong> <Badge variant={editCourtRules.is_booking_rolling ? 'default' : 'secondary'}>{editCourtRules.is_booking_rolling ? 'Yes' : 'No'}</Badge></div>
-                                    </CardContent>
-                                </Card>
-                            )}
                             <div className="space-y-2">
                                 <Label>Date</Label>
                                 <Popover>
@@ -490,7 +480,8 @@ export function BookingsClientPage({
 
              {/* Add Dialog */}
             <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogChange}>
-                <DialogContent><DialogHeader><DialogTitle>Add New Court Booking</DialogTitle></DialogHeader>
+                <DialogContent>
+                <DialogHeader><DialogTitle>Add New Court Booking</DialogTitle></DialogHeader>
                     <form onSubmit={(e) => { e.preventDefault(); 
                         const formData = new FormData(e.currentTarget);
                         if(addDate) formData.append('date', addDate);
@@ -545,7 +536,13 @@ export function BookingsClientPage({
                                 <Label>Timeslot</Label>
                                 <Select name="timeslot_id" disabled={isAddLoadingSlots || !addDate || !addCourtId || !addUserId}>
                                     <SelectTrigger><SelectValue placeholder={isAddLoadingSlots ? "Loading..." : "Select user, court, and date first"} /></SelectTrigger>
-                                    <SelectContent>{addAvailableSlots.length > 0 ? addAvailableSlots.map(s => <SelectItem key={s.id} value={s.id.toString()}>{formatTime(s.start_time)} - {formatTime(s.end_time)}</SelectItem>) : <SelectItem value="none" disabled>No slots available</SelectItem>}</SelectContent>
+                                    <SelectContent>
+                                        {addAvailableSlots.length > 0 ? addAvailableSlots.map(s => (
+                                            <SelectItem key={s.id} value={s.id} disabled={s.isDisable}>
+                                                {s.startTime} - {s.endTime} {s.isDisable ? `(${s.reasonDesc})` : ''}
+                                            </SelectItem>
+                                        )) : <SelectItem value="none" disabled>No slots available</SelectItem>}
+                                    </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
