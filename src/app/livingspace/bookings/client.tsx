@@ -512,9 +512,10 @@ export function BookingsClientPage({
             </Dialog>}
 
             <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogChange}>
-                <DialogContent className="max-h-[90vh] flex flex-col sm:max-w-lg">
+                <DialogContent className="max-h-[90vh] flex flex-col sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Add New Court Booking</DialogTitle>
+                        <DialogDescription>Select the user, court, date, and time to create a new booking.</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={(e) => { e.preventDefault(); 
                         const formData = new FormData(e.currentTarget);
@@ -522,18 +523,18 @@ export function BookingsClientPage({
                         if (addSelectedTimeSlot) formData.set('timeslot_id', addSelectedTimeSlot.startTime);
                         handleFormSubmit(addBooking(formData), "Booking added.", "Add Failed");
                     }}>
-                        <div className="space-y-3 py-4 overflow-y-auto pr-2">
+                        <div className="space-y-4 py-4 overflow-y-auto pr-4">
                             <div className="space-y-1.5">
-                                <Label className="text-xs">User</Label>
+                                <Label>User</Label>
                                 <Select name="user_id" onValueChange={setAddUserId} value={addUserId}>
-                                    <SelectTrigger className="h-9"><SelectValue placeholder="Select user"/></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder="Select a user"/></SelectTrigger>
                                     <SelectContent>{allUsers.map(u => <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <Label className="text-xs">Court</Label>
+                                <Label>Court</Label>
                                 <Select name="court_id" onValueChange={setAddCourtId} value={addCourtId}>
-                                    <SelectTrigger className="h-9"><SelectValue placeholder="Select court"/></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder="Select a court"/></SelectTrigger>
                                     <SelectContent>{allCourts.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
@@ -549,19 +550,22 @@ export function BookingsClientPage({
                                     </CardContent>
                                 </Card>
                             )}
-                            <div className="flex justify-center pt-2">
-                                <Calendar
-                                    mode="single"
-                                    selected={addDate}
-                                    onSelect={setAddDate}
-                                    className="rounded-md border"
-                                    disabled={(date) =>
-                                        date < new Date(new Date().setDate(new Date().getDate() - 1)) || date > maxBookableDate
-                                    }
-                                />
+                            <div className="space-y-2 pt-2">
+                                <Label className="text-center block">Date</Label>
+                                <div className="flex justify-center">
+                                    <Calendar
+                                        mode="single"
+                                        selected={addDate}
+                                        onSelect={setAddDate}
+                                        className="rounded-md border"
+                                        disabled={(date) =>
+                                            date < startOfDay(new Date()) || date > maxBookableDate
+                                        }
+                                    />
+                                </div>
                             </div>
-                             <div className="space-y-1.5 pt-2">
-                                <h4 className="mb-1 text-xs font-medium text-center text-muted-foreground">
+                             <div className="space-y-2 pt-2">
+                                <h4 className="mb-1 text-sm font-medium text-center">
                                     Available Slots for {addDate ? format(addDate, "PPP") : "..."}
                                 </h4>
                                 <div className="grid grid-cols-4 gap-1.5">
@@ -584,18 +588,21 @@ export function BookingsClientPage({
                                         ))
                                     ) : (
                                         <p className="col-span-4 text-center text-xs text-muted-foreground pt-2">
-                                            No available slots.
+                                            Please select a user and court first.
                                         </p>
                                     )}
                                 </div>
                             </div>
                             <div className="space-y-1.5 pt-2">
-                                <Label className="text-xs">Status</Label>
-                                <Select name="status" defaultValue="Pending"><SelectTrigger className="h-9"><SelectValue/></SelectTrigger>
+                                <Label>Status</Label>
+                                <Select name="status" defaultValue="Pending"><SelectTrigger><SelectValue/></SelectTrigger>
                                 <SelectContent>{courtBookingStatuses.map(s => <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>)}</SelectContent></Select>
                             </div>
                         </div>
-                        <DialogFooter className="pt-4 border-t"><DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose><Button type="submit" disabled={!addSelectedTimeSlot}>Add Booking</Button></DialogFooter>
+                        <DialogFooter className="pt-4 border-t">
+                            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                            <Button type="submit" disabled={!addSelectedTimeSlot || !addUserId || !addCourtId}>Add Booking</Button>
+                        </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
@@ -653,4 +660,3 @@ export function BookingsClientPage({
         </>
     );
 }
-
