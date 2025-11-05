@@ -112,7 +112,7 @@ export default function ArenaLayout({
             </div>
             <div className="mt-auto p-4">
                 <p className="text-xs text-muted-foreground capitalize">
-                  {organisationType && `${organisationType} | `}Version 16.6.6
+                  {organisationType && `${organisationType} | `}Version 16.6.9
                 </p>
             </div>
           </aside>
@@ -140,7 +140,7 @@ export default function ArenaLayout({
                     </div>
                      <div className="mt-auto p-4">
                         <p className="text-xs text-muted-foreground capitalize">
-                          {organisationType && `${organisationType} | `}Version 16.6.6
+                          {organisationType && `${organisationType} | `}Version 16.6.9
                         </p>
                     </div>
                 </SheetContent>
