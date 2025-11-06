@@ -619,5 +619,3 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
         </div>
     );
 }
-
-    
