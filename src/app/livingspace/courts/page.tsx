@@ -35,7 +35,7 @@ export default async function CourtListPage() {
   // Fetch all data needed for the courts page, including relations for editing.
   const { data: courtsData, error: courtsError } = await supabase
     .from('courts')
-    .select('*, organisations(name), sports(name), status:court_status(id, label)')
+    .select('*, organisations(name), sports(name), status:court_avaliablity_status(id, label)')
     .eq('organisation_id', organisationId);
 
   // For the dropdown filter, we only need the names of the organizations.
