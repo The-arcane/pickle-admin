@@ -66,6 +66,7 @@ function getCourtFields(formData: FormData) {
         one_booking_per_user_per_day: formData.get('one_booking_per_user_per_day') === 'true',
         is_booking_rolling: formData.get('is_booking_rolling') === 'true',
         booking_style: formData.get('booking_style') as 'calendar' | 'rolling_window',
+        is_public: formData.get('is_public') === 'true',
         slot_duration: formData.get('slot_duration') ? Number(formData.get('slot_duration')) : 60,
     };
 }
@@ -85,10 +86,9 @@ export async function addCourt(formData: FormData) {
     }
     
     // --- 1. Insert the main court record (without images first) ---
-    const isPublic = formData.get('is_public') === 'true';
     const { data: newCourt, error: courtError } = await supabase
       .from('courts')
-      .insert({...courtFields, is_public: isPublic})
+      .insert(courtFields)
       .select()
       .single();
 
@@ -172,27 +172,27 @@ export async function updateCourt(formData: FormData) {
   try {
     if (!id) return { error: 'Court ID is missing.' };
     
-    const courtFields = getCourtFields(formData);
+    const courtUpdateData = getCourtFields(formData);
 
-    if (!courtFields.name || !courtFields.organisation_id || !courtFields.sport_id) {
+    if (!courtUpdateData.name || !courtUpdateData.organisation_id || !courtUpdateData.sport_id) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
     }
     
-    const isPublic = formData.get('is_public') === 'true';
-    const courtUpdateData: any = { ...courtFields, is_public: isPublic };
+    const imageUpdatePayload: { image?: string; cover_image?: string } = {};
     
     // --- Handle Image Uploads ---
     const mainImageFile = formData.get('main_image_file') as File | null;
     const coverImageFile = formData.get('cover_image_file') as File | null;
     
     const mainImageUrl = await handleImageUpload(supabase, mainImageFile, id, 'main');
-    if (mainImageUrl) courtUpdateData.image = mainImageUrl;
+    if (mainImageUrl) imageUpdatePayload.image = mainImageUrl;
     
     const coverImageUrl = await handleImageUpload(supabase, coverImageFile, id, 'cover');
-    if (coverImageUrl) courtUpdateData.cover_image = coverImageUrl;
+    if (coverImageUrl) imageUpdatePayload.cover_image = coverImageUrl;
 
     // --- 1. Update main court table ---
-    const { data, error: courtError } = await supabase.from('courts').update(courtUpdateData).eq('id', id).select().single();
+    const finalUpdatePayload = { ...courtUpdateData, ...imageUpdatePayload };
+    const { data, error: courtError } = await supabase.from('courts').update(finalUpdatePayload).eq('id', id).select().single();
     if (courtError) { console.error('Error updating court:', courtError); return { error: `Failed to update court. ${courtError.message}` };}
     if (!data) { return { error: 'Failed to update court. No data was returned after update.' }; }
     

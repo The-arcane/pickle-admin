@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
@@ -170,21 +171,25 @@ export async function updateCourt(formData: FormData) {
   try {
     if (!id) return { error: 'Court ID is missing.' };
     
-    const finalUpdatePayload = getCourtFields(formData);
+    const courtFields = getCourtFields(formData);
 
-    if (!finalUpdatePayload.name || !finalUpdatePayload.organisation_id || !finalUpdatePayload.sport_id) {
+    if (!courtFields.name || !courtFields.organisation_id || !courtFields.sport_id) {
       return { error: 'Court Name, Venue, and Sport Type are required.' };
     }
     
+    const imageUpdatePayload: { image?: string; cover_image?: string } = {};
+
     // --- Handle Image Uploads ---
     const mainImageFile = formData.get('main_image_file') as File | null;
     const coverImageFile = formData.get('cover_image_file') as File | null;
     
     const mainImageUrl = await handleImageUpload(supabase, mainImageFile, id, 'main');
-    if (mainImageUrl) (finalUpdatePayload as any).image = mainImageUrl;
+    if (mainImageUrl) imageUpdatePayload.image = mainImageUrl;
     
     const coverImageUrl = await handleImageUpload(supabase, coverImageFile, id, 'cover');
-    if (coverImageUrl) (finalUpdatePayload as any).cover_image = coverImageUrl;
+    if (coverImageUrl) imageUpdatePayload.cover_image = coverImageUrl;
+    
+    const finalUpdatePayload = { ...courtFields, ...imageUpdatePayload };
 
     // --- 1. Update main court table ---
     const { data, error: courtError } = await supabase.from('courts').update(finalUpdatePayload).eq('id', id).select().single();
