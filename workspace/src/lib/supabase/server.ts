@@ -3,7 +3,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function createServer(useServiceRoleKey = false) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   // Next.js automatically loads variables from .env.local.
   // The `NEXT_PUBLIC_` prefix makes them available to the browser,
