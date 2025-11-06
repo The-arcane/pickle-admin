@@ -382,6 +382,19 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
                                      <p className="text-xs text-muted-foreground">Choose how booking availability is presented to users.</p>
                                 </div>
                             </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="slot_duration">Slot Duration (Minutes)</Label>
+                                <Select name="slot_duration" defaultValue={court?.slot_duration?.toString() ?? '60'}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="30">30 minutes</SelectItem>
+                                        <SelectItem value="60">60 minutes</SelectItem>
+                                        <SelectItem value="90">90 minutes</SelectItem>
+                                        <SelectItem value="120">120 minutes</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-muted-foreground">Define the length of a single booking slot.</p>
+                            </div>
                             <div className="flex items-center justify-between rounded-lg border p-4">
                                 <div className="space-y-1">
                                     <Label htmlFor="one_booking_per_user_per_day" className="text-base font-medium">One Booking Per Day</Label>
