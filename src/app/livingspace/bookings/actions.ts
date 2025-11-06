@@ -179,7 +179,10 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
     }
   
     const selectedDateObj = parseISO(date);
-    const now = new Date();
+    const nowUtc = new Date();
+    const offsetMs = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
+    const istDate = new Date(nowUtc.getTime() + offsetMs);
+    const now = istDate;//new Date();
   
     const { data: courtRules, error: courtError } = await supabase
       .from("courts")
@@ -264,8 +267,13 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
 
     return allPossibleSlots.map((slot, index) => {
       const [slotHour, slotMinute] = slot.startTime.split(":").map(Number);
-      const slotDateTime = new Date(selectedDateObj);
-      slotDateTime.setHours(slotHour, slotMinute, 0, 0);
+      const slotDateTimeMain = new Date(selectedDateObj);
+      slotDateTimeMain.setHours(slotHour, slotMinute, 0, 0);
+
+      const objNowUtc = new Date(slotDateTimeMain);
+      const offsetMs = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
+      const istObjDate = new Date(objNowUtc.getTime() + offsetMs);
+      const  slotDateTime =  istObjDate; 
 
       const isBooked = bookedSlotsMap.has(slot.startTime);
       const isPastSlot = slotDateTime < now;
@@ -287,14 +295,16 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
         reasonDesc = "A booking for today already exists for this user's flat.";
         color = "bg-orange-100";
       } else if (courtRules.is_booking_rolling) {
-          const hoursFromNow = differenceInHours(slotDateTime, now);
-          if (hoursFromNow > 24) {
-              isDisable = true;
-              reasonDesc = "Booking opens 24h before";
-              color = "bg-yellow-100";
-          }
+       
+        const hoursFromNow = differenceInHours(slotDateTime, now);
+         
+        if (hoursFromNow > 24) {
+            isDisable = true;
+            reasonDesc = "Booking opens 24h before";
+            color = "bg-yellow-100";
+        }
       }
-      
+    
       return {
         // Use the start time as a temporary ID for the UI
         id: slot.startTime, 
