@@ -11,7 +11,8 @@ import { Eye, Pencil, MoreHorizontal, Search, Globe, ShieldOff, List } from 'luc
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusBadge } from '@/components/status-badge';
 import { Switch } from '@/components/ui/switch';
-import { toggleCourtPublicStatus, updateCourtStatus } from '@/app/super-admin/courts/actions';
+import { toggleCourtPublicStatus } from '@/app/arena/courts/[id]/actions';
+import { updateCourtStatus } from '@/app/super-admin/courts/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -69,10 +70,10 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
         }
     }
     
-    const handleOperationalStatusChange = async (courtId: number, status: string) => {
+    const handleOperationalStatusChange = async (courtId: number, statusId: number) => {
       const formData = new FormData();
       formData.append('courtId', courtId.toString());
-      formData.append('status', status);
+      formData.append('statusId', statusId.toString());
 
       const result = await updateCourtStatus(formData);
       if (result.error) {
@@ -167,9 +168,9 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                                     <DropdownMenuSub>
                                         <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
                                         <DropdownMenuSubContent>
-                                            <DropdownMenuItem onSelect={() => handleOperationalStatusChange(court.id, 'Open')}>Open</DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={() => handleOperationalStatusChange(court.id, 'Maintenance')}>Maintenance</DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={() => handleOperationalStatusChange(court.id, 'Closed')}>Closed</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleOperationalStatusChange(court.id, 1)}>Open</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleOperationalStatusChange(court.id, 3)}>Maintenance</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleOperationalStatusChange(court.id, 2)}>Closed</DropdownMenuItem>
                                         </DropdownMenuSubContent>
                                     </DropdownMenuSub>
                                 </DropdownMenuContent>

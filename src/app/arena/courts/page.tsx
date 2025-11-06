@@ -34,7 +34,7 @@ export default async function ArenaCourtsPage() {
 
   const { data: courtsData, error: courtsError } = await supabase
     .from('courts')
-    .select('*, organisations(name), sports(name)')
+    .select('*, organisations(name), sports(name), status:court_status(id, label)')
     .eq('organisation_id', organisationId);
 
   const { data: organisationsData, error: orgsError } = await supabase.from('organisations').select('id, name').eq('id', organisationId);
@@ -52,7 +52,7 @@ export default async function ArenaCourtsPage() {
       max_players: c.max_players,
       organisation_id: c.organisation_id,
       sport_id: c.sport_id,
-      status: c.status || 'Open', // Use real status, default to 'Open'
+      status: c.status?.label || 'Unknown',
       is_public: c.is_public,
   })) || [];
 

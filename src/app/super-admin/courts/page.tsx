@@ -22,7 +22,7 @@ export default function CourtsPage() {
       setLoading(true);
       const { data, error } = await supabase
         .from('courts')
-        .select('id, name, surface, status, sports(name)')
+        .select('id, name, surface, status:court_status(id, label), sports(name)')
         .eq('organisation_id', selectedOrgId);
 
       if (error) {

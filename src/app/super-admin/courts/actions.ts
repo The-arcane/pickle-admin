@@ -7,15 +7,15 @@ import { revalidatePath } from 'next/cache';
 export async function updateCourtStatus(formData: FormData) {
     const supabase = await createServer();
     const courtId = formData.get('courtId') as string;
-    const status = formData.get('status') as string;
+    const statusId = formData.get('statusId') as string;
 
-    if (!courtId || !status) {
-        return { error: 'Court ID and status are required.' };
+    if (!courtId || !statusId) {
+        return { error: 'Court ID and Status ID are required.' };
     }
 
     const { error } = await supabase
         .from('courts')
-        .update({ status: status })
+        .update({ status_id: Number(statusId) })
         .eq('id', courtId);
     
     if (error) {

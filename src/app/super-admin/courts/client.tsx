@@ -34,17 +34,17 @@ type Court = {
   id: number;
   name: string;
   surface: string | null;
-  status: string;
+  status: { id: number, label: string } | null;
   sports: { name: string } | null;
 };
 
 export function CourtsClientPage({ courts, loading }: { courts: Court[], loading: boolean }) {
   const { toast } = useToast();
 
-  const handleStatusChange = async (courtId: number, status: string) => {
+  const handleStatusChange = async (courtId: number, statusId: number) => {
     const formData = new FormData();
     formData.append('courtId', courtId.toString());
-    formData.append('status', status);
+    formData.append('statusId', statusId.toString());
 
     const result = await updateCourtStatus(formData);
     if (result.error) {
@@ -90,7 +90,7 @@ export function CourtsClientPage({ courts, loading }: { courts: Court[], loading
                   <TableCell className="font-medium">{court.name}</TableCell>
                   <TableCell>{court.sports?.name || 'N/A'}</TableCell>
                   <TableCell className='capitalize'>{court.surface || 'N/A'}</TableCell>
-                  <TableCell><StatusBadge status={court.status} /></TableCell>
+                  <TableCell><StatusBadge status={court.status?.label ?? 'Unknown'} /></TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -107,9 +107,9 @@ export function CourtsClientPage({ courts, loading }: { courts: Court[], loading
                         <DropdownMenuSub>
                            <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
                            <DropdownMenuSubContent>
-                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 'Open')}>Open</DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 'Maintenance')}>Maintenance</DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 'Closed')}>Closed</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 1)}>Open</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 3)}>Maintenance</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 2)}>Closed</DropdownMenuItem>
                            </DropdownMenuSubContent>
                         </DropdownMenuSub>
                       </DropdownMenuContent>

@@ -59,10 +59,10 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
         });
     }, [courts, venueFilter, searchQuery]);
     
-    const handleStatusChange = async (courtId: number, status: string) => {
+    const handleStatusChange = async (courtId: number, statusId: number) => {
         const formData = new FormData();
         formData.append('courtId', courtId.toString());
-        formData.append('status', status);
+        formData.append('statusId', statusId.toString());
 
         const result = await updateCourtStatus(formData);
         if (result.error) {
@@ -153,9 +153,9 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                                     <DropdownMenuSub>
                                         <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
                                         <DropdownMenuSubContent>
-                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 'Open')}>Open</DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 'Maintenance')}>Maintenance</DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 'Closed')}>Closed</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 1)}>Open</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 3)}>Maintenance</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 2)}>Closed</DropdownMenuItem>
                                         </DropdownMenuSubContent>
                                     </DropdownMenuSub>
                                 </DropdownMenuContent>
