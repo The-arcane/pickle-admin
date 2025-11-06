@@ -46,10 +46,7 @@ export default async function CourtListPage() {
     console.error('Error fetching court data:', courtsError || orgsError || sportsError);
   }
   
-  // Mock statuses for the UI as it's not in the DB schema
-  const statuses = ['Open', 'Closed', 'Maintenance'];
-
-  const courts = courtsData?.map((c, index) => ({
+  const courts = courtsData?.map((c) => ({
       id: c.id,
       name: c.name,
       venue: c.organisations?.name ?? 'N/A',
@@ -57,7 +54,7 @@ export default async function CourtListPage() {
       max_players: c.max_players,
       organisation_id: c.organisation_id,
       sport_id: c.sport_id,
-      status: statuses[index % statuses.length], // Assign a status cyclically for demo
+      status: c.status || 'Open',
       is_public: c.is_public,
   })) || [];
 

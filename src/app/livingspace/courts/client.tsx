@@ -7,9 +7,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye, Pencil, MoreVertical, Search, Globe, ShieldOff, List } from 'lucide-react';
+import { Pencil, MoreVertical, Search, Globe, ShieldOff, List } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusBadge } from '@/components/status-badge';
+import { useToast } from '@/hooks/use-toast';
+import { updateCourtStatus } from '@/app/super-admin/courts/actions';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
 
 type Court = {
   id: number;
@@ -36,6 +49,7 @@ type Sport = {
 export function CourtsClientPage({ courts, organisations, sports }: { courts: Court[], organisations: Organisation[], sports: Sport[] }) {
     const [venueFilter, setVenueFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const { toast } = useToast();
 
     const filteredCourts = useMemo(() => {
         return courts.filter(court => {
@@ -44,6 +58,20 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
             return venueMatch && searchMatch;
         });
     }, [courts, venueFilter, searchQuery]);
+    
+    const handleStatusChange = async (courtId: number, status: string) => {
+        const formData = new FormData();
+        formData.append('courtId', courtId.toString());
+        formData.append('status', status);
+
+        const result = await updateCourtStatus(formData);
+        if (result.error) {
+          toast({ variant: 'destructive', title: 'Error', description: result.error });
+        } else {
+          toast({ title: 'Success', description: result.message });
+        }
+    };
+
 
   return (
     <div className="space-y-6">
@@ -92,7 +120,6 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                         <TableHead>Court</TableHead>
                         <TableHead className="hidden md:table-cell">Venue</TableHead>
                         <TableHead className="hidden sm:table-cell">Type</TableHead>
-                        <TableHead className="hidden md:table-cell">Max Players</TableHead>
                         <TableHead>Visibility</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -104,7 +131,6 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                         <TableCell className="font-medium">{court.name}</TableCell>
                         <TableCell className="hidden md:table-cell">{court.venue || 'N/A'}</TableCell>
                         <TableCell className="hidden sm:table-cell">{court.type || 'N/A'}</TableCell>
-                        <TableCell className="hidden md:table-cell">{court.max_players || 'N/A'}</TableCell>
                         <TableCell>
                             <div className="flex items-center gap-2">
                             {court.is_public ? <Globe className="h-4 w-4 text-green-500" /> : <ShieldOff className="h-4 w-4 text-red-500" />}
@@ -115,14 +141,25 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                             <StatusBadge status={court.status} />
                         </TableCell>
                         <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                                <Button asChild variant="ghost" size="icon">
-                                <Link href={`/livingspace/courts/${court.id}`}>
-                                    <Pencil className="h-4 w-4" />
-                                    <span className="sr-only">Edit court</span>
-                                </Link>
-                                </Button>
-                            </div>
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuItem asChild>
+                                        <Link href={`/livingspace/courts/${court.id}`}><Pencil className="mr-2 h-4 w-4" />Edit</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSub>
+                                        <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
+                                        <DropdownMenuSubContent>
+                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 'Open')}>Open</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 'Maintenance')}>Maintenance</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 'Closed')}>Closed</DropdownMenuItem>
+                                        </DropdownMenuSubContent>
+                                    </DropdownMenuSub>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </TableCell>
                         </TableRow>
                     ))}

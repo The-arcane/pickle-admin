@@ -43,10 +43,8 @@ export default async function ArenaCourtsPage() {
   if (courtsError || orgsError || sportsError) {
     console.error('Error fetching court data:', courtsError || orgsError || sportsError);
   }
-  
-  const statuses = ['Open', 'Closed', 'Maintenance'];
 
-  const courts = courtsData?.map((c, index) => ({
+  const courts = courtsData?.map((c) => ({
       id: c.id,
       name: c.name,
       venue: c.organisations?.name ?? 'N/A',
@@ -54,7 +52,7 @@ export default async function ArenaCourtsPage() {
       max_players: c.max_players,
       organisation_id: c.organisation_id,
       sport_id: c.sport_id,
-      status: statuses[index % statuses.length],
+      status: c.status || 'Open', // Use real status, default to 'Open'
       is_public: c.is_public,
   })) || [];
 
