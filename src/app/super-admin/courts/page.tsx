@@ -22,19 +22,14 @@ export default function CourtsPage() {
       setLoading(true);
       const { data, error } = await supabase
         .from('courts')
-        .select('id, name, surface, sports(name)')
+        .select('id, name, surface, status, sports(name)')
         .eq('organisation_id', selectedOrgId);
 
       if (error) {
         console.error('Error fetching courts:', error);
         setCourts([]);
       } else {
-        const statuses = ['Open', 'Closed', 'Maintenance'];
-        const courtsWithStatus = data.map((c, i) => ({
-            ...c,
-            status: statuses[i % statuses.length]
-        }))
-        setCourts(courtsWithStatus);
+        setCourts(data || []);
       }
       setLoading(false);
     };
