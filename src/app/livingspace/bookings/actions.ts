@@ -271,9 +271,9 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
       slotDateTimeMain.setHours(slotHour, slotMinute, 0, 0);
 
       const objNowUtc = new Date(slotDateTimeMain);
-      const offsetMs = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
-      const istObjDate = new Date(objNowUtc.getTime() + offsetMs);
-      const  slotDateTime =  istObjDate; 
+     // const offsetMs = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
+      //const istObjDate = new Date(objNowUtc.getTime() + offsetMs);
+      const  slotDateTime = objNowUtc;// istObjDate; 
 
       const isBooked = bookedSlotsMap.has(slot.startTime);
       const isPastSlot = slotDateTime < now;
@@ -304,7 +304,7 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
             color = "bg-yellow-100";
         }
       }
-    
+     
       return {
         // Use the start time as a temporary ID for the UI
         id: slot.startTime, 
