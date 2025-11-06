@@ -81,6 +81,7 @@ export type Court = {
   one_booking_per_user_per_day: boolean;
   is_booking_rolling: boolean;
   booking_style: 'calendar' | 'rolling_window';
+  slot_duration: number | null;
   
   // Nested relations
   organisations: Organisation | null;

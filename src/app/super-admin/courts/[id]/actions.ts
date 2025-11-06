@@ -66,6 +66,7 @@ function getCourtFields(formData: FormData) {
         one_booking_per_user_per_day: formData.get('one_booking_per_user_per_day') === 'true',
         is_booking_rolling: formData.get('is_booking_rolling') === 'true',
         booking_style: formData.get('booking_style') as 'calendar' | 'rolling_window',
+        slot_duration: formData.get('slot_duration') ? Number(formData.get('slot_duration')) : 60,
     };
 }
 
