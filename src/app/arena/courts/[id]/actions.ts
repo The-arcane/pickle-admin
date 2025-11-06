@@ -66,6 +66,7 @@ function getCourtFields(formData: FormData) {
         is_booking_rolling: formData.get('is_booking_rolling') === 'true',
         booking_style: formData.get('booking_style') as 'calendar' | 'rolling_window',
         is_public: formData.get('is_public') === 'true',
+        slot_duration: formData.get('slot_duration') ? Number(formData.get('slot_duration')) : 60,
     };
 }
 
