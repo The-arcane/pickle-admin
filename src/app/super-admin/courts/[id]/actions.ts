@@ -53,9 +53,9 @@ function getCourtFields(formData: FormData) {
         description: formData.get('description') as string,
         max_players: formData.get('max_players') ? Number(formData.get('max_players')) : null,
         audience_capacity: formData.get('audience_capacity') ? Number(formData.get('audience_capacity')) : null,
-        is_equipment_available: formData.get('is_equipment_available') === 'true',
+        is_equipment_available: formData.get('is_equipment_available') === 'on',
         surface: formData.get('surface') as string,
-        has_floodlights: formData.get('has_floodlights') === 'true',
+        has_floodlights: formData.get('has_floodlights') === 'on',
         price: formData.get('price') ? Number(formData.get('price')) : null,
         discount: formData.get('discount') ? Number(formData.get('discount')) : null,
         feature: formData.get('feature') as string,
@@ -63,10 +63,10 @@ function getCourtFields(formData: FormData) {
         c_start_time: formData.get('c_start_time') || null,
         c_end_time: formData.get('c_end_time') || null,
         booking_window: formData.get('booking_window') ? Number(formData.get('booking_window')) : 1,
-        one_booking_per_user_per_day: formData.get('one_booking_per_user_per_day') === 'true',
-        is_booking_rolling: formData.get('is_booking_rolling') === 'true',
+        one_booking_per_user_per_day: formData.get('one_booking_per_user_per_day') === 'on',
+        is_booking_rolling: formData.get('is_booking_rolling') === 'on',
         booking_style: formData.get('booking_style') as 'calendar' | 'rolling_window',
-        is_public: formData.get('is_public') === 'true',
+        is_public: formData.get('is_public') === 'on',
         slot_duration: formData.get('slot_duration') ? Number(formData.get('slot_duration')) : 60,
     };
 }
@@ -408,5 +408,24 @@ export async function deleteCourtGalleryImage(formData: FormData) {
     revalidatePath(`/super-admin/courts/${courtId}`);
     revalidatePath(`/livingspace/courts/${courtId}`);
     revalidatePath(`/arena/courts/${courtId}`);
+    return { success: true };
+}
+
+export async function toggleCourtPublicStatus(courtId: number, isPublic: boolean) {
+    const supabase = await createServer();
+
+    const { error } = await supabase
+        .from('courts')
+        .update({ is_public: isPublic })
+        .eq('id', courtId);
+
+    if (error) {
+        console.error('Error toggling court status:', error);
+        return { error: `Failed to toggle court status: ${error.message}` };
+    }
+
+    revalidatePath('/arena/courts');
+    revalidatePath('/super-admin/courts');
+    revalidatePath('/livingspace/courts');
     return { success: true };
 }

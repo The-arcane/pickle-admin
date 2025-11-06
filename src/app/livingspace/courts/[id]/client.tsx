@@ -136,11 +136,6 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
     }, []); 
 
     const handleFormAction = async (formData: FormData) => {
-        formData.append('is_equipment_available', String(equipmentRental));
-        formData.append('has_floodlights', String(floodlights));
-        formData.append('is_public', String(isPublic));
-        formData.append('one_booking_per_user_per_day', String(oneBookingPerDay));
-        formData.append('is_booking_rolling', String(isBookingRolling));
         formData.append('rules', JSON.stringify(rules.filter(r => r.rule && r.rule.trim() !== '')));
         formData.append('contact', JSON.stringify(contact));
         formData.append('availability', JSON.stringify(availability.filter(a => a.date)));
