@@ -2,7 +2,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export function createServer() {
+export async function createServer() {
   const cookieStore = cookies();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -40,7 +40,7 @@ export function createServer() {
 }
 
 // Dedicated function to create a client with service_role privileges
-export function createServiceRoleServer() {
+export async function createServiceRoleServer() {
   const cookieStore = cookies();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
