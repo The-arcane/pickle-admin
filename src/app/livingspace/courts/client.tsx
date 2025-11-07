@@ -108,7 +108,7 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                     </SelectContent>
                 </Select>
             </div>
-            <Button asChild className="w-full sm:w-auto flex-shrink-0">
+            <Button asChild className="w-full sm:w-auto flex-shrink-0 h-8 text-xs">
               <Link href="/livingspace/courts/add">+ Add Court</Link>
             </Button>
         </div>

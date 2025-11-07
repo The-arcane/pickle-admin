@@ -53,7 +53,7 @@ export function CourtsClientPage({ courts, loading }: { courts: Court[], loading
     <>
       <div className="flex items-center justify-between">
         <PageHeader title="Courts" description="View and manage courts for the selected Living Space." />
-        <Button asChild>
+        <Button asChild className="h-8 text-xs">
             <Link href="/super-admin/courts/add">+ Add Court</Link>
         </Button>
       </div>
