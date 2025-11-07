@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -114,7 +115,7 @@ export function SalesClientPage({
                 <div className="flex items-center gap-3">
                     <TrendingUp className="h-8 w-8 text-green-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Sales Team</h1>
+                        <h1 className="text-2xl font-bold">Sales Team</h1>
                         <p className="text-muted-foreground">Manage sales people in the system.</p>
                     </div>
                 </div>

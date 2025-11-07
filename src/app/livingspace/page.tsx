@@ -250,12 +250,12 @@ export default async function DashboardPage() {
             />
           )}
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground">Here&apos;s a snapshot of your facility&apos;s activity.</p>
           </div>
         </div>
         <Link href="/livingspace/bookings" className="w-full sm:w-auto">
-            <Button className="w-full sm:w-auto">+ New Booking</Button>
+            <Button className="w-full sm:w-auto h-8 text-xs">+ New Booking</Button>
         </Link>
       </div>
 

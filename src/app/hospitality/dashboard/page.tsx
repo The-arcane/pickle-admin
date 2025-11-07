@@ -100,13 +100,13 @@ export default async function HospitalityDashboardPage() {
                 <CardDescription>Get started by managing your packages or bookings.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
-                <Button asChild>
+                <Button asChild className="h-8 text-xs">
                     <Link href="/hospitality/packages">
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Manage Packages
                     </Link>
                 </Button>
-                 <Button asChild variant="secondary">
+                 <Button asChild variant="secondary" className="h-8 text-xs">
                     <Link href="/hospitality/bookings">
                         <Calendar className="mr-2 h-4 w-4" />
                         View Bookings

@@ -73,10 +73,10 @@ export function PackagesClientPage({ packages }: { packages: Package[] }) {
         <>
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Packages</h1>
+                    <h1 className="text-2xl font-bold">Packages</h1>
                     <p className="text-muted-foreground">Manage your organization's special packages.</p>
                 </div>
-                <Button onClick={() => openFormDialog(null)}><PlusCircle className="mr-2 h-4 w-4"/> Add Package</Button>
+                <Button onClick={() => openFormDialog(null)} className="h-8 text-xs"><PlusCircle className="mr-2 h-4 w-4"/> Add Package</Button>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

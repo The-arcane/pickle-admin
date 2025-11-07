@@ -42,7 +42,7 @@ export default function CommunicationPage() {
             <p className="text-muted-foreground">Manage faculty directory and oversee communications.</p>
           </div>
         </div>
-        <Button asChild>
+        <Button asChild className="h-8 text-xs">
           <Link href="/education/communication/add">
             <PlusCircle className="mr-2 h-4 w-4" /> Add Faculty
           </Link>

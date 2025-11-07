@@ -70,7 +70,7 @@ export default function EventsListPage() {
             <p className="text-muted-foreground">Schedule, manage, and track all school pickleball events.</p>
           </div>
         </div>
-        <Button asChild>
+        <Button asChild className="h-8 text-xs">
           <Link href="/education/events/add">
             <PlusCircle className="mr-2 h-4 w-4" /> Create Event
           </Link>

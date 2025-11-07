@@ -201,7 +201,7 @@ export default async function ArenaDashboardPage() {
             </div>
         </div>
         <Link href="/arena/bookings" className="w-full sm:w-auto">
-            <Button className="w-full sm:w-auto">+ New Booking</Button>
+            <Button className="w-full sm:w-auto h-8 text-xs">+ New Booking</Button>
         </Link>
       </div>
       

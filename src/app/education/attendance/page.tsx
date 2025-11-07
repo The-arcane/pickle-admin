@@ -33,7 +33,7 @@ export default function AttendanceSessionsPage() {
             <p className="text-muted-foreground">Select a session to mark attendance.</p>
             </div>
         </div>
-        <Button asChild>
+        <Button asChild className="h-8 text-xs">
             <Link href="/education/attendance/sessions/add">
                 <PlusCircle className="mr-2 h-4 w-4" /> Create Session
             </Link>

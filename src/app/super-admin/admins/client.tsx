@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -120,7 +121,7 @@ export function AdminsClientPage({
                 <div className="flex items-center gap-3">
                     <ShieldCheck className="h-8 w-8 text-red-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Admins</h1>
+                        <h1 className="text-2xl font-bold">Admins</h1>
                         <p className="text-muted-foreground">Manage admin users across all organizations.</p>
                     </div>
                 </div>

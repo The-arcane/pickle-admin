@@ -62,7 +62,7 @@ export default function ResourcesPage() {
                 </div>
                 <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button className="h-8 text-xs">
                             <PlusCircle className="mr-2 h-4 w-4" /> Add Resource
                         </Button>
                     </DialogTrigger>

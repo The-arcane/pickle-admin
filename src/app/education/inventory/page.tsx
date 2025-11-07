@@ -99,7 +99,7 @@ export default function InventoryPage() {
                         <p className="text-muted-foreground">Track and manage all school equipment.</p>
                     </div>
                 </div>
-                <Button onClick={openAddForm}>
+                <Button onClick={openAddForm} className="h-8 text-xs">
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Equipment
                 </Button>
             </div>
