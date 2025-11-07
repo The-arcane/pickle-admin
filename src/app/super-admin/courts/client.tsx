@@ -60,47 +60,49 @@ export function CourtsClientPage({ courts, loading }: { courts: Court[], loading
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading ? (
                 Array.from({ length: 3 }).map((_, i) => (
-                    <Card key={i}><CardContent className="p-4"><Skeleton className="h-48 w-full" /><Skeleton className="h-5 w-3/4 mt-4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardContent></Card>
+                    <Card key={i}><CardContent className="p-4"><Skeleton className="h-40 w-full rounded-lg" /><Skeleton className="h-5 w-3/4 mt-4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardContent></Card>
                 ))
             ) : courts.length > 0 ? (
                 courts.map((court) => (
                     <Card key={court.id} className="flex flex-col overflow-hidden">
-                        <div className="relative">
-                            <Image
-                                src={court.image || `https://picsum.photos/seed/${court.id}/600/400`}
-                                alt={court.name}
-                                width={600}
-                                height={400}
-                                className="h-48 w-full object-cover"
-                                data-ai-hint="pickleball court"
-                            />
-                             <div className="absolute top-2 right-2">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-background/80 hover:bg-background">
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuItem asChild>
-                                            <Link href={`/super-admin/courts/${court.id}`}>Edit</Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSub>
-                                            <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
-                                            <DropdownMenuSubContent>
-                                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 1)}>Open</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 3)}>Maintenance</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 2)}>Closed</DropdownMenuItem>
-                                            </DropdownMenuSubContent>
-                                        </DropdownMenuSub>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                        <CardHeader className="p-4">
+                            <div className="relative">
+                                <Image
+                                    src={court.image || `https://picsum.photos/seed/${court.id}/600/400`}
+                                    alt={court.name}
+                                    width={600}
+                                    height={400}
+                                    className="h-40 w-full object-cover rounded-lg"
+                                    data-ai-hint="pickleball court"
+                                />
+                                <div className="absolute top-2 right-2">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-background/80 hover:bg-background">
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuItem asChild>
+                                                <Link href={`/super-admin/courts/${court.id}`}>Edit</Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSub>
+                                                <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
+                                                <DropdownMenuSubContent>
+                                                    <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 1)}>Open</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 3)}>Maintenance</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 2)}>Closed</DropdownMenuItem>
+                                                </DropdownMenuSubContent>
+                                            </DropdownMenuSub>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
                             </div>
-                        </div>
-                         <div className="flex flex-col flex-grow p-4 space-y-2">
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0 flex flex-col flex-grow space-y-2">
                             <div className="flex justify-between items-start">
-                                <CardTitle className="text-base font-bold truncate">{court.name}</CardTitle>
+                                <CardTitle className="text-base font-bold truncate pr-2">{court.name}</CardTitle>
                                 {court.rating && (
                                     <div className="flex items-center gap-1 shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5">
                                         <Star className="h-3 w-3 text-amber-500 fill-amber-500"/>
@@ -116,7 +118,13 @@ export function CourtsClientPage({ courts, loading }: { courts: Court[], loading
                                 <p className='capitalize text-xs text-muted-foreground'>{court.surface || 'N/A'}</p>
                                 <StatusBadge status={court.status?.label ?? 'Unknown'} />
                             </div>
-                        </div>
+                        </CardContent>
+                        <CardFooter className="grid grid-cols-2 gap-2 p-2 mt-auto bg-muted/50">
+                            <Button asChild variant="outline" className="h-8 text-xs bg-background">
+                               <Link href={`/super-admin/courts/${court.id}/bookings`}>Bookings</Link>
+                            </Button>
+                            <Button variant="outline" className="h-8 text-xs bg-background">Manage Slots</Button>
+                        </CardFooter>
                     </Card>
                 ))
             ) : (
