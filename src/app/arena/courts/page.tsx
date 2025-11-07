@@ -54,6 +54,9 @@ export default async function ArenaCourtsPage() {
       sport_id: c.sport_id,
       status: c.status?.label || 'Unknown',
       is_public: c.is_public,
+      image: c.image,
+      rating: c.rating,
+      address: c.address,
   })) || [];
 
   const organisations = organisationsData ? [organisationsData] : [];
