@@ -3,11 +3,11 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Pencil, MoreHorizontal, Search, Globe, ShieldOff, List } from 'lucide-react';
+import { Pencil, MoreHorizontal, Search, Globe, ShieldOff, List, Star, MapPin } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusBadge } from '@/components/status-badge';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +23,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-
 type Court = {
   id: number;
   name: string;
@@ -34,6 +33,9 @@ type Court = {
   sport_id: number;
   status: string;
   is_public: boolean | null;
+  image: string | null;
+  rating: number | null;
+  address: string | null;
 };
 
 type Organisation = {
@@ -111,70 +113,80 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
             </Button>
         </div>
         
-        <Card>
-            <CardContent className="pt-0">
-            <div className="overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Court</TableHead>
-                        <TableHead className="hidden md:table-cell">Venue</TableHead>
-                        <TableHead className="hidden sm:table-cell">Type</TableHead>
-                        <TableHead>Visibility</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {filteredCourts.map((court) => (
-                        <TableRow key={court.id}>
-                        <TableCell className="font-medium">{court.name}</TableCell>
-                        <TableCell className="hidden md:table-cell">{court.venue || 'N/A'}</TableCell>
-                        <TableCell className="hidden sm:table-cell">{court.type || 'N/A'}</TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-2">
-                            {court.is_public ? <Globe className="h-4 w-4 text-green-500" /> : <ShieldOff className="h-4 w-4 text-red-500" />}
-                            <span className="capitalize hidden sm:inline">{court.is_public ? 'Public' : 'Private'}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCourts.length > 0 ? (
+                filteredCourts.map((court) => (
+                    <Card key={court.id} className="flex flex-col overflow-hidden">
+                        <div className="relative">
+                            <Image
+                                src={court.image || `https://picsum.photos/seed/${court.id}/600/400`}
+                                alt={court.name}
+                                width={600}
+                                height={400}
+                                className="h-48 w-full object-cover"
+                                data-ai-hint="pickleball court"
+                            />
+                             <div className="absolute top-2 right-2">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-background/80 hover:bg-background">
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/livingspace/courts/${court.id}`}>Edit</Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSub>
+                                            <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
+                                            <DropdownMenuSubContent>
+                                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 1)}>Open</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 3)}>Maintenance</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 2)}>Closed</DropdownMenuItem>
+                                            </DropdownMenuSubContent>
+                                        </DropdownMenuSub>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
-                        </TableCell>
-                        <TableCell>
-                            <StatusBadge status={court.status} />
-                        </TableCell>
-                        <TableCell className="text-right">
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuItem asChild>
-                                        <Link href={`/livingspace/courts/${court.id}`}><Pencil className="mr-2 h-4 w-4" />Edit</Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSub>
-                                        <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
-                                        <DropdownMenuSubContent>
-                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 1)}>Open</DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 3)}>Maintenance</DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={() => handleStatusChange(court.id, 2)}>Closed</DropdownMenuItem>
-                                        </DropdownMenuSubContent>
-                                    </DropdownMenuSub>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </TableCell>
-                        </TableRow>
-                    ))}
-                    {filteredCourts.length === 0 && (
-                        <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground h-24">
-                            No courts found matching your criteria.
-                        </TableCell>
-                        </TableRow>
-                    )}
-                    </TableBody>
-                </Table>
-            </div>
-            </CardContent>
-        </Card>
+                        </div>
+                        <CardHeader>
+                            <div className="flex justify-between items-start">
+                                <CardTitle>{court.name}</CardTitle>
+                                {court.rating && (
+                                    <div className="flex items-center gap-1 shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5">
+                                        <Star className="h-3 w-3 text-amber-500 fill-amber-500"/>
+                                        <span className="text-xs font-bold text-amber-700 dark:text-amber-300">{court.rating.toFixed(1)}</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center text-sm text-muted-foreground gap-2 pt-1">
+                                <MapPin className="h-4 w-4 shrink-0" />
+                                <p className="truncate">{court.address}</p>
+                            </div>
+                        </CardHeader>
+                         <CardContent className="flex-grow">
+                             <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    {court.is_public ? 
+                                        <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs"><Globe className="h-3 w-3" /> Public</div> : 
+                                        <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-xs"><ShieldOff className="h-3 w-3" /> Private</div>}
+                                </div>
+                                <StatusBadge status={court.status} />
+                             </div>
+                        </CardContent>
+                        <CardFooter className="grid grid-cols-2 gap-2 p-2 pt-0">
+                            <Button variant="outline" size="sm">Bookings</Button>
+                            <Button variant="outline" size="sm">Manage Slots</Button>
+                        </CardFooter>
+                    </Card>
+                ))
+            ) : (
+                <div className="col-span-full text-center text-muted-foreground py-10">
+                    No courts found matching your criteria.
+                </div>
+            )}
+        </div>
     </div>
   );
 }
