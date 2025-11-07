@@ -41,7 +41,7 @@ export function ChannelsClientPage({ initialChannels }: { initialChannels: Chann
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-end">
-                <Button asChild>
+                <Button asChild className="h-8 text-xs">
                     <Link href="/arena/channels/add">
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Channel
                     </Link>

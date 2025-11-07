@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -280,8 +278,8 @@ export function BookingsClientPage({
                     </div>
                 </div>
                  <div className="w-full sm:w-auto">
-                    {activeTab === 'courts' && <Button className="w-full" onClick={() => setIsAddDialogOpen(true)}>+ Add Court Booking</Button>}
-                    {activeTab === 'events' && <Button className="w-full" asChild><Link href={`${basePath}/events/add`}>+ Add Event Booking</Link></Button>}
+                    {activeTab === 'courts' && <Button className="w-full h-8 text-xs" onClick={() => setIsAddDialogOpen(true)}>+ Add Court Booking</Button>}
+                    {activeTab === 'events' && <Button className="w-full h-8 text-xs" asChild><Link href={`${basePath}/events/add`}>+ Add Event Booking</Link></Button>}
                 </div>
             </header>
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -125,7 +124,7 @@ export function EmployeesClientPage({
                         <p className="text-muted-foreground">Manage employees for your Living Space.</p>
                     </div>
                 </div>
-                <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
+                <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto h-8 text-xs">
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Employee
                 </Button>
             </div>

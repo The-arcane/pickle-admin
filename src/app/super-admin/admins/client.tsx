@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -125,7 +124,7 @@ export function AdminsClientPage({
                         <p className="text-muted-foreground">Manage admin users across all organizations.</p>
                     </div>
                 </div>
-                <Button onClick={() => setIsInviteDialogOpen(true)}>
+                <Button onClick={() => setIsInviteDialogOpen(true)} className="h-8 text-xs">
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Admin
                 </Button>
             </div>

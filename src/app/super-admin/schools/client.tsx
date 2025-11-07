@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -167,10 +166,10 @@ export function SchoolsClientPage({ schools }: { schools: School[] }) {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button onClick={() => setIsImportDialogOpen(true)} variant="outline">
+                    <Button onClick={() => setIsImportDialogOpen(true)} variant="outline" className="h-8 text-xs">
                         <FileUp className="mr-2 h-4 w-4" /> Import via CSV
                     </Button>
-                    <Button onClick={() => setIsAddDialogOpen(true)}>
+                    <Button onClick={() => setIsAddDialogOpen(true)} className="h-8 text-xs">
                         <PlusCircle className="mr-2 h-4 w-4" /> Add School
                     </Button>
                 </div>
@@ -299,7 +298,7 @@ export function SchoolsClientPage({ schools }: { schools: School[] }) {
                     <DialogHeader>
                         <DialogTitle>Import Schools via CSV</DialogTitle>
                         <DialogDescription>
-                            Upload a CSV file with 'name' and 'address' columns to bulk create schools.
+                            Upload a CSV file with 'name' and 'address' columns to bulk create schools. All will be assigned to a default admin.
                         </DialogDescription>
                     </DialogHeader>
                     <form ref={csvFormRef} action={handleCsvImportAction} className="space-y-4 py-4">

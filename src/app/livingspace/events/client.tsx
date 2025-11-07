@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -104,7 +103,7 @@ export function EventsClientPage({ events, basePath = '/livingspace' }: { events
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <Button asChild className="w-full sm:w-auto">
+                <Button asChild className="w-full sm:w-auto h-8 text-xs">
                     <Link href={`${basePath}/events/add`}>+ Add Event</Link>
                 </Button>
             </div>

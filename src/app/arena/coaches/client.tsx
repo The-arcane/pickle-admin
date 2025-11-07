@@ -45,7 +45,7 @@ export function CoachesClientPage({ initialCoaches }: { initialCoaches: Coach[] 
                         <p className="text-muted-foreground">Manage coaches for your Sports Venue.</p>
                     </div>
                 </div>
-                <Button asChild>
+                <Button asChild className="h-8 text-xs">
                     <Link href="/arena/coaches/add">
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Coach
                     </Link>

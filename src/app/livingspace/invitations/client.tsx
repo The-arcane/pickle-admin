@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef } from 'react';
@@ -138,7 +137,7 @@ export function InvitationsClientPage({
                             <CardTitle>Invitations List</CardTitle>
                             <CardDescription>A list of all invited and joined users.</CardDescription>
                         </div>
-                         <Button onClick={() => setIsInviteDialogOpen(true)} disabled={!organisationId || loading} className="w-full sm:w-auto">
+                         <Button onClick={() => setIsInviteDialogOpen(true)} disabled={!organisationId || loading} className="w-full sm:w-auto h-8 text-xs">
                             <PlusCircle className="mr-2 h-4 w-4" /> Invite Users
                         </Button>
                     </div>
