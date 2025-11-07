@@ -156,7 +156,7 @@ export function BookingsClientPage({
     const [addDate, setAddDate] = useState<Date | undefined>(new Date());
     const [addSelectedTimeSlot, setAddSelectedTimeSlot] = useState<Timeslot | null>(null);
     const [addAvailableSlots, setAddAvailableSlots] = useState<Timeslot[]>([]);
-    const [isAddLoadingSlots, setIsAddLoadingSlots] = useState(false);
+    const [isAddLoadingTimeslots, setIsAddLoadingTimeslots] = useState(false);
     const [addCourtRules, setAddCourtRules] = useState<Partial<Court> | null>(null);
     
     // Fetch available timeslots for Edit Dialog
@@ -180,14 +180,20 @@ export function BookingsClientPage({
     // Fetch available timeslots for Add Dialog
     useEffect(() => {
         if (addCourtId && addDate && addUserId) {
-            setIsAddLoadingSlots(true);
+            setIsAddLoadingTimeslots(true);
             setAddAvailableSlots([]); // Clear old slots
             setAddSelectedTimeSlot(null);
             setAddCourtRules(allCourts.find(c => c.id.toString() === addCourtId) ?? null);
             getTimeslots(Number(addCourtId), formatISO(addDate, { representation: 'date'}), Number(addUserId))
                 .then(setAddAvailableSlots)
-                .catch((e) => toast({ variant: "destructive", title: "Error fetching slots", description: e.message }))
-                .finally(() => setIsAddLoadingSlots(false));
+                .catch((e) => {
+                    if (e.message.includes('User already has a booking')) {
+                        toast({ variant: 'destructive', title: 'Booking Limit', description: 'This user already has a booking for the selected day.' });
+                    } else {
+                        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch available slots.'});
+                    }
+                })
+                .finally(() => setIsAddLoadingTimeslots(false));
         } else {
             setAddCourtRules(null);
         }
