@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Pencil, MoreHorizontal, Search, Globe, ShieldOff, List, Star, MapPin } from 'lucide-react';
+import { Pencil, Search, Globe, ShieldOff, List, Star, MapPin } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StatusBadge } from '@/components/status-badge';
 import { useToast } from '@/hooks/use-toast';
@@ -152,7 +152,7 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                         </div>
                         <div className="flex flex-col flex-grow p-4 space-y-2">
                             <div className="flex justify-between items-start">
-                                <CardTitle className="text-lg truncate">{court.name}</CardTitle>
+                                <CardTitle className="text-base font-bold truncate">{court.name}</CardTitle>
                                 {court.rating && (
                                     <div className="flex items-center gap-1 shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5">
                                         <Star className="h-3 w-3 text-amber-500 fill-amber-500"/>
