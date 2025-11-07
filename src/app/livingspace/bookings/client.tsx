@@ -165,15 +165,16 @@ export function BookingsClientPage({
             setIsEditLoadingSlots(true);
             setEditCourtRules(allCourts.find(c => c.id.toString() === editCourtId) ?? null);
             getTimeslots(Number(editCourtId), editDate, selectedCourtBooking.user_id, selectedCourtBooking.id)
-                .then(slots => {
+                .then((slots) => {
                     setEditAvailableSlots(slots);
                     if (!slots.some(s => s.id === editTimeslot?.id)) {
                         setEditTimeslot(null);
                     }
                 })
+                .catch((e) => toast({ variant: "destructive", title: "Error fetching slots", description: e.message }))
                 .finally(() => setIsEditLoadingSlots(false));
         }
-    }, [editCourtId, editDate, isCourtEditDialogOpen, selectedCourtBooking, allCourts, editTimeslot]);
+    }, [editCourtId, editDate, isCourtEditDialogOpen, selectedCourtBooking, allCourts, editTimeslot, toast]);
 
 
     // Fetch available timeslots for Add Dialog
@@ -185,11 +186,12 @@ export function BookingsClientPage({
             setAddCourtRules(allCourts.find(c => c.id.toString() === addCourtId) ?? null);
             getTimeslots(Number(addCourtId), formatISO(addDate, { representation: 'date'}), Number(addUserId))
                 .then(setAddAvailableSlots)
+                .catch((e) => toast({ variant: "destructive", title: "Error fetching slots", description: e.message }))
                 .finally(() => setIsAddLoadingSlots(false));
         } else {
             setAddCourtRules(null);
         }
-    }, [addCourtId, addDate, addUserId, allCourts]);
+    }, [addCourtId, addDate, addUserId, allCourts, toast]);
 
     const handleCourtEditClick = (booking: ProcessedCourtBooking) => {
         setSelectedCourtBooking(booking);
@@ -512,7 +514,7 @@ export function BookingsClientPage({
             </Dialog>}
 
             <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogChange}>
-                <DialogContent className="max-h-[90vh] flex flex-col sm:max-w-md">
+                <DialogContent className="max-h-[90vh] flex flex-col w-full max-w-md">
                     <DialogHeader>
                         <DialogTitle>Add New Court Booking</DialogTitle>
                         <DialogDescription>Select the user, court, date, and time to create a new booking.</DialogDescription>
@@ -522,8 +524,8 @@ export function BookingsClientPage({
                         if (addDate) formData.set('date', formatISO(addDate, { representation: 'date' }));
                         if (addSelectedTimeSlot) formData.set('timeslot_id', addSelectedTimeSlot.startTime);
                         handleFormSubmit(addBooking(formData), "Booking added.", "Add Failed");
-                    }}>
-                        <div className="space-y-4 py-4 overflow-y-auto pr-4">
+                    }} className="flex-grow overflow-hidden flex flex-col">
+                        <div className="space-y-4 py-4 overflow-y-auto px-1">
                             <div className="space-y-1.5">
                                 <Label>User</Label>
                                 <Select name="user_id" onValueChange={setAddUserId} value={addUserId}>
@@ -568,7 +570,7 @@ export function BookingsClientPage({
                                 <h4 className="mb-1 text-sm font-medium text-center">
                                     Available Slots for {addDate ? format(addDate, "PPP") : "..."}
                                 </h4>
-                                <div className="grid grid-cols-4 gap-1.5">
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                                     {isAddLoadingSlots ? (
                                         [...Array(8)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)
                                     ) : addAvailableSlots.length > 0 ? (
@@ -587,7 +589,7 @@ export function BookingsClientPage({
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="col-span-4 text-center text-xs text-muted-foreground pt-2">
+                                        <p className="col-span-full text-center text-xs text-muted-foreground pt-2">
                                             Please select a user and court first.
                                         </p>
                                     )}
@@ -599,7 +601,7 @@ export function BookingsClientPage({
                                 <SelectContent>{courtBookingStatuses.map(s => <SelectItem key={s.id} value={s.label}>{s.label}</SelectItem>)}</SelectContent></Select>
                             </div>
                         </div>
-                        <DialogFooter className="pt-4 border-t">
+                        <DialogFooter className="pt-4 border-t mt-auto">
                             <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
                             <Button type="submit" disabled={!addSelectedTimeSlot || !addUserId || !addCourtId}>Add Booking</Button>
                         </DialogFooter>
