@@ -1,10 +1,9 @@
 
 import { createServer } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, ChevronLeft } from 'lucide-react';
+import { Calendar, ChevronLeft, Clock, User } from 'lucide-react';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { StatusBadge } from '@/components/status-badge';
@@ -63,36 +62,38 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
                     <p className="text-muted-foreground">A list of all past and upcoming bookings for this court.</p>
                 </div>
             </div>
-            <Card>
-                <CardContent className="pt-6">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>User</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Time</TableHead>
-                                <TableHead>Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {bookings && bookings.length > 0 ? (
-                                bookings.map(b => (
-                                    <TableRow key={b.id}>
-                                        <TableCell>{b.user?.name ?? 'N/A'}</TableCell>
-                                        <TableCell>{b.timeslots?.date ? format(parseISO(b.timeslots.date), 'PP') : 'N/A'}</TableCell>
-                                        <TableCell>{`${formatTime(b.timeslots?.start_time)} - ${formatTime(b.timeslots?.end_time)}`}</TableCell>
-                                        <TableCell><StatusBadge status={b.booking_status?.label ?? 'Unknown'} /></TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="text-center h-24">No bookings found for this court.</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {bookings && bookings.length > 0 ? (
+                    bookings.map(b => (
+                        <Card key={b.id}>
+                            <CardHeader>
+                                <div className="flex justify-between items-start">
+                                    <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                        <User className="h-4 w-4 text-muted-foreground" />
+                                        {b.user?.name ?? 'N/A'}
+                                    </CardTitle>
+                                    <StatusBadge status={b.booking_status?.label ?? 'Unknown'} />
+                                </div>
+                            </CardHeader>
+                            <CardContent className="text-sm space-y-2">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Calendar className="h-4 w-4" />
+                                    <span>{b.timeslots?.date ? format(parseISO(b.timeslots.date), 'PP') : 'N/A'}</span>
+                                </div>
+                                 <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Clock className="h-4 w-4" />
+                                    <span>{`${formatTime(b.timeslots?.start_time)} - ${formatTime(b.timeslots?.end_time)}`}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))
+                ) : (
+                    <div className="col-span-full text-center py-10 text-muted-foreground">
+                        No bookings found for this court.
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
