@@ -151,7 +151,7 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                             </div>
                         </div>
                         <div className="flex flex-col flex-grow">
-                            <CardHeader>
+                            <CardHeader className="p-4">
                                 <div className="flex justify-between items-start">
                                     <CardTitle className="text-lg truncate">{court.name}</CardTitle>
                                     {court.rating && (
@@ -166,7 +166,7 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                                     <p className="truncate">{court.address}</p>
                                 </div>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="p-4 pt-0">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         {court.is_public ? 
