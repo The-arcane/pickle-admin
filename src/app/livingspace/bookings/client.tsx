@@ -335,14 +335,14 @@ export function BookingsClientPage({
                             <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader><TableRow>
-                                        <TableHead>User</TableHead><TableHead>Court</TableHead><TableHead>Date</TableHead>
-                                        <TableHead>Time</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
+                                        <TableHead>User</TableHead><TableHead className="hidden sm:table-cell">Court</TableHead><TableHead className="hidden md:table-cell">Date</TableHead>
+                                        <TableHead className="hidden lg:table-cell">Time</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
                                     </TableRow></TableHeader>
                                     <TableBody>
                                         {!isClient ? Array.from({ length: 5 }).map((_, i) => (
                                             <TableRow key={`skel-court-${i}`}>
-                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
+                                                <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell><TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                                 <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell><TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                                             </TableRow>
                                         )) : filteredCourtBookings.length === 0 ? (
@@ -350,8 +350,8 @@ export function BookingsClientPage({
                                         ) : (
                                             filteredCourtBookings.map(b => (
                                                 <TableRow key={b.id}>
-                                                    <TableCell className="font-medium">{b.user}</TableCell><TableCell>{b.court}</TableCell><TableCell>{b.date}</TableCell>
-                                                    <TableCell>{b.time}</TableCell><TableCell><StatusBadge status={b.status} /></TableCell>
+                                                    <TableCell className="font-medium">{b.user}</TableCell><TableCell className="hidden sm:table-cell">{b.court}</TableCell><TableCell className="hidden md:table-cell">{b.date}</TableCell>
+                                                    <TableCell className="hidden lg:table-cell">{b.time}</TableCell><TableCell><StatusBadge status={b.status} /></TableCell>
                                                     <TableCell className="text-right">
                                                          <DropdownMenu>
                                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -395,16 +395,16 @@ export function BookingsClientPage({
                             <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader><TableRow>
-                                        <TableHead>Event</TableHead><TableHead>User</TableHead><TableHead>Attendees</TableHead>
-                                        <TableHead>Total Enrolled</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead>
+                                        <TableHead>Event</TableHead><TableHead className="hidden sm:table-cell">User</TableHead><TableHead>Attendees</TableHead>
+                                        <TableHead className="hidden md:table-cell">Total Enrolled</TableHead><TableHead className="hidden lg:table-cell">Date</TableHead><TableHead>Status</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
                                     </TableRow></TableHeader>
                                     <TableBody>
                                         {!isClient ? Array.from({ length: 3 }).map((_, i) => (
                                             <TableRow key={`skel-event-${i}`}>
-                                                <TableCell><Skeleton className="h-5 w-32" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-16" /></TableCell><TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                                <TableCell><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-32" /></TableCell><TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell><Skeleton className="h-5 w-16" /></TableCell><TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                                <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-24" /></TableCell><TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
                                                 <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                                             </TableRow>
                                         )) : filteredEventBookings.length === 0 ? (
@@ -412,8 +412,8 @@ export function BookingsClientPage({
                                         ) : (
                                             filteredEventBookings.map(b => (
                                                 <TableRow key={b.id}>
-                                                    <TableCell className="font-medium">{b.event}</TableCell><TableCell>{b.user}</TableCell><TableCell>{b.quantity}</TableCell>
-                                                    <TableCell>{b.total_enrolled}</TableCell><TableCell>{b.date}</TableCell><TableCell><StatusBadge status={b.status} /></TableCell>
+                                                    <TableCell className="font-medium">{b.event}</TableCell><TableCell className="hidden sm:table-cell">{b.user}</TableCell><TableCell>{b.quantity}</TableCell>
+                                                    <TableCell className="hidden md:table-cell">{b.total_enrolled}</TableCell><TableCell className="hidden lg:table-cell">{b.date}</TableCell><TableCell><StatusBadge status={b.status} /></TableCell>
                                                     <TableCell className="text-right">
                                                          <DropdownMenu>
                                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -571,7 +571,7 @@ export function BookingsClientPage({
                                     Available Slots for {addDate ? format(addDate, "PPP") : "..."}
                                 </h4>
                                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-                                    {isAddLoadingSlots ? (
+                                    {isAddLoadingTimeslots ? (
                                         [...Array(8)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)
                                     ) : addAvailableSlots.length > 0 ? (
                                         addAvailableSlots.map((slot) => (
