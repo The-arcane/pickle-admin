@@ -125,7 +125,7 @@ export function ArenaClientPage({ orgs }: { orgs: ArenaOrg[] }) {
                 <div className="flex items-center gap-3">
                     <Shield className="h-8 w-8 text-gray-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Arenas</h1>
+                        <h1 className="text-2xl font-bold">Arenas</h1>
                         <p className="text-muted-foreground">Manage Arena-type Living Spaces.</p>
                     </div>
                 </div>

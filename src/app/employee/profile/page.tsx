@@ -33,7 +33,7 @@ export default async function EmployeeProfilePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Employee Profile</h1>
+        <h1 className="text-2xl font-bold">Employee Profile</h1>
         <p className="text-muted-foreground">View your profile information.</p>
       </div>
 

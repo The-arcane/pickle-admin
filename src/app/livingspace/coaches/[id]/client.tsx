@@ -111,7 +111,7 @@ export function EditCoachClientPage({ coach, sports, organisationId }: { coach: 
     return (
         <form action={handleFormAction} className="space-y-8">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold">{isAdding ? 'Add New Coach' : 'Edit Coach'}</h1>
+                <h1 className="text-2xl font-bold">{isAdding ? 'Add New Coach' : 'Edit Coach'}</h1>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" type="button" asChild><Link href="/livingspace/coaches">Cancel</Link></Button>
                     <Button type="submit">Save Changes</Button>

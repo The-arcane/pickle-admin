@@ -63,7 +63,7 @@ export default async function ChannelsPage() {
           <div className="flex items-center gap-3">
               <Radio className="h-8 w-8 text-indigo-500" />
               <div>
-                  <h1 className="text-3xl font-bold">Channels</h1>
+                  <h1 className="text-2xl font-bold">Channels</h1>
                   <p className="text-muted-foreground">Manage real-time communication channels for your Living Space.</p>
               </div>
           </div>

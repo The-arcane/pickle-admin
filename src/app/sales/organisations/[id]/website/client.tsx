@@ -98,7 +98,7 @@ export function EditWebsiteClientPage({ organization, websiteDetails }: { organi
                 <div className="flex items-center gap-3">
                     <Globe className="h-8 w-8 text-primary" />
                     <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold">Edit Public Page</h1>
+                        <h1 className="text-2xl sm:text-2xl font-bold">Edit Public Page</h1>
                         <p className="text-muted-foreground">Manage content for the public page of <span className="font-semibold">{organization.name}</span>.</p>
                     </div>
                 </div>

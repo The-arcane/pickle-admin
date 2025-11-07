@@ -162,7 +162,7 @@ export default async function SuperAdminDashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Super Admin Dashboard</h1>
+        <h1 className="text-2xl font-bold">Super Admin Dashboard</h1>
         <p className="text-muted-foreground">A high-level overview of platform-wide activity.</p>
       </div>
 
@@ -175,7 +175,7 @@ export default async function SuperAdminDashboardPage() {
                   <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
               </div>
               <div>
-                <p className="text-3xl font-bold">{stat.value}</p>
+                <p className="text-2xl font-bold">{stat.value}</p>
               </div>
             </Card>
           </Link>
@@ -196,7 +196,7 @@ export default async function SuperAdminDashboardPage() {
                   <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
               </div>
               <div>
-                <p className="text-3xl font-bold">{stat.value}</p>
+                <p className="text-2xl font-bold">{stat.value}</p>
               </div>
             </Card>
           </Link>
@@ -217,7 +217,7 @@ export default async function SuperAdminDashboardPage() {
                   <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
               </div>
               <div>
-                <p className="text-3xl font-bold">{stat.value}</p>
+                <p className="text-2xl font-bold">{stat.value}</p>
               </div>
             </Card>
           </Link>

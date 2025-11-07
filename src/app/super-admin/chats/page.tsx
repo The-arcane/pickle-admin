@@ -20,7 +20,7 @@ export default function SuperAdminChatsPage() {
         <div className="flex items-center gap-3">
             <MessageSquare className="h-8 w-8 text-blue-500" />
             <div>
-                <h1 className="text-3xl font-bold">Live Chats</h1>
+                <h1 className="text-2xl font-bold">Live Chats</h1>
                 <p className="text-muted-foreground">Review transcripts of support chats.</p>
             </div>
         </div>

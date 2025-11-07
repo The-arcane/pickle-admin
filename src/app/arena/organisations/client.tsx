@@ -65,7 +65,7 @@ export function OrganisationClientPage({
              <div className="flex items-center gap-3">
                 <Building className="h-8 w-8 text-primary" />
                 <div>
-                    <h1 className="text-3xl font-bold">{orgTypeName} Profile</h1>
+                    <h1 className="text-2xl font-bold">{orgTypeName} Profile</h1>
                     <p className="text-muted-foreground">Manage your {orgTypeName}'s public information and structure.</p>
                 </div>
             </div>

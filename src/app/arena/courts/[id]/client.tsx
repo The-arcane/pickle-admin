@@ -240,7 +240,7 @@ export function EditCourtClientPage({ court, organisations, sports, organisation
             <div className="col-span-1 lg:col-span-4 space-y-8">
                 <form action={handleFormAction} className="space-y-8">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <h1 className="text-3xl font-bold">{isAdding ? 'Add New Court' : 'Edit Court'}</h1>
+                        <h1 className="text-2xl font-bold">{isAdding ? 'Add New Court' : 'Edit Court'}</h1>
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                             <Button variant="outline" type="button" asChild className="flex-1 sm:flex-initial"><Link href="/arena/courts">Cancel</Link></Button>
                             <Button type="submit" className="flex-1 sm:flex-initial">Save Changes</Button>

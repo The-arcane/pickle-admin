@@ -41,7 +41,7 @@ export function CoachesClientPage({ initialCoaches }: { initialCoaches: Coach[] 
                 <div className="flex items-center gap-3">
                     <Contact2 className="h-8 w-8 text-rose-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Coaches</h1>
+                        <h1 className="text-2xl font-bold">Coaches</h1>
                         <p className="text-muted-foreground">Manage coaches for your Living Space.</p>
                     </div>
                 </div>

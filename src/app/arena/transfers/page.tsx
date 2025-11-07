@@ -32,7 +32,7 @@ export default function ArenaTransfersPage() {
                 <CardDescription>Your current balance that can be transferred.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-                <p className="text-3xl font-bold">₹ 15,340.00</p>
+                <p className="text-2xl font-bold">₹ 15,340.00</p>
                 <p className="text-xs text-muted-foreground">Next automatic transfer is in 3 days.</p>
             </CardContent>
         </Card>

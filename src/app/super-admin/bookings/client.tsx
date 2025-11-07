@@ -275,7 +275,7 @@ export function BookingsClientPage({
   return (
     <>
         <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Bookings</h1>
+            <h1 className="text-2xl font-bold">Bookings</h1>
             <Button onClick={() => setIsAddDialogOpen(true)}>+ Add Booking</Button>
         </div>
         <Card>

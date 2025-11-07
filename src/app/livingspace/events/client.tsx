@@ -88,7 +88,7 @@ export function EventsClientPage({ events, basePath = '/livingspace' }: { events
             <div className="flex items-center gap-3">
                 <PartyPopper className="h-8 w-8 text-pink-500" />
                 <div>
-                    <h1 className="text-3xl font-bold">Event Management</h1>
+                    <h1 className="text-2xl font-bold">Event Management</h1>
                     <p className="text-muted-foreground">Manage your events, bookings, and schedules.</p>
                 </div>
             </div>

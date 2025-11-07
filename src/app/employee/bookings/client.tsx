@@ -144,7 +144,7 @@ export function EmployeeBookingsClientPage({
         return (
             <div className="space-y-6">
                 <div>
-                    <h1 className="text-3xl font-bold">Court Bookings</h1>
+                    <h1 className="text-2xl font-bold">Court Bookings</h1>
                     <p className="text-muted-foreground">View and filter all scheduled court bookings.</p>
                 </div>
                 <Alert variant="destructive">
@@ -159,7 +159,7 @@ export function EmployeeBookingsClientPage({
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold">Court Bookings</h1>
+                <h1 className="text-2xl font-bold">Court Bookings</h1>
                 <p className="text-muted-foreground">View and filter all scheduled court bookings.</p>
             </div>
 

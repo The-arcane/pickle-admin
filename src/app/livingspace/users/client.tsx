@@ -69,7 +69,7 @@ export function UsersClientPage({ users, error }: { users: User[], error: any })
             <div className="flex items-center gap-3">
                 <Users className="h-8 w-8 text-violet-500" />
                 <div>
-                    <h1 className="text-3xl font-bold">Users</h1>
+                    <h1 className="text-2xl font-bold">Users</h1>
                     <p className="text-muted-foreground">Manage your users and their permissions.</p>
                 </div>
             </div>

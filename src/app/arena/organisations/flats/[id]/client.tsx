@@ -73,7 +73,7 @@ export function FlatsClientPage({ buildingNumberId, initialFlats, buildingInfo }
                         <Link href="/arena/organisations"><ChevronLeft className="h-4 w-4" /></Link>
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold">Manage Flats</h1>
+                        <h1 className="text-2xl font-bold">Manage Flats</h1>
                         <p className="text-muted-foreground">
                             {buildingInfo.buildingName} - Wing/Block: {buildingInfo.wingNumber}
                         </p>

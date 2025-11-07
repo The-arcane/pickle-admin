@@ -65,7 +65,7 @@ export default async function OrganizationPublicPage({ params }: { params: { id:
                             data-ai-hint="logo"
                         />
                         <div className="sm:ml-6 mt-4 sm:mt-0 flex-grow">
-                            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight">
                                 {org.name}
                             </h1>
                             <p className="text-gray-400 mt-1">Public Living Space</p>

@@ -61,7 +61,7 @@ export function BookingsClientPage({ bookings }: { bookings: PackageBooking[] })
                 <div className="flex items-center gap-3">
                     <Calendar className="h-8 w-8 text-rose-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Package Bookings</h1>
+                        <h1 className="text-2xl font-bold">Package Bookings</h1>
                         <p className="text-muted-foreground">Manage all package bookings for your organization.</p>
                     </div>
                 </div>

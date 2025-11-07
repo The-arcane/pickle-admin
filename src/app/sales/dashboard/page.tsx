@@ -92,7 +92,7 @@ export default function SalesDashboardPage() {
                             <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
                         </div>
                         <div>
-                            <p className="text-3xl font-bold">{stat.value}</p>
+                            <p className="text-2xl font-bold">{stat.value}</p>
                         </div>
                     </Card>
               </Link>

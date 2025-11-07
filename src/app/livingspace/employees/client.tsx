@@ -120,7 +120,7 @@ export function EmployeesClientPage({
                 <div className="flex items-center gap-3">
                     <Briefcase className="h-8 w-8 text-orange-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Employees</h1>
+                        <h1 className="text-2xl font-bold">Employees</h1>
                         <p className="text-muted-foreground">Manage employees for your Living Space.</p>
                     </div>
                 </div>

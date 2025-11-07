@@ -58,7 +58,7 @@ export default async function EducationDashboardPage() {
                     <stat.icon className={cn("h-6 w-6 text-muted-foreground", stat.color)} />
                 </div>
                 <div>
-                    <p className="text-3xl font-bold">{stat.value}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
                     <p className="text-xs text-muted-foreground">+2.1% from last month</p>
                 </div>
             </Card>

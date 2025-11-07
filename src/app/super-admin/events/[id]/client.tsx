@@ -189,7 +189,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
             <div className="space-y-8">
                  <form action={handleFormAction} className="space-y-8">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-3xl font-bold">{isAdding ? 'Add New Event' : 'Edit Event'}</h1>
+                        <h1 className="text-2xl font-bold">{isAdding ? 'Add New Event' : 'Edit Event'}</h1>
                         <div className="flex items-center gap-2">
                             <Button variant="outline" type="button" asChild><Link href={`${basePath}/events`}>Cancel</Link></Button>
                             <Button type="submit">Save Changes</Button>
