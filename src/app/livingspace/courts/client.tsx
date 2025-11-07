@@ -153,7 +153,7 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                         <div className="flex flex-col flex-grow">
                             <CardHeader>
                                 <div className="flex justify-between items-start">
-                                    <CardTitle className="text-lg">{court.name}</CardTitle>
+                                    <CardTitle className="text-lg truncate">{court.name}</CardTitle>
                                     {court.rating && (
                                         <div className="flex items-center gap-1 shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5">
                                             <Star className="h-3 w-3 text-amber-500 fill-amber-500"/>
@@ -177,7 +177,7 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                                 </div>
                             </CardContent>
                         </div>
-                        <CardFooter className="grid grid-cols-2 gap-2 p-2 pt-0">
+                        <CardFooter className="grid grid-cols-2 gap-2 p-2 pt-0 mt-auto">
                             <Button variant="outline" size="sm">Bookings</Button>
                             <Button variant="outline" size="sm">Manage Slots</Button>
                         </CardFooter>
