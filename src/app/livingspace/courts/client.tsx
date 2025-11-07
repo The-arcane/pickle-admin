@@ -150,32 +150,34 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                                 </DropdownMenu>
                             </div>
                         </div>
-                        <CardHeader>
-                            <div className="flex justify-between items-start">
-                                <CardTitle>{court.name}</CardTitle>
-                                {court.rating && (
-                                    <div className="flex items-center gap-1 shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5">
-                                        <Star className="h-3 w-3 text-amber-500 fill-amber-500"/>
-                                        <span className="text-xs font-bold text-amber-700 dark:text-amber-300">{court.rating.toFixed(1)}</span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex items-center text-sm text-muted-foreground gap-2 pt-1">
-                                <MapPin className="h-4 w-4 shrink-0" />
-                                <p className="truncate">{court.address}</p>
-                            </div>
-                        </CardHeader>
-                         <CardContent className="flex-grow">
-                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    {court.is_public ? 
-                                        <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs"><Globe className="h-3 w-3" /> Public</div> : 
-                                        <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-xs"><ShieldOff className="h-3 w-3" /> Private</div>}
+                        <div className="flex flex-col flex-grow">
+                            <CardHeader>
+                                <div className="flex justify-between items-start">
+                                    <CardTitle>{court.name}</CardTitle>
+                                    {court.rating && (
+                                        <div className="flex items-center gap-1 shrink-0 rounded-full bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5">
+                                            <Star className="h-3 w-3 text-amber-500 fill-amber-500"/>
+                                            <span className="text-xs font-bold text-amber-700 dark:text-amber-300">{court.rating.toFixed(1)}</span>
+                                        </div>
+                                    )}
                                 </div>
-                                <StatusBadge status={court.status} />
-                             </div>
-                        </CardContent>
-                        <CardFooter className="grid grid-cols-2 gap-2 p-2 pt-0">
+                                <div className="flex items-center text-sm text-muted-foreground gap-2 pt-1">
+                                    <MapPin className="h-4 w-4 shrink-0" />
+                                    <p className="truncate">{court.address}</p>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        {court.is_public ? 
+                                            <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs"><Globe className="h-3 w-3" /> Public</div> : 
+                                            <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-xs"><ShieldOff className="h-3 w-3" /> Private</div>}
+                                    </div>
+                                    <StatusBadge status={court.status} />
+                                </div>
+                            </CardContent>
+                        </div>
+                        <CardFooter className="grid grid-cols-2 gap-2 p-2 pt-0 mt-auto">
                             <Button variant="outline" size="sm">Bookings</Button>
                             <Button variant="outline" size="sm">Manage Slots</Button>
                         </CardFooter>
