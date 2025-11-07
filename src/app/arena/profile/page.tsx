@@ -36,7 +36,7 @@ export default async function ArenaProfilePage() {
       <div className="flex items-center gap-3">
         <User className="h-8 w-8 text-slate-500" />
         <div>
-            <h1 className="text-3xl font-bold">Admin Profile</h1>
+            <h1 className="text-2xl font-bold">Admin Profile</h1>
             <p className="text-muted-foreground">View your profile information.</p>
         </div>
       </div>

@@ -89,7 +89,7 @@ export function EditSessionClientPage({
                         <Link href="/education/attendance/sessions"><ChevronLeft className="h-4 w-4" /></Link>
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold">{isAdding ? 'Create Session' : 'Edit Session'}</h1>
+                        <h1 className="text-2xl font-bold">{isAdding ? 'Create Session' : 'Edit Session'}</h1>
                         <p className="text-muted-foreground">{isAdding ? 'Schedule a new class or practice.' : 'Update the session details.'}</p>
                     </div>
                 </div>

@@ -77,7 +77,7 @@ export default async function EmployeeDashboardPage() {
             />
         )}
         <div>
-            <h1 className="text-3xl font-bold">Employee Dashboard</h1>
+            <h1 className="text-2xl font-bold">Employee Dashboard</h1>
             <p className="text-muted-foreground">Welcome! Access your tools and view bookings here.</p>
         </div>
       </div>

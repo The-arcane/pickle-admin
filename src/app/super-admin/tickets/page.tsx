@@ -21,7 +21,7 @@ export default function SuperAdminTicketsPage() {
         <div className="flex items-center gap-3">
             <Ticket className="h-8 w-8 text-orange-500" />
             <div>
-                <h1 className="text-3xl font-bold">Support Tickets</h1>
+                <h1 className="text-2xl font-bold">Support Tickets</h1>
                 <p className="text-muted-foreground">Monitor and manage all support tickets across the platform.</p>
             </div>
         </div>

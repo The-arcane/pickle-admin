@@ -1,3 +1,4 @@
+
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { ThemeSelect } from '@/components/theme-select';
@@ -10,7 +11,7 @@ export default function SuperAdminSettingsPage() {
       <div className="flex items-center gap-3">
         <Settings className="h-8 w-8 text-gray-500" />
         <div>
-            <h1 className="text-3xl font-bold">Settings</h1>
+            <h1 className="text-2xl font-bold">Settings</h1>
             <p className="text-muted-foreground">
             Manage your application preferences.
             </p>

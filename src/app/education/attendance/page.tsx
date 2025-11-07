@@ -29,7 +29,7 @@ export default function AttendanceSessionsPage() {
         <div className="flex items-center gap-3">
             <CalendarCheck className="h-8 w-8 text-primary" />
             <div>
-            <h1 className="text-3xl font-bold">Attendance</h1>
+            <h1 className="text-2xl font-bold">Attendance</h1>
             <p className="text-muted-foreground">Select a session to mark attendance.</p>
             </div>
         </div>

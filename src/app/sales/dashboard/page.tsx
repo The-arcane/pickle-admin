@@ -63,7 +63,7 @@ export default function SalesDashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Sales Dashboard</h1>
+        <h1 className="text-2xl font-bold">Sales Dashboard</h1>
         <p className="text-muted-foreground">A high-level overview of platform-wide activity.</p>
         <p className="text-sm text-muted-foreground mt-2">
             {format(currentDateTime, 'eeee, MMMM d, yyyy, hh:mm:ss a')}

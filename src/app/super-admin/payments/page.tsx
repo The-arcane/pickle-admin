@@ -19,7 +19,7 @@ export default function SuperAdminPaymentsPage() {
             <div className="flex items-center gap-3">
                 <Banknote className="h-8 w-8 text-green-500" />
                 <div>
-                    <h1 className="text-3xl font-bold">Payments & Payouts</h1>
+                    <h1 className="text-2xl font-bold">Payments & Payouts</h1>
                     <p className="text-muted-foreground">Monitor and manage payouts to all Living Spaces.</p>
                 </div>
             </div>

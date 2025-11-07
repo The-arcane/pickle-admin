@@ -19,7 +19,7 @@ export default function ArenaTransfersPage() {
             <div className="flex items-center gap-3">
                 <Banknote className="h-8 w-8 text-gray-500" />
                 <div>
-                    <h1 className="text-3xl font-bold">Transfers</h1>
+                    <h1 className="text-2xl font-bold">Transfers</h1>
                     <p className="text-muted-foreground">Manage payouts to your bank account.</p>
                 </div>
             </div>

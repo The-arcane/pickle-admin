@@ -20,7 +20,7 @@ export default function SuperAdminTransactionsPage() {
             <div className="flex items-center gap-3">
                 <ArrowRightLeft className="h-8 w-8 text-gray-500" />
                 <div>
-                    <h1 className="text-3xl font-bold">Transactions</h1>
+                    <h1 className="text-2xl font-bold">Transactions</h1>
                     <p className="text-muted-foreground">Review all financial transactions across the platform.</p>
                 </div>
             </div>

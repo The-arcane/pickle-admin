@@ -44,7 +44,7 @@ export default async function EducationDashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Welcome, {userProfile?.name ?? 'Admin'}!</h1>
+        <h1 className="text-2xl font-bold">Welcome, {userProfile?.name ?? 'Admin'}!</h1>
         <p className="text-muted-foreground">Here’s a snapshot of what’s happening at your school today.</p>
       </div>
       

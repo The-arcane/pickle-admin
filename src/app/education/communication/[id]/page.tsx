@@ -70,7 +70,7 @@ export default function EditFacultyPage() {
             <Link href="/education/communication"><ChevronLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">{isAdding ? 'Add New Faculty' : 'Edit Faculty Profile'}</h1>
+            <h1 className="text-2xl font-bold">{isAdding ? 'Add New Faculty' : 'Edit Faculty Profile'}</h1>
             <p className="text-muted-foreground">{isAdding ? 'Create a new profile for a faculty or coach.' : `Editing profile for ${name}`}</p>
           </div>
         </div>

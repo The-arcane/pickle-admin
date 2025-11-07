@@ -19,7 +19,7 @@ export default function BankDetailsPage() {
         <div className="flex items-center gap-3">
             <Landmark className="h-8 w-8 text-gray-500" />
             <div>
-                <h1 className="text-3xl font-bold">Bank Details</h1>
+                <h1 className="text-2xl font-bold">Bank Details</h1>
                 <p className="text-muted-foreground">Manage your bank account for receiving payouts.</p>
             </div>
         </div>

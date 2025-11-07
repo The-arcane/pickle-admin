@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
@@ -8,7 +9,7 @@ export default function EmployeeSettingsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-2xl font-bold">Settings</h1>
         <p className="text-muted-foreground">
           Manage your application preferences.
         </p>

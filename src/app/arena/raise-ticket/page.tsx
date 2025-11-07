@@ -22,7 +22,7 @@ export default function RaiseTicketPage() {
         <div className="flex items-center gap-3">
             <Ticket className="h-8 w-8 text-orange-500" />
             <div>
-                <h1 className="text-3xl font-bold">Raise a Ticket</h1>
+                <h1 className="text-2xl font-bold">Raise a Ticket</h1>
                 <p className="text-muted-foreground">Submit a support request to our team.</p>
             </div>
         </div>

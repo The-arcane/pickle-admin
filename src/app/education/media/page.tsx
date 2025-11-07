@@ -51,7 +51,7 @@ export default function MediaPage() {
             <div className="flex items-center gap-3">
                 <ImageIcon className="h-8 w-8 text-cyan-500" />
                 <div>
-                    <h1 className="text-3xl font-bold">Content & Media Management</h1>
+                    <h1 className="text-2xl font-bold">Content & Media Management</h1>
                     <p className="text-muted-foreground">Manage photos, videos, and highlights.</p>
                 </div>
             </div>

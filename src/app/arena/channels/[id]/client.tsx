@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -118,7 +119,7 @@ export function EditChannelClientPage({ channel, members, users }: { channel: Ch
                     <div className="flex items-center gap-3">
                         <Radio className="h-8 w-8 text-indigo-500" />
                         <div>
-                            <h1 className="text-3xl font-bold">{isAdding ? 'Add New Channel' : 'Edit Channel'}</h1>
+                            <h1 className="text-2xl font-bold">{isAdding ? 'Add New Channel' : 'Edit Channel'}</h1>
                             <p className="text-muted-foreground">{isAdding ? 'Create a new channel for your Arena.' : 'Update the channel details.'}</p>
                         </div>
                     </div>

@@ -65,7 +65,7 @@ export default function HealthAndSafetyPage() {
             <div className="flex items-center gap-3">
                 <HeartPulse className="h-8 w-8 text-red-500" />
                 <div>
-                    <h1 className="text-3xl font-bold">Health &amp; Safety</h1>
+                    <h1 className="text-2xl font-bold">Health &amp; Safety</h1>
                     <p className="text-muted-foreground">Monitor student health, log injuries, and manage safety protocols.</p>
                 </div>
             </div>

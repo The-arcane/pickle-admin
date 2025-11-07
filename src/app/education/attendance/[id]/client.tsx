@@ -128,7 +128,7 @@ export function MarkAttendanceClientPage({
                         <Link href="/education/attendance"><ChevronLeft className="h-4 w-4" /></Link>
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold">{session.name}</h1>
+                        <h1 className="text-2xl font-bold">{session.name}</h1>
                         <p className="text-muted-foreground">Mark attendance for each student.</p>
                     </div>
                 </div>

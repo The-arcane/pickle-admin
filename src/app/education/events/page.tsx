@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -65,7 +66,7 @@ export default function EventsListPage() {
         <div className="flex items-center gap-3">
           <PartyPopper className="h-8 w-8 text-pink-500" />
           <div>
-            <h1 className="text-3xl font-bold">Event Management</h1>
+            <h1 className="text-2xl font-bold">Event Management</h1>
             <p className="text-muted-foreground">Schedule, manage, and track all school pickleball events.</p>
           </div>
         </div>

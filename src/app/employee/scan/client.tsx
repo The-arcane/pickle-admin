@@ -116,7 +116,7 @@ export function QrScannerClient() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">QR Code Scanner</h1>
+        <h1 className="text-2xl font-bold">QR Code Scanner</h1>
         <p className="text-muted-foreground">Point the camera at a booking QR code. It will scan automatically.</p>
       </div>
       

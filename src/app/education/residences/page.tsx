@@ -67,7 +67,7 @@ export default async function ParentsPage() {
                 <div className="flex items-center gap-3">
                     <Home className="h-8 w-8 text-teal-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Residents</h1>
+                        <h1 className="text-2xl font-bold">Residents</h1>
                         <p className="text-muted-foreground">Manage and invite residents to your school.</p>
                     </div>
                 </div>

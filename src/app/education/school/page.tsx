@@ -32,7 +32,7 @@ export default async function SchoolProfilePage() {
         <div className="flex items-center gap-3">
             <School className="h-8 w-8 text-primary" />
             <div>
-                <h1 className="text-3xl font-bold">School Profile</h1>
+                <h1 className="text-2xl font-bold">School Profile</h1>
                 <p className="text-muted-foreground">View your school's details.</p>
             </div>
         </div>

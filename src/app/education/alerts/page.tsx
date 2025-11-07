@@ -53,7 +53,7 @@ export default function AlertsPage() {
             <div className="flex items-center gap-3">
                 <ShieldAlert className="h-8 w-8 text-red-500" />
                 <div>
-                    <h1 className="text-3xl font-bold">Emergency Alerts</h1>
+                    <h1 className="text-2xl font-bold">Emergency Alerts</h1>
                     <p className="text-muted-foreground">Send urgent communications to parents and faculty.</p>
                 </div>
             </div>

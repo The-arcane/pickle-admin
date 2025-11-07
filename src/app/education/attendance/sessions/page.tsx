@@ -31,7 +31,7 @@ export default async function AttendanceSessionsListPage() {
         <div className="flex items-center gap-3">
             <BookCopy className="h-8 w-8 text-primary" />
             <div>
-            <h1 className="text-3xl font-bold">Manage Sessions</h1>
+            <h1 className="text-2xl font-bold">Manage Sessions</h1>
             <p className="text-muted-foreground">Create, view, and edit class and practice sessions.</p>
             </div>
         </div>

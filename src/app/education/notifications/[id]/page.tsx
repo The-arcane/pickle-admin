@@ -100,7 +100,7 @@ export default function EditNotificationPage() {
             <Link href="/education/notifications"><ChevronLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">{isAdding ? 'Create Notification' : 'Edit Notification'}</h1>
+            <h1 className="text-2xl font-bold">{isAdding ? 'Create Notification' : 'Edit Notification'}</h1>
             <p className="text-muted-foreground">{isAdding ? 'Build and schedule a new notification.' : 'Update the notification details.'}</p>
           </div>
         </div>

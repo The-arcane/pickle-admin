@@ -157,7 +157,7 @@ export default async function ArenaDashboardPage() {
   if (!orgLink) {
       return (
           <div className="space-y-8 text-center py-10">
-              <h1 className="text-3xl font-bold">Welcome, {userProfile.name ?? 'Admin'}!</h1>
+              <h1 className="text-2xl font-bold">Welcome, {userProfile.name ?? 'Admin'}!</h1>
               <p className="text-muted-foreground">Your account is not yet linked to an arena.</p>
           </div>
       );
@@ -196,7 +196,7 @@ export default async function ArenaDashboardPage() {
                 />
             )}
             <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground">Here’s a snapshot of your arena's activities.</p>
             </div>
         </div>

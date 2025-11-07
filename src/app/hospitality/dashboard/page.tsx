@@ -56,7 +56,7 @@ export default async function HospitalityDashboardPage() {
   if (!orgLink) {
       return (
           <div className="space-y-8 text-center py-10">
-              <h1 className="text-3xl font-bold">Welcome, {userProfile.name ?? 'Admin'}!</h1>
+              <h1 className="text-2xl font-bold">Welcome, {userProfile.name ?? 'Admin'}!</h1>
               <p className="text-muted-foreground">Your account is not yet linked to a hospitality organization.</p>
           </div>
       );
@@ -73,7 +73,7 @@ export default async function HospitalityDashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Welcome, {userProfile.name ?? 'Admin'}!</h1>
+        <h1 className="text-2xl font-bold">Welcome, {userProfile.name ?? 'Admin'}!</h1>
         <p className="text-muted-foreground">Here’s a snapshot of your hospitality services.</p>
       </div>
 

@@ -48,7 +48,7 @@ export default function SeasonPage() {
                 <div className="flex items-center gap-3">
                     <Trophy className="h-8 w-8 text-yellow-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Season & Leaderboard</h1>
+                        <h1 className="text-2xl font-bold">Season & Leaderboard</h1>
                         <p className="text-muted-foreground">Manage the active season and view team standings.</p>
                     </div>
                 </div>

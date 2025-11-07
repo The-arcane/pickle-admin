@@ -28,7 +28,7 @@ export default function ArenaInvoicesPage() {
         <div className="flex items-center gap-3">
           <Receipt className="h-8 w-8 text-gray-500" />
           <div>
-            <h1 className="text-3xl font-bold">Invoices</h1>
+            <h1 className="text-2xl font-bold">Invoices</h1>
             <p className="text-muted-foreground">View and manage invoices for your sports venue.</p>
           </div>
         </div>

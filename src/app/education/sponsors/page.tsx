@@ -83,7 +83,7 @@ export default function SponsorshipPage() {
                 <div className="flex items-center gap-3">
                     <Handshake className="h-8 w-8 text-green-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Sponsorships &amp; Funding</h1>
+                        <h1 className="text-2xl font-bold">Sponsorships &amp; Funding</h1>
                         <p className="text-muted-foreground">Track and manage sponsorships for your school's activities.</p>
                     </div>
                 </div>

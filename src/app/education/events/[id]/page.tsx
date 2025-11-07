@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -143,7 +144,7 @@ export default function EditEventPage() {
             <Link href="/education/events"><ChevronLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">{isAdding ? 'Create New Event' : 'Manage Event'}</h1>
+            <h1 className="text-2xl font-bold">{isAdding ? 'Create New Event' : 'Manage Event'}</h1>
             <p className="text-muted-foreground">{isAdding ? 'Fill in the details for the new event.' : event?.name}</p>
           </div>
         </div>

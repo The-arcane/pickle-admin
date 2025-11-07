@@ -23,7 +23,7 @@ export default function TicketConversationPage({ params }: { params: { id: strin
             <div className="flex items-center gap-3">
                 <Ticket className="h-8 w-8 text-orange-500" />
                 <div>
-                    <h1 className="text-3xl font-bold">Ticket Details</h1>
+                    <h1 className="text-2xl font-bold">Ticket Details</h1>
                     <p className="text-muted-foreground font-mono">ID: {params.id}</p>
                 </div>
             </div>

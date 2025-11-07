@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,7 +31,7 @@ export default async function SuperAdminProfilePage() {
       <div className="flex items-center gap-3">
         <User className="h-8 w-8 text-slate-500" />
         <div>
-            <h1 className="text-3xl font-bold">Super Admin Profile</h1>
+            <h1 className="text-2xl font-bold">Super Admin Profile</h1>
             <p className="text-muted-foreground">Manage your profile information.</p>
         </div>
       </div>

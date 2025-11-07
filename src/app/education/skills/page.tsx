@@ -43,7 +43,7 @@ export default function SkillsPage() {
             <div className="flex items-center gap-3">
                 <Trophy className="h-8 w-8 text-yellow-500" />
                 <div>
-                    <h1 className="text-3xl font-bold">Skill Assessment</h1>
+                    <h1 className="text-2xl font-bold">Skill Assessment</h1>
                     <p className="text-muted-foreground">Track player progress and manage assessments.</p>
                 </div>
             </div>

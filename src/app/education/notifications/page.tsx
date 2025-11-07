@@ -63,7 +63,7 @@ export default function NotificationsListPage() {
         <div className="flex items-center gap-3">
           <Megaphone className="h-8 w-8 text-yellow-500" />
           <div>
-            <h1 className="text-3xl font-bold">Notifications</h1>
+            <h1 className="text-2xl font-bold">Notifications</h1>
             <p className="text-muted-foreground">Manage and schedule communications for all events.</p>
           </div>
         </div>

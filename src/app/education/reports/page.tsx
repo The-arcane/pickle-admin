@@ -34,7 +34,7 @@ export default function ReportsPage() {
                 <div className="flex items-center gap-3">
                     <ChartIcon className="h-8 w-8 text-green-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">Reports & Analytics Hub</h1>
+                        <h1 className="text-2xl font-bold">Reports & Analytics Hub</h1>
                         <p className="text-muted-foreground">Key metrics and performance overview.</p>
                     </div>
                 </div>

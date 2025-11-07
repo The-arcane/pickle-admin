@@ -27,7 +27,7 @@ export default function CalendarPage() {
                 <div className="flex items-center gap-3">
                     <CalendarIcon className="h-8 w-8 text-blue-500" />
                     <div>
-                        <h1 className="text-3xl font-bold">School Calendar</h1>
+                        <h1 className="text-2xl font-bold">School Calendar</h1>
                         <p className="text-muted-foreground">View all scheduled classes and events.</p>
                     </div>
                 </div>
