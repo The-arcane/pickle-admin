@@ -1,6 +1,6 @@
 
 import { createServer } from '@/lib/supabase/server';
-import { ResidencesClientPage } from '@/app/dashboard/residences/client';
+//import { ResidencesClientPage } from '@/app/dashboard/residences/client';
 import { redirect } from 'next/navigation';
 import { Home } from 'lucide-react';
 
@@ -72,11 +72,11 @@ export default async function ParentsPage() {
                     </div>
                 </div>
             </div>
-            <ResidencesClientPage 
+            {/* <ResidencesClientPage 
                 initialResidences={processedResidences} 
                 organisationId={organisationId}
                 loading={false}
-            />
+            /> */}
         </div>
     );
 }
