@@ -2,18 +2,64 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { ChevronLeft, Send, Ticket } from "lucide-react";
 import Link from "next/link";
+import { createServer } from "@/lib/supabase/server";
+import { notFound, redirect } from "next/navigation";
+import { format, formatDistanceToNow } from 'date-fns';
+import { ConversationClient } from "./client";
 
-const mockConversation = [
-    { from: 'user', message: 'Hi, I noticed the payout for July seems to be incorrect. Can you please look into it?', time: '2 days ago' },
-    { from: 'support', message: 'Hello! Thank you for reaching out. We are sorry for the inconvenience. Could you please provide the transaction ID for the payout?', time: '2 days ago' },
-    { from: 'user', message: 'Yes, the transaction ID is TR-001.', time: '1 day ago' },
-    { from: 'support', message: 'Thank you. We are investigating this and will get back to you with an update within 24 hours. The ticket status has been set to "In Progress".', time: '1 day ago' },
-];
+export const dynamic = 'force-dynamic';
 
-export default function TicketConversationPage({ params }: { params: { id: string } }) {
+function getInitials(name: string | undefined | null) {
+  if (!name) return 'U';
+  const names = name.split(' ').filter(Boolean);
+  if (names.length > 1) {
+    return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+  }
+  return names[0]?.substring(0, 2).toUpperCase() ?? 'U';
+};
+
+export default async function TicketConversationPage({ params }: { params: { id: string } }) {
+    const supabase = await createServer();
+    const ticketId = Number(params.id);
+    
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) {
+        return redirect('/login?type=arena');
+    }
+
+    const { data: ticket, error: ticketError } = await supabase
+        .from('tickets')
+        .select('*, user:user_id(name, profile_image_url), organisation:organisation_id(name)')
+        .eq('id', ticketId)
+        .single();
+    
+    if (ticketError || !ticket) {
+        console.error("Error fetching ticket:", ticketError);
+        notFound();
+    }
+
+    const { data: messages, error: messagesError } = await supabase
+        .from('ticket_messages')
+        .select('*, user:user_id(id, name, profile_image_url, user_type)')
+        .eq('ticket_id', ticketId)
+        .order('created_at', { ascending: true });
+
+    if(messagesError) {
+        console.error("Error fetching messages:", messagesError);
+    }
+
+    const processedMessages = messages?.map(msg => ({
+        id: msg.id,
+        message: msg.message,
+        time: formatDistanceToNow(new Date(msg.created_at), { addSuffix: true }),
+        from: msg.user?.id === authUser.id ? 'user' : 'support',
+        userInitials: getInitials(msg.user?.name),
+        isSuperAdmin: msg.user?.user_type === 3,
+    })) || [];
+
+
   return (
     <div className="space-y-6">
         <div className="flex items-center gap-3">
@@ -23,44 +69,17 @@ export default function TicketConversationPage({ params }: { params: { id: strin
             <div className="flex items-center gap-3">
                 <Ticket className="h-8 w-8 text-orange-500" />
                 <div>
-                    <h1 className="text-2xl font-bold">Ticket Details</h1>
-                    <p className="text-muted-foreground font-mono">ID: {params.id}</p>
+                    <h1 className="text-2xl font-bold truncate max-w-sm sm:max-w-md">Re: {ticket.subject}</h1>
+                    <p className="text-muted-foreground font-mono">ID: {ticket.id} | Status: {ticket.status}</p>
                 </div>
             </div>
         </div>
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Conversation History</CardTitle>
-                <CardDescription>Review the messages between you and the support team.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-4">
-                    {mockConversation.map((msg, index) => (
-                         <div key={index} className={`flex items-start gap-3 ${msg.from === 'user' ? 'justify-end' : ''}`}>
-                             {msg.from === 'support' && (
-                                <Avatar className="h-8 w-8">
-                                    <AvatarFallback>S</AvatarFallback>
-                                </Avatar>
-                             )}
-                            <div className={`p-3 rounded-lg max-w-lg ${msg.from === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                                <p className="text-sm">{msg.message}</p>
-                                <p className={`text-xs mt-1 ${msg.from === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{msg.time}</p>
-                            </div>
-                             {msg.from === 'user' && (
-                                <Avatar className="h-8 w-8">
-                                    <AvatarFallback>U</AvatarFallback>
-                                </Avatar>
-                             )}
-                         </div>
-                    ))}
-                 </div>
-                <div className="flex items-center gap-2 pt-4 border-t">
-                    <Input placeholder="Type your reply..."/>
-                    <Button><Send className="mr-2 h-4 w-4" /> Reply</Button>
-                </div>
-            </CardContent>
-        </Card>
+        <ConversationClient
+            ticketId={ticketId}
+            initialMessages={processedMessages}
+            currentUserId={authUser.id}
+        />
     </div>
   );
 }

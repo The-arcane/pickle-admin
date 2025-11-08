@@ -1,22 +1,45 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Ticket, MessagesSquare } from "lucide-react";
+import { MessagesSquare, Ticket } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
 import Link from "next/link";
+import { createServer } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { formatDistanceToNow } from 'date-fns';
+import { RaiseTicketForm } from "./form";
 
-const mockTickets = [
-  { id: 'TKT-001', subject: 'Payout for July is incorrect', submitted: '2 days ago', status: 'In Progress' },
-  { id: 'TKT-002', subject: 'Unable to add new court', submitted: '5 days ago', status: 'Closed' },
-  { id: 'TKT-003', subject: 'Question about event scheduling', submitted: '1 week ago', status: 'Closed' },
-];
+export const dynamic = 'force-dynamic';
 
-export default function RaiseTicketPage() {
+export default async function RaiseTicketPage() {
+    const supabase = await createServer();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return redirect('/login?type=arena');
+    }
+
+    const { data: userProfile } = await supabase.from('user').select('id, user_organisations(organisation_id)').eq('user_uuid', user.id).single();
+    if (!userProfile) {
+        return <p className="text-muted-foreground">Could not find your user profile.</p>;
+    }
+    const organisationId = userProfile.user_organisations[0]?.organisation_id;
+    if (!organisationId) {
+        return <p className="text-muted-foreground">You are not associated with an organization.</p>;
+    }
+
+    const { data: tickets, error } = await supabase
+        .from('tickets')
+        .select('id, subject, created_at, status, priority')
+        .eq('user_id', userProfile.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+    
+    if (error) {
+        console.error("Error fetching tickets:", error);
+    }
+
   return (
     <div className="space-y-8">
         <div className="flex items-center gap-3">
@@ -28,41 +51,7 @@ export default function RaiseTicketPage() {
         </div>
 
         <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>New Support Ticket</CardTitle>
-                    <CardDescription>Describe your issue below and we'll get back to you as soon as possible.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="subject">Subject</Label>
-                        <Input id="subject" placeholder="e.g., Issue with a booking" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="priority">Priority</Label>
-                        <Select>
-                            <SelectTrigger id="priority">
-                                <SelectValue placeholder="Select a priority" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="low">Low</SelectItem>
-                                <SelectItem value="medium">Medium</SelectItem>
-                                <SelectItem value="high">High</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea id="description" placeholder="Please provide as much detail as possible..." rows={6} />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="attachment">Attachment</Label>
-                        <Input id="attachment" type="file" />
-                        <p className="text-xs text-muted-foreground">Optional: Attach a screenshot or relevant file.</p>
-                    </div>
-                    <Button className="w-full">Submit Ticket</Button>
-                </CardContent>
-            </Card>
+            <RaiseTicketForm organisationId={organisationId} />
 
              <Card>
                 <CardHeader>
@@ -75,20 +64,27 @@ export default function RaiseTicketPage() {
                             <TableRow>
                                 <TableHead>Subject</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead>Conversation</TableHead>
+                                <TableHead>Priority</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {mockTickets.map((ticket) => (
+                            {tickets && tickets.length > 0 ? (
+                                tickets.map((ticket) => (
                                 <TableRow key={ticket.id}>
                                     <TableCell>
                                         <p className="font-medium">{ticket.subject}</p>
-                                        <p className="text-xs text-muted-foreground">{ticket.id} &middot; {ticket.submitted}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {`#${ticket.id}`} &middot; {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
+                                        </p>
                                     </TableCell>
                                     <TableCell>
                                         <StatusBadge status={ticket.status} />
                                     </TableCell>
                                     <TableCell>
+                                        <StatusBadge status={ticket.priority} />
+                                    </TableCell>
+                                    <TableCell className="text-right">
                                         <Button asChild variant="outline" size="sm">
                                             <Link href={`/arena/raise-ticket/${ticket.id}`}>
                                                 <MessagesSquare className="mr-2 h-4 w-4" />
@@ -97,7 +93,12 @@ export default function RaiseTicketPage() {
                                         </Button>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center">No recent tickets found.</TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
