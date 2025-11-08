@@ -12,7 +12,7 @@ import { Calendar as CalendarIcon, Plus, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import type { AvailabilityBlock } from '@/app/super-admin/courts/[id]/types';
 import { useFormStatus } from 'react-dom';
 
@@ -80,10 +80,10 @@ export function UnavailabilityClientPage({ courtId, initialAvailability, basePat
                                     <PopoverTrigger asChild>
                                         <Button type="button" variant="outline" className={cn("w-full justify-start text-left font-normal", !block.date && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {block.date ? format(new Date(block.date), "PPP") : <span>Pick a date</span>}
+                                            {block.date ? format(parseISO(block.date), "PPP") : <span>Pick a date</span>}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={block.date ? new Date(block.date) : undefined} onSelect={(date) => handleAvailabilityChange(index, 'date', date ? format(date, 'yyyy-MM-dd') : null)} initialFocus/></PopoverContent>
+                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={block.date ? parseISO(block.date) : undefined} onSelect={(date) => handleAvailabilityChange(index, 'date', date ? format(date, 'yyyy-MM-dd') : null)} initialFocus/></PopoverContent>
                                 </Popover>
                             </div>
                              <div className="space-y-1.5">
