@@ -37,7 +37,7 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
         notFound();
     }
     
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date().toISOString();
 
     const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
@@ -48,7 +48,7 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
             booking_status:booking_status(label)
         `)
         .eq('court_id', courtId)
-        .gte('timeslots.date', today)
+        .gte('timeslots.end_time', now)
         .order('date', { referencedTable: 'timeslots', ascending: true })
         .order('start_time', { referencedTable: 'timeslots', ascending: true });
     
@@ -65,7 +65,7 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
                 .from('user_organisations')
                 .select(`
                     user_id,
-                    flats(flat_number, building_numbers(number, buildings(name)))
+                    flats!left(flat_number, building_numbers(number, buildings(name)))
                 `)
                 .in('user_id', userIds);
                 
