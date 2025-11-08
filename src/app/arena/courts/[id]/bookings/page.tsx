@@ -3,7 +3,7 @@ import { createServer } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, ChevronLeft, Clock, User } from 'lucide-react';
+import { Calendar, ChevronLeft, Clock, Home, User } from 'lucide-react';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { StatusBadge } from '@/components/status-badge';
@@ -40,16 +40,35 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
     const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
-            id, booking_status, user:user_id(name), 
+            id, booking_status,
+            user:user_id(name), 
+            user_organisation:user_organisations!left(
+                flats(flat_number, building_numbers(number, buildings(name)))
+            ),
             timeslots:timeslot_id(date, start_time, end_time),
             booking_status:booking_status(label)
         `)
         .eq('court_id', courtId)
         .order('id', { ascending: false });
-
+    
     if (bookingsError) {
         console.error("Error fetching bookings for court:", bookingsError);
     }
+    
+    const getFlatDetails = (booking: any) => {
+        const org = booking.user_organisation?.[0];
+        if (!org || !org.flats) return null;
+        
+        const flat = org.flats;
+        const buildingNumber = flat.building_numbers;
+        const building = buildingNumber?.buildings;
+
+        if (building && buildingNumber && flat) {
+            return `${building.name}, ${buildingNumber.number}, Flat ${flat.flat_number}`;
+        }
+        return null;
+    }
+
 
     return (
         <div className="space-y-6">
@@ -65,29 +84,38 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
             
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {bookings && bookings.length > 0 ? (
-                    bookings.map(b => (
-                        <Card key={b.id}>
-                            <CardHeader>
-                                <div className="flex justify-between items-start">
-                                    <CardTitle className="text-base font-semibold flex items-center gap-2">
-                                        <User className="h-4 w-4 text-muted-foreground" />
-                                        {b.user?.name ?? 'N/A'}
-                                    </CardTitle>
-                                    <StatusBadge status={b.booking_status?.label ?? 'Unknown'} />
-                                </div>
-                            </CardHeader>
-                            <CardContent className="text-sm space-y-2">
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Calendar className="h-4 w-4" />
-                                    <span>{b.timeslots?.date ? format(parseISO(b.timeslots.date), 'PP') : 'N/A'}</span>
-                                </div>
-                                 <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Clock className="h-4 w-4" />
-                                    <span>{`${formatTime(b.timeslots?.start_time)} - ${formatTime(b.timeslots?.end_time)}`}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))
+                    bookings.map(b => {
+                        const flatDetails = getFlatDetails(b);
+                        return (
+                            <Card key={b.id}>
+                                <CardHeader>
+                                    <div className="flex justify-between items-start">
+                                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                            <User className="h-4 w-4 text-muted-foreground" />
+                                            {b.user?.name ?? 'N/A'}
+                                        </CardTitle>
+                                        <StatusBadge status={b.booking_status?.label ?? 'Unknown'} />
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="text-sm space-y-2">
+                                    {flatDetails && (
+                                         <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Home className="h-4 w-4" />
+                                            <span>{flatDetails}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Calendar className="h-4 w-4" />
+                                        <span>{b.timeslots?.date ? format(parseISO(b.timeslots.date), 'PP') : 'N/A'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Clock className="h-4 w-4" />
+                                        <span>{`${formatTime(b.timeslots?.start_time)} - ${formatTime(b.timeslots?.end_time)}`}</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )
+                    })
                 ) : (
                     <div className="col-span-full text-center py-10 text-muted-foreground">
                         No bookings found for this court.
