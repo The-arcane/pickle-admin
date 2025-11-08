@@ -33,7 +33,7 @@ function SubmitButton() {
 
 export function UnavailabilityClientPage({ courtId, initialAvailability, basePath = '/livingspace' }: UnavailabilityClientPageProps) {
     const { toast } = useToast();
-    const [availability, setAvailability] = useState<Partial<AvailabilityBlock>[]>([]);
+    const [availability, setAvailability] = useState<Partial<AvailabilityBlock>[]>(initialAvailability);
 
     useEffect(() => {
         setAvailability(initialAvailability);
