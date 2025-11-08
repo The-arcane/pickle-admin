@@ -36,17 +36,21 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
     if (courtError || !court) {
         notFound();
     }
+    
+    const today = new Date().toISOString().split('T')[0];
 
     const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
             id, booking_status,
             user:user_id(id, name), 
-            timeslots:timeslot_id(date, start_time, end_time),
+            timeslots:timeslot_id!inner(date, start_time, end_time),
             booking_status:booking_status(label)
         `)
         .eq('court_id', courtId)
-        .order('id', { ascending: false });
+        .gte('timeslots.date', today)
+        .order('date', { referencedTable: 'timeslots', ascending: true })
+        .order('start_time', { referencedTable: 'timeslots', ascending: true });
     
     if (bookingsError) {
         console.error("Error fetching bookings for court:", bookingsError);
@@ -56,25 +60,27 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
     if (bookings && bookings.length > 0) {
         const userIds = bookings.map(b => b.user?.id).filter(Boolean) as number[];
         
-        const { data: orgData } = await supabase
-            .from('user_organisations')
-            .select(`
-                user_id,
-                flats(flat_number, building_numbers(number, buildings(name)))
-            `)
-            .in('user_id', userIds);
+        if (userIds.length > 0) {
+            const { data: orgData } = await supabase
+                .from('user_organisations')
+                .select(`
+                    user_id,
+                    flats(flat_number, building_numbers(number, buildings(name)))
+                `)
+                .in('user_id', userIds);
+                
+            const userOrgMap = new Map();
+            if (orgData) {
+                orgData.forEach(org => {
+                    userOrgMap.set(org.user_id, org);
+                });
+            }
             
-        const userOrgMap = new Map();
-        if (orgData) {
-            orgData.forEach(org => {
-                userOrgMap.set(org.user_id, org);
-            });
+            bookingsWithFlatDetails = bookings.map(booking => ({
+                ...booking,
+                user_organisation: booking.user ? userOrgMap.get(booking.user.id) : null
+            }));
         }
-        
-        bookingsWithFlatDetails = bookings.map(booking => ({
-            ...booking,
-            user_organisation: booking.user ? userOrgMap.get(booking.user.id) : null
-        }));
     }
 
     const getFlatDetails = (booking: any) => {
@@ -99,8 +105,8 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
                     <Link href="/super-admin/courts"><ChevronLeft className="h-4 w-4" /></Link>
                 </Button>
                 <div>
-                    <h1 className="text-2xl font-bold">Bookings for {court.name}</h1>
-                    <p className="text-muted-foreground">A list of all past and upcoming bookings for this court.</p>
+                    <h1 className="text-2xl font-bold">Upcoming Bookings for {court.name}</h1>
+                    <p className="text-muted-foreground">A list of all upcoming bookings for this court.</p>
                 </div>
             </div>
             
@@ -140,7 +146,7 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
                     })
                 ) : (
                     <div className="col-span-full text-center py-10 text-muted-foreground">
-                        No bookings found for this court.
+                        No upcoming bookings found for this court.
                     </div>
                 )}
             </div>
