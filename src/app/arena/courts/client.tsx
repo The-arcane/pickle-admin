@@ -50,6 +50,12 @@ type Sport = {
     name: string;
 }
 
+const operationalStatuses = [
+    { id: 1, label: 'Open' },
+    { id: 3, label: 'Maintenance' },
+    { id: 2, label: 'Closed' }
+];
+
 export function CourtsClientPage({ courts, organisations, sports }: { courts: Court[], organisations: Organisation[], sports: Sport[] }) {
     const [venueFilter, setVenueFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -62,15 +68,6 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
             return venueMatch && searchMatch;
         });
     }, [courts, venueFilter, searchQuery]);
-    
-    const handleStatusToggle = async (courtId: number, newStatus: boolean) => {
-        const result = await toggleCourtPublicStatus(courtId, newStatus);
-        if (result.error) {
-            toast({ variant: 'destructive', title: 'Error', description: result.error });
-        } else {
-            toast({ title: 'Success', description: `Court visibility updated to ${newStatus ? 'Public' : 'Private'}.` });
-        }
-    }
     
     const handleOperationalStatusChange = async (courtId: number, statusId: number) => {
       const formData = new FormData();
@@ -152,9 +149,9 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                                             <DropdownMenuSub>
                                                 <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
                                                 <DropdownMenuSubContent>
-                                                    <DropdownMenuItem onSelect={() => handleOperationalStatusChange(court.id, 1)}>Open</DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => handleOperationalStatusChange(court.id, 3)}>Maintenance</DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => handleOperationalStatusChange(court.id, 2)}>Closed</DropdownMenuItem>
+                                                    {operationalStatuses.map(status => (
+                                                        <DropdownMenuItem key={status.id} onSelect={() => handleOperationalStatusChange(court.id, status.id)}>{status.label}</DropdownMenuItem>
+                                                    ))}
                                                 </DropdownMenuSubContent>
                                             </DropdownMenuSub>
                                         </DropdownMenuContent>
