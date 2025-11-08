@@ -41,10 +41,7 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
         .from('bookings')
         .select(`
             id, booking_status,
-            user:user_id(name), 
-            user_organisation:user_organisations!left(
-                flats(flat_number, building_numbers(number, buildings(name)))
-            ),
+            user:user_id(id, name), 
             timeslots:timeslot_id(date, start_time, end_time),
             booking_status:booking_status(label)
         `)
@@ -55,8 +52,33 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
         console.error("Error fetching bookings for court:", bookingsError);
     }
     
+    let bookingsWithFlatDetails = bookings || [];
+    if (bookings && bookings.length > 0) {
+        const userIds = bookings.map(b => b.user?.id).filter(Boolean) as number[];
+        
+        const { data: orgData } = await supabase
+            .from('user_organisations')
+            .select(`
+                user_id,
+                flats(flat_number, building_numbers(number, buildings(name)))
+            `)
+            .in('user_id', userIds);
+            
+        const userOrgMap = new Map();
+        if (orgData) {
+            orgData.forEach(org => {
+                userOrgMap.set(org.user_id, org);
+            });
+        }
+        
+        bookingsWithFlatDetails = bookings.map(booking => ({
+            ...booking,
+            user_organisation: booking.user ? userOrgMap.get(booking.user.id) : null
+        }));
+    }
+
     const getFlatDetails = (booking: any) => {
-        const org = booking.user_organisation?.[0];
+        const org = booking.user_organisation;
         if (!org || !org.flats) return null;
         
         const flat = org.flats;
@@ -83,8 +105,8 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
             </div>
             
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {bookings && bookings.length > 0 ? (
-                    bookings.map(b => {
+                {bookingsWithFlatDetails && bookingsWithFlatDetails.length > 0 ? (
+                    bookingsWithFlatDetails.map(b => {
                         const flatDetails = getFlatDetails(b);
                         return (
                             <Card key={b.id}>
