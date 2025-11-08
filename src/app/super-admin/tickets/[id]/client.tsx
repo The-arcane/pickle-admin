@@ -1,7 +1,7 @@
 
 'use client';
-import { useRef } from 'react';
-import { useActionState, useFormStatus } from 'react-dom';
+import { useRef, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +29,7 @@ function SubmitButton() {
     )
 }
 
-export function ConversationClient({ ticketId, initialMessages }: { ticketId: number, initialMessages: Message[] }) {
+export function ConversationClient({ ticketId, initialMessages, currentUserId }: { ticketId: number, initialMessages: Message[], currentUserId: string }) {
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -79,4 +79,3 @@ export function ConversationClient({ ticketId, initialMessages }: { ticketId: nu
         </Card>
     );
 }
-
