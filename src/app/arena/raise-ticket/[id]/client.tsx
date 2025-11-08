@@ -1,7 +1,7 @@
 
 'use client';
-import { useState, useRef, useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useRef, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,7 +42,7 @@ export function ConversationClient({ ticketId, initialMessages, currentUserId }:
         }
         return result;
     }
-    const [state, dispatch] = useFormState(formAction, null);
+    const [state, dispatch] = useActionState(formAction, null);
 
     return (
         <Card>
