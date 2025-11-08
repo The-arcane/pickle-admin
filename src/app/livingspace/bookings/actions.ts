@@ -203,7 +203,7 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
         if (courtRules.one_booking_per_user_per_day) {
             const { data: userBookings, error: userBookingsError } = await supabase.rpc(
                 "get_user_bookings_for_date",
-                { p_user_id: targetUserId, p_date: date }
+                { p_user_id: targetUserId, p_date: date, p_court_id: courtId }
             );
 
             if (userBookingsError) {
@@ -222,7 +222,7 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
         if (isResidentialApp) {
             const { data: hasBooked, error: flatBookingError } = await supabase.rpc(
                 'has_flat_booked_for_date',
-                { p_user_id: targetUserId, p_booking_date: date }
+                { p_user_id: targetUserId, p_booking_date: date,  p_court_id: courtId  }
             );
 
             if (flatBookingError) {
