@@ -58,13 +58,6 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
     const { toast } = useToast();
     const isAdding = !court;
     
-    // Form State
-    const [equipmentRental, setEquipmentRental] = useState(false);
-    const [floodlights, setFloodlights] = useState(false);
-    const [isPublic, setIsPublic] = useState(true);
-    const [oneBookingPerDay, setOneBookingPerDay] = useState(false);
-    const [isBookingRolling, setIsBookingRolling] = useState(false);
-    
     // State for related tables
     const [rules, setRules] = useState<Partial<CourtRule>[]>([{ rule: '' }]);
     const [contact, setContact] = useState<Partial<CourtContact>>({});
@@ -86,11 +79,6 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
     // Set state from props after initial render to avoid hydration mismatch
     useEffect(() => {
         if (court) {
-            setEquipmentRental(court.is_equipment_available ?? false);
-            setFloodlights(court.has_floodlights ?? false);
-            setIsPublic(court.is_public ?? true);
-            setOneBookingPerDay(court.one_booking_per_user_per_day ?? false);
-            setIsBookingRolling(court.is_booking_rolling ?? false);
             setRules(court.court_rules.length > 0 ? court.court_rules : [{ rule: '' }]);
             setContact(court.court_contacts?.[0] ?? {});
             setAvailability(court.availability_blocks ?? []);
@@ -285,9 +273,21 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
                                 <div className="space-y-2"><Label htmlFor="audience_capacity">Audience Capacity</Label><Input id="audience_capacity" name="audience_capacity" type="number" defaultValue={court?.audience_capacity ?? undefined} /></div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="flex items-center justify-between rounded-lg border p-4"><Label htmlFor="has_floodlights" className="text-base font-medium flex items-center gap-2"><Lightbulb className="h-4 w-4"/> Floodlights</Label><Switch id="has_floodlights" name="has_floodlights" checked={floodlights} onCheckedChange={setFloodlights}/></div>
-                                <div className="flex items-center justify-between rounded-lg border p-4"><Label htmlFor="is_equipment_available" className="text-base font-medium">Equipment</Label><Switch id="is_equipment_available" name="is_equipment_available" checked={equipmentRental} onCheckedChange={setEquipmentRental}/></div>
-                                <div className="flex items-center justify-between rounded-lg border p-4"><Label htmlFor="is_public" className="text-base font-medium flex items-center gap-2"><Globe className="h-4 w-4"/> Public</Label><Switch id="is_public" name="is_public" checked={isPublic} onCheckedChange={setIsPublic}/></div>
+                                <div className="flex items-center justify-between rounded-lg border p-4">
+                                    <Label htmlFor="has_floodlights" className="text-base font-medium flex items-center gap-2"><Lightbulb className="h-4 w-4"/> Floodlights</Label>
+                                    <input type="hidden" name="has_floodlights" value="false" />
+                                    <Switch id="has_floodlights" name="has_floodlights" defaultChecked={court?.has_floodlights ?? false}/>
+                                </div>
+                                <div className="flex items-center justify-between rounded-lg border p-4">
+                                    <Label htmlFor="is_equipment_available" className="text-base font-medium">Equipment</Label>
+                                    <input type="hidden" name="is_equipment_available" value="false" />
+                                    <Switch id="is_equipment_available" name="is_equipment_available" defaultChecked={court?.is_equipment_available ?? false}/>
+                                </div>
+                                <div className="flex items-center justify-between rounded-lg border p-4">
+                                    <Label htmlFor="is_public" className="text-base font-medium flex items-center gap-2"><Globe className="h-4 w-4"/> Public</Label>
+                                    <input type="hidden" name="is_public" value="false" />
+                                    <Switch id="is_public" name="is_public" defaultChecked={court?.is_public ?? true}/>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -396,14 +396,16 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
                                     <Label htmlFor="one_booking_per_user_per_day" className="text-base font-medium">One Booking Per Day</Label>
                                     <p className="text-xs text-muted-foreground">Limit users to one booking on this court per calendar day.</p>
                                 </div>
-                                <Switch id="one_booking_per_user_per_day" name="one_booking_per_user_per_day" checked={oneBookingPerDay} onCheckedChange={setOneBookingPerDay} />
+                                <input type="hidden" name="one_booking_per_user_per_day" value="false" />
+                                <Switch id="one_booking_per_user_per_day" name="one_booking_per_user_per_day" defaultChecked={court?.one_booking_per_user_per_day ?? false} />
                             </div>
                              <div className="flex items-center justify-between rounded-lg border p-4">
                                 <div className="space-y-1">
                                     <Label htmlFor="is_booking_rolling" className="text-base font-medium">Rolling 24-Hour Window</Label>
                                     <p className="text-xs text-muted-foreground">Users can only book a slot if it's within 24 hours of the current time.</p>
                                 </div>
-                                <Switch id="is_booking_rolling" name="is_booking_rolling" checked={isBookingRolling} onCheckedChange={setIsBookingRolling} />
+                                <input type="hidden" name="is_booking_rolling" value="false" />
+                                <Switch id="is_booking_rolling" name="is_booking_rolling" defaultChecked={court?.is_booking_rolling ?? false} />
                             </div>
                         </CardContent>
                     </Card>
