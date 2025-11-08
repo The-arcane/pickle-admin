@@ -1,42 +1,64 @@
 
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { QrCode, Calendar, PartyPopper } from 'lucide-react';
 import Link from 'next/link';
-import { createServer } from '@/lib/supabase/server';
 import Image from 'next/image';
+import { createClient } from '@/lib/supabase/client';
 import { redirect } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
 
-export default async function EmployeeDashboardPage() {
-  const supabase = await createServer();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-      return redirect('/login?type=employee');
-  }
+export default function EmployeeDashboardPage() {
+  const [organisationLogo, setOrganisationLogo] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
 
-  const { data: userProfile } = await supabase
-    .from('user')
-    .select('id')
-    .eq('user_uuid', user.id)
-    .single();
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  let organisationLogo: string | null | undefined = null;
-  if (userProfile) {
-      const { data: orgLink } = await supabase
-        .from('user_organisations')
-        .select('organisation_id')
-        .eq('user_id', userProfile.id)
-        .maybeSingle();
-      
-      if (orgLink?.organisation_id) {
-        const { data: orgData } = await supabase
-            .from('organisations')
-            .select('logo')
-            .eq('id', orgLink.organisation_id)
+  useEffect(() => {
+    async function fetchData() {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            redirect('/login?type=employee');
+            return;
+        }
+
+        const { data: userProfile } = await supabase
+            .from('user')
+            .select('id')
+            .eq('user_uuid', user.id)
             .single();
-        organisationLogo = orgData?.logo;
-      }
-  }
+
+        if (userProfile) {
+            const { data: orgLink } = await supabase
+                .from('user_organisations')
+                .select('organisation_id')
+                .eq('user_id', userProfile.id)
+                .maybeSingle();
+            
+            if (orgLink?.organisation_id) {
+                const { data: orgData } = await supabase
+                    .from('organisations')
+                    .select('logo')
+                    .eq('id', orgLink.organisation_id)
+                    .single();
+                setOrganisationLogo(orgData?.logo || null);
+            }
+        }
+        setLoading(false);
+    }
+    fetchData();
+  }, []);
 
 
   const features = [
@@ -63,6 +85,20 @@ export default async function EmployeeDashboardPage() {
     },
   ];
 
+  if (loading) {
+      return (
+          <div className="space-y-8">
+              <div className="flex items-center gap-4">
+                  <Skeleton className="h-10 w-10 rounded-md" />
+                  <div>
+                      <Skeleton className="h-7 w-48" />
+                      <Skeleton className="h-4 w-64 mt-1" />
+                  </div>
+              </div>
+          </div>
+      )
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-4">
@@ -79,6 +115,9 @@ export default async function EmployeeDashboardPage() {
         <div>
             <h1 className="text-2xl font-bold">Employee Dashboard</h1>
             <p className="text-muted-foreground">Welcome! Access your tools and view bookings here.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+                {format(currentDateTime, 'eeee, MMMM d, yyyy, hh:mm:ss a')}
+            </p>
         </div>
       </div>
 

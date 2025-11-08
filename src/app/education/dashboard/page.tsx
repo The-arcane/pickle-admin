@@ -1,20 +1,45 @@
 
-import { createServer } from '@/lib/supabase/server';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Activity, ArrowRight, CalendarCheck, PartyPopper, Briefcase, Box } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default async function EducationDashboardPage() {
-  const supabase = await createServer();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return redirect('/login?type=education');
-  }
+export default function EducationDashboardPage() {
+  const [userName, setUserName] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
 
-  const { data: userProfile } = await supabase.from('user').select('name').eq('user_uuid', user.id).single();
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    async function fetchUser() {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            redirect('/login?type=education');
+            return;
+        }
+
+        const { data: userProfile } = await supabase.from('user').select('name').eq('user_uuid', user.id).single();
+        setUserName(userProfile?.name ?? 'Admin');
+        setLoading(false);
+    }
+    fetchUser();
+  }, []);
+
 
   // Mock data for the dashboard summary
   const stats = [
@@ -41,11 +66,25 @@ export default async function EducationDashboardPage() {
       { id: 'event_003', name: 'Intra-School League - Week 2', date: 'today' },
   ];
 
+  if (loading) {
+    return (
+        <div className="space-y-8">
+             <div>
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-4 w-80 mt-2" />
+            </div>
+        </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Welcome, {userProfile?.name ?? 'Admin'}!</h1>
+        <h1 className="text-2xl font-bold">Welcome, {userName}!</h1>
         <p className="text-muted-foreground">Here’s a snapshot of what’s happening at your school today.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+            {format(currentDateTime, 'eeee, MMMM d, yyyy, hh:mm:ss a')}
+        </p>
       </div>
       
       {/* Academic & Administrative Stats */}

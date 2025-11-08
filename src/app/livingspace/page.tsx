@@ -1,8 +1,11 @@
 
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, BarChartHorizontal, Clock, PartyPopper, AlertCircle, MapPin, Users, List, UserCheck, Home, Radio, Contact2 } from 'lucide-react';
-import { createServer } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
 import { format, parseISO } from 'date-fns';
 import { RecentBookingsTable } from '@/components/recent-bookings-table';
 import Link from 'next/link';
@@ -10,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const statusMap: { [key: number]: string } = {
   0: 'Cancelled',
@@ -35,185 +39,192 @@ const getInitials = (name: string) => {
     return names[0]?.substring(0, 2).toUpperCase() ?? '';
 };
 
-async function getDashboardData(organisationId: number) {
-  const supabase = await createServer();
-  const today = new Date().toISOString().split('T')[0];
-  
-  const { data: confirmedEventStatus } = await supabase
-    .from('event_booking_status')
-    .select('id')
-    .eq('label', 'Confirmed')
-    .maybeSingle();
-  const confirmedEventStatusId = confirmedEventStatus?.id;
+
+export default function DashboardPage() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const supabase = createClient();
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    async function getDashboardData() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            redirect('/login');
+            return;
+        }
+
+        const { data: userProfile } = await supabase
+            .from('user')
+            .select('id')
+            .eq('user_uuid', user.id)
+            .single();
+        if (!userProfile) {
+            redirect('/login');
+            return;
+        }
+
+        const { data: orgLink } = await supabase
+            .from('user_organisations')
+            .select('organisation_id')
+            .eq('user_id', userProfile.id)
+            .maybeSingle();
+
+        if (!orgLink?.organisation_id) {
+            setData({ noOrg: true });
+            setLoading(false);
+            return;
+        }
+        
+        const organisationId = orgLink.organisation_id;
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: confirmedEventStatus } = await supabase
+            .from('event_booking_status')
+            .select('id')
+            .eq('label', 'Confirmed')
+            .maybeSingle();
+        const confirmedEventStatusId = confirmedEventStatus?.id;
+
+        const [
+            recentBookingsRes,
+            todaysBookingsRes,
+            totalRevenueRes,
+            totalCourtsRes,
+            latestReviewRes,
+            avgRatingRes,
+            upcomingEventsRes,
+            totalEventsCountRes,
+            totalEnrolmentsRes,
+            organisationRes,
+        ] = await Promise.all([
+            supabase
+            .from('bookings')
+            .select('id, booking_status, user:user_id(name, profile_image_url), courts:court_id!inner(name), timeslots:timeslot_id(date, start_time)')
+            .eq('courts.organisation_id', organisationId)
+            .limit(5)
+            .order('id', { ascending: false }),
+            supabase
+                .from('bookings')
+                .select('id, timeslots!inner(date), courts!inner(id)', { count: 'exact', head: true })
+                .eq('timeslots.date', today)
+                .in('booking_status', [1, 2])
+                .eq('courts.organisation_id', organisationId),
+            supabase
+                .from('bookings')
+                .select('courts!inner(price)')
+                .eq('booking_status', 1)
+                .eq('courts.organisation_id', organisationId),
+            supabase
+                .from('courts')
+                .select('id', { count: 'exact', head: true })
+                .eq('organisation_id', organisationId),
+            supabase
+                .from('court_reviews')
+                .select('review_text, reviewer_name, rating')
+                .order('review_date', { ascending: false })
+                .limit(1)
+                .maybeSingle(),
+            supabase
+                .from('court_reviews')
+                .select('rating'),
+            supabase
+                .from('events')
+                .select('id, title, start_time, location_name')
+                .eq('organiser_org_id', organisationId)
+                .gte('end_time', new Date().toISOString())
+                .order('start_time', { ascending: true })
+                .limit(3),
+            supabase
+                .from('events')
+                .select('id', { count: 'exact', head: true })
+                .eq('organiser_org_id', organisationId),
+            supabase
+                .from('event_bookings')
+                .select('quantity, events!inner(id)')
+                .eq('status', confirmedEventStatusId ?? -1)
+                .eq('events.organiser_org_id', organisationId),
+            supabase.from('organisations').select('logo').eq('id', organisationId).maybeSingle(),
+        ]);
+        
+        const recentBookings = recentBookingsRes.data?.map((booking) => {
+            const user = booking.user;
+            const court = booking.courts;
+            const timeslot = booking.timeslots;
+            const userName = typeof user === 'object' && user !== null && 'name' in user ? (user as any).name : 'N/A';
+
+            return {
+            id: booking.id,
+            user: userName,
+            court: typeof court === 'object' && court !== null && 'name' in court ? (court as any).name : 'N/A',
+            date: typeof timeslot === 'object' && timeslot !== null && 'date' in timeslot ? formatDate((timeslot as any).date) : 'N/A',
+            time: typeof timeslot === 'object' && timeslot !== null && 'start_time' in timeslot ? (timeslot as any).start_time as string : '',
+            status: statusMap[booking.booking_status] ?? 'Unknown',
+            avatar: typeof user === 'object' && user !== null && 'profile_image_url' in user ? (user as any).profile_image_url as string | null : null,
+            initials: getInitials(userName),
+            };
+        }) || [];
+        
+        setData({
+            recentBookings,
+            stats: {
+                todaysBookings: todaysBookingsRes.count ?? 0,
+                totalRevenue: totalRevenueRes.data?.reduce((acc, item) => acc + ((item.courts as any)?.price || 0), 0) ?? 0,
+                totalCourts: totalCourtsRes.count ?? 0,
+                totalEventsCount: totalEventsCountRes.count ?? 0,
+                totalEnrolments: totalEnrolmentsRes.data?.reduce((sum, booking) => sum + (booking.quantity ?? 1), 0) ?? 0,
+            },
+            feedback: {
+                comment: latestReviewRes.data?.review_text || 'No reviews yet. Be the first to leave one!',
+                user: latestReviewRes.data?.reviewer_name || '',
+                rating: parseFloat((avgRatingRes.data?.map(r => r.rating).filter(r => r !== null) as number[] || []).reduce((acc, r, _, arr) => acc + r / arr.length, 0).toFixed(1)),
+            },
+            upcomingEvents: upcomingEventsRes.data?.map(event => ({
+                id: event.id,
+                title: event.title,
+                startTime: event.start_time,
+                location: event.location_name ?? 'N/A',
+            })) || [],
+            error: recentBookingsRes.error,
+            organisationLogo: organisationRes.data?.logo
+        });
+        setLoading(false);
+    }
+    getDashboardData();
+  }, [supabase]);
 
 
-  const [
-    recentBookingsRes,
-    todaysBookingsRes,
-    totalRevenueRes,
-    totalCourtsRes,
-    latestReviewRes,
-    avgRatingRes,
-    upcomingEventsRes,
-    totalEventsCountRes,
-    totalEnrolmentsRes,
-    organisationRes,
-  ] = await Promise.all([
-    supabase
-      .from('bookings')
-      .select('id, booking_status, user:user_id(name, profile_image_url), courts:court_id!inner(name), timeslots:timeslot_id(date, start_time)')
-      .eq('courts.organisation_id', organisationId)
-      .limit(5)
-      .order('id', { ascending: false }),
-    supabase
-        .from('bookings')
-        .select('id, timeslots!inner(date), courts!inner(id)', { count: 'exact', head: true })
-        .eq('timeslots.date', today)
-        .in('booking_status', [1, 2])
-        .eq('courts.organisation_id', organisationId),
-    supabase
-        .from('bookings')
-        .select('courts!inner(price)')
-        .eq('booking_status', 1)
-        .eq('courts.organisation_id', organisationId),
-    supabase
-        .from('courts')
-        .select('id', { count: 'exact', head: true })
-        .eq('organisation_id', organisationId),
-    supabase
-        .from('court_reviews')
-        .select('review_text, reviewer_name, rating')
-        .order('review_date', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    supabase
-        .from('court_reviews')
-        .select('rating'),
-    supabase
-        .from('events')
-        .select('id, title, start_time, location_name')
-        .eq('organiser_org_id', organisationId)
-        .gte('end_time', new Date().toISOString())
-        .order('start_time', { ascending: true })
-        .limit(3),
-    supabase
-        .from('events')
-        .select('id', { count: 'exact', head: true })
-        .eq('organiser_org_id', organisationId),
-    supabase
-        .from('event_bookings')
-        .select('quantity, events!inner(id)')
-        .eq('status', confirmedEventStatusId ?? -1)
-        .eq('events.organiser_org_id', organisationId),
-    supabase.from('organisations').select('logo').eq('id', organisationId).maybeSingle(),
-  ]);
-
-  if (recentBookingsRes.error) console.error("Error fetching recent bookings:", recentBookingsRes.error.message);
-  if (todaysBookingsRes.error) console.error("Error fetching today's bookings:", todaysBookingsRes.error.message);
-  if (totalRevenueRes.error) console.error("Error fetching total revenue:", totalRevenueRes.error.message);
-  if (totalCourtsRes.error) console.error("Error fetching total courts:", totalCourtsRes.error.message);
-  if (latestReviewRes.error) console.error("Error fetching latest review:", latestReviewRes.error.message);
-  if (avgRatingRes.error) console.error("Error fetching ratings:", avgRatingRes.error.message);
-  if (upcomingEventsRes.error) console.error("Error fetching upcoming events:", upcomingEventsRes.error.message);
-  if (totalEventsCountRes.error) console.error("Error fetching total events count:", totalEventsCountRes.error.message);
-  if (totalEnrolmentsRes.error) console.error("Error fetching total enrolments:", totalEnrolmentsRes.error.message);
-  if (organisationRes.error) console.error("Error fetching organisation logo:", organisationRes.error.message);
-
-
-  const recentBookings = recentBookingsRes.data?.map((booking) => {
-    const user = booking.user;
-    const court = booking.courts;
-    const timeslot = booking.timeslots;
-    const userName = typeof user === 'object' && user !== null && 'name' in user ? (user as any).name : 'N/A';
-
-    return {
-      id: booking.id,
-      user: userName,
-      court: typeof court === 'object' && court !== null && 'name' in court ? (court as any).name : 'N/A',
-      date: typeof timeslot === 'object' && timeslot !== null && 'date' in timeslot ? formatDate((timeslot as any).date) : 'N/A',
-      time: typeof timeslot === 'object' && timeslot !== null && 'start_time' in timeslot ? (timeslot as any).start_time as string : '',
-      status: statusMap[booking.booking_status] ?? 'Unknown',
-      avatar: typeof user === 'object' && user !== null && 'profile_image_url' in user ? (user as any).profile_image_url as string | null : null,
-      initials: getInitials(userName),
-    };
-  }) || [];
-  
-  const todaysBookingsCount = todaysBookingsRes.count ?? 0;
-  
-  const totalRevenue = totalRevenueRes.data?.reduce(
-      (acc, item) => acc + ((item.courts as any)?.price || 0), 
-  0) ?? 0;
-  
-  const totalCourtsCount = totalCourtsRes.count ?? 0;
-  
-  const latestReview = latestReviewRes.data ? {
-      comment: latestReviewRes.data.review_text,
-      user: latestReviewRes.data.reviewer_name,
-  } : {
-      comment: 'No reviews yet. Be the first to leave one!',
-      user: '',
-  };
-
-  const ratings = avgRatingRes.data?.map(r => r.rating).filter(r => r !== null) as number[] || [];
-  const averageRating = ratings.length > 0
-      ? (ratings.reduce((acc, r) => acc + r, 0) / ratings.length)
-      : 0;
-
-  const upcomingEvents = upcomingEventsRes.data?.map(event => ({
-    id: event.id,
-    title: event.title,
-    startTime: event.start_time,
-    location: event.location_name ?? 'N/A',
-  })) || [];
-
-  const totalEventsCount = totalEventsCountRes.count ?? 0;
-  const totalEnrolments = totalEnrolmentsRes.data?.reduce((sum, booking) => sum + (booking.quantity ?? 1), 0) ?? 0;
-  const organisationLogo = organisationRes.data?.logo;
-
-  return {
-    recentBookings,
-    stats: {
-        todaysBookings: todaysBookingsCount,
-        totalRevenue: totalRevenue,
-        totalCourts: totalCourtsCount,
-        totalEventsCount: totalEventsCount,
-        totalEnrolments: totalEnrolments,
-    },
-    feedback: {
-        ...latestReview,
-        rating: parseFloat(averageRating.toFixed(1)),
-    },
-    upcomingEvents,
-    error: recentBookingsRes.error,
-    organisationLogo,
-  };
-}
-
-export default async function DashboardPage() {
-  const supabase = await createServer();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return redirect('/login');
+  if (loading) {
+    return (
+        <div className="space-y-8">
+             <div>
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-64 mt-2" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+            </div>
+             <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-32" />
+                    <Skeleton className="h-4 w-48" />
+                </CardHeader>
+                <CardContent className="flex flex-wrap gap-2">
+                    {[...Array(7)].map((_, i) => <Skeleton key={i} className="h-8 w-24" />)}
+                </CardContent>
+            </Card>
+        </div>
+    )
   }
 
-  const { data: userProfile } = await supabase
-    .from('user')
-    .select('id')
-    .eq('user_uuid', user.id)
-    .single();
-
-  if (!userProfile) {
-    return redirect('/login');
-  }
-
-  const { data: orgLink } = await supabase
-    .from('user_organisations')
-    .select('organisation_id')
-    .eq('user_id', userProfile.id)
-    .maybeSingle();
-
-  if (!orgLink?.organisation_id) {
+  if (data?.noOrg) {
     return (
         <div className="flex flex-col items-center justify-center h-full">
             <p className="text-muted-foreground">You are not associated with a Living Space.</p>
@@ -222,7 +233,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const { recentBookings, stats, feedback, upcomingEvents, error, organisationLogo } = await getDashboardData(orgLink.organisation_id);
+  const { recentBookings, stats, feedback, upcomingEvents, error, organisationLogo } = data;
   
   const primaryStats = [
     { label: "Today's Bookings", value: stats.todaysBookings, icon: Calendar, color: 'text-sky-500' },
@@ -252,6 +263,9 @@ export default async function DashboardPage() {
           <div>
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground">Here&apos;s a snapshot of your facility&apos;s activity.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+                {format(currentDateTime, 'eeee, MMMM d, yyyy, hh:mm:ss a')}
+            </p>
           </div>
         </div>
         <Link href="/livingspace/bookings" className="w-full sm:w-auto">
@@ -268,7 +282,6 @@ export default async function DashboardPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{stat.value}</p>
-               {stat.description && <p className="text-xs text-muted-foreground">{stat.description}</p>}
             </div>
           </Card>
         ))}
@@ -348,7 +361,7 @@ export default async function DashboardPage() {
                 <CardContent>
                      {upcomingEvents.length > 0 ? (
                         <div className="space-y-4">
-                            {upcomingEvents.map(event => (
+                            {upcomingEvents.map((event: any) => (
                                 <div key={event.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 p-3 rounded-lg border">
                                     <div className="flex-1 space-y-1">
                                         <p className="font-semibold">{event.title}</p>

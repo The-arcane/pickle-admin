@@ -1,68 +1,102 @@
 
-import { createServer } from '@/lib/supabase/server';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Package, PlusCircle, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
-async function getHospitalityDashboardData(organisationId: number) {
-    const supabase = await createServer();
+export default function HospitalityDashboardPage() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const supabase = createClient();
 
-    const [
-        { count: activePackages, error: packageError },
-        { count: totalBookings, error: bookingError }
-    ] = await Promise.all([
-        supabase
-            .from('packages')
-            .select('id', { count: 'exact', head: true })
-            .eq('organisation_id', organisationId)
-            .eq('is_active', true),
-        supabase
-            .from('package_bookings')
-            .select('id', { count: 'exact', head: true })
-            .eq('organisation_id', organisationId)
-    ]);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    async function getHospitalityDashboardData() {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            redirect('/login?type=hospitality');
+            return;
+        }
+
+        const { data: userProfile } = await supabase.from('user').select('id, name').eq('user_uuid', user.id).single();
+        if (!userProfile) {
+            redirect('/login?type=hospitality&error=profile_not_found');
+            return;
+        }
+
+        const { data: orgLink } = await supabase.from('user_organisations').select('organisation_id').eq('user_id', userProfile.id).single();
+        if (!orgLink) {
+            setData({ noOrg: true, userName: userProfile.name });
+            setLoading(false);
+            return;
+        }
+        
+        const [
+            { count: activePackages, error: packageError },
+            { count: totalBookings, error: bookingError }
+        ] = await Promise.all([
+            supabase
+                .from('packages')
+                .select('id', { count: 'exact', head: true })
+                .eq('organisation_id', orgLink.organisation_id)
+                .eq('is_active', true),
+            supabase
+                .from('package_bookings')
+                .select('id', { count: 'exact', head: true })
+                .eq('organisation_id', orgLink.organisation_id)
+        ]);
 
 
-    if (packageError) {
-        console.error("Error fetching active packages count:", packageError);
+        if (packageError) console.error("Error fetching active packages count:", packageError);
+        if (bookingError) console.error("Error fetching total bookings count:", bookingError);
+
+        setData({
+            userName: userProfile.name,
+            activePackages: activePackages ?? 0,
+            totalBookings: totalBookings ?? 0,
+        });
+        setLoading(false);
     }
-    if (bookingError) {
-        console.error("Error fetching total bookings count:", bookingError);
-    }
-
-    return {
-        activePackages: activePackages ?? 0,
-        totalBookings: totalBookings ?? 0,
-    };
-}
+    getHospitalityDashboardData();
+  }, [supabase]);
 
 
-export default async function HospitalityDashboardPage() {
-  const supabase = await createServer();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return redirect('/login?type=hospitality');
+  if (loading) {
+      return (
+          <div className="space-y-8">
+              <div>
+                  <Skeleton className="h-8 w-64" />
+                  <Skeleton className="h-4 w-80 mt-2" />
+              </div>
+          </div>
+      )
   }
 
-  const { data: userProfile } = await supabase.from('user').select('id, name').eq('user_uuid', user.id).single();
-  if (!userProfile) {
-      return redirect('/login?type=hospitality&error=profile_not_found');
-  }
-
-  const { data: orgLink } = await supabase.from('user_organisations').select('organisation_id').eq('user_id', userProfile.id).single();
-  if (!orgLink) {
+  if (data?.noOrg) {
       return (
           <div className="space-y-8 text-center py-10">
-              <h1 className="text-2xl font-bold">Welcome, {userProfile.name ?? 'Admin'}!</h1>
+              <h1 className="text-2xl font-bold">Welcome, {data.userName ?? 'Admin'}!</h1>
               <p className="text-muted-foreground">Your account is not yet linked to a hospitality organization.</p>
           </div>
       );
   }
 
-  const { activePackages, totalBookings } = await getHospitalityDashboardData(orgLink.organisation_id);
+  const { userName, activePackages, totalBookings } = data;
 
   const stats = [
       { label: 'Active Packages', value: activePackages, icon: Package, href: '/hospitality/packages', color: 'text-orange-500', description: 'Currently available packages' },
@@ -73,8 +107,11 @@ export default async function HospitalityDashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Welcome, {userProfile.name ?? 'Admin'}!</h1>
+        <h1 className="text-2xl font-bold">Welcome, {userName ?? 'Admin'}!</h1>
         <p className="text-muted-foreground">Here’s a snapshot of your hospitality services.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+            {format(currentDateTime, 'eeee, MMMM d, yyyy, hh:mm:ss a')}
+        </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

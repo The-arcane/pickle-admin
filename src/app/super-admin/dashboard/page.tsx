@@ -1,7 +1,9 @@
 
-import { createServer } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, List, PartyPopper, School, Hotel, Home, Building, Calendar, ShieldCheck, TrendingUp, Contact2, Briefcase, Shield } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,96 +12,13 @@ import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/status-badge';
 import { cn } from '@/lib/utils';
-
+import { Skeleton } from '@/components/ui/skeleton';
 
 const bookingStatusMap: { [key: number]: string } = {
   0: 'Cancelled',
   1: 'Confirmed',
   2: 'Pending',
 };
-
-async function getSuperAdminDashboardData() {
-    const supabase = await createServer();
-    
-    const [
-        totalOrgsRes,
-        schoolsRes,
-        hospitalityRes,
-        residencesRes,
-        arenaRes,
-        usersRes,
-        courtsRes,
-        eventsRes,
-        bookingsRes,
-        recentBookingsRes,
-        recentUsersRes,
-        totalAdminsRes,
-        totalSalesRes,
-        totalCoachesRes,
-        totalEmployeesRes,
-    ] = await Promise.all([
-        supabase.from('organisations').select('id', { count: 'exact', head: true }),
-        supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 2),
-        supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 3),
-        supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 1),
-        supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 4), // Arena
-        supabase.from('user').select('id', { count: 'exact', head: true }),
-        supabase.from('courts').select('id', { count: 'exact', head: true }),
-        supabase.from('events').select('id', { count: 'exact', head: true }),
-        supabase.from('bookings').select('id', { count: 'exact', head: true }),
-        supabase
-          .from('bookings')
-          .select(`
-              id, 
-              booking_status, 
-              timeslots:timeslot_id(date), 
-              user:user_id(name), 
-              courts:court_id(name, organisations(name))
-          `)
-          .order('id', { ascending: false })
-          .limit(5),
-        supabase.from('user').select('id, name, email, created_at, profile_image_url').order('created_at', { ascending: false }).limit(5),
-        supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 2), // Admins
-        supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 6), // Sales
-        supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 5), // Coaches
-        supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 4), // Employees
-    ]);
-
-    // Error handling
-    if(totalOrgsRes.error) console.error("Error fetching total orgs count", totalOrgsRes.error);
-    if(schoolsRes.error) console.error("Error fetching schools count", schoolsRes.error);
-    if(hospitalityRes.error) console.error("Error fetching hospitality count", hospitalityRes.error);
-    if(residencesRes.error) console.error("Error fetching residences count", residencesRes.error);
-    if(arenaRes.error) console.error("Error fetching arena count", arenaRes.error);
-    if(usersRes.error) console.error("Error fetching users count", usersRes.error);
-    if(courtsRes.error) console.error("Error fetching courts count", courtsRes.error);
-    if(eventsRes.error) console.error("Error fetching events count", eventsRes.error);
-    if(bookingsRes.error) console.error("Error fetching bookings count", bookingsRes.error);
-    if(recentBookingsRes.error) console.error("Error fetching recent bookings", recentBookingsRes.error);
-    if(recentUsersRes.error) console.error("Error fetching recent users", recentUsersRes.error);
-    if(totalAdminsRes.error) console.error("Error fetching total admins", totalAdminsRes.error);
-    if(totalSalesRes.error) console.error("Error fetching total sales", totalSalesRes.error);
-    if(totalCoachesRes.error) console.error("Error fetching total coaches", totalCoachesRes.error);
-    if(totalEmployeesRes.error) console.error("Error fetching total employees", totalEmployeesRes.error);
-
-    return {
-        totalLivingSpaces: totalOrgsRes.count ?? 0,
-        totalSchools: schoolsRes.count ?? 0,
-        totalHospitality: hospitalityRes.count ?? 0,
-        totalResidences: residencesRes.count ?? 0,
-        totalArenas: arenaRes.count ?? 0,
-        totalUsers: usersRes.count ?? 0, 
-        totalCourts: courtsRes.count ?? 0, 
-        totalEvents: eventsRes.count ?? 0,
-        totalBookings: bookingsRes.count ?? 0,
-        totalAdmins: totalAdminsRes.count ?? 0,
-        totalSales: totalSalesRes.count ?? 0,
-        totalCoaches: totalCoachesRes.count ?? 0,
-        totalEmployees: totalEmployeesRes.count ?? 0,
-        recentBookings: recentBookingsRes.data || [],
-        recentUsers: recentUsersRes.data || [],
-    }
-}
 
 const getInitials = (name: string | null) => {
     if (!name) return '';
@@ -111,12 +30,99 @@ const getInitials = (name: string | null) => {
 };
 
 
-export default async function SuperAdminDashboardPage() {
-  const supabase = await createServer();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    // This should not happen due to middleware, but as a safeguard.
-    return redirect('/super-admin/login');
+export default function SuperAdminDashboardPage() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const supabase = createClient();
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    async function getSuperAdminDashboardData() {
+        const [
+            totalOrgsRes,
+            schoolsRes,
+            hospitalityRes,
+            residencesRes,
+            arenaRes,
+            usersRes,
+            courtsRes,
+            eventsRes,
+            bookingsRes,
+            recentBookingsRes,
+            recentUsersRes,
+            totalAdminsRes,
+            totalSalesRes,
+            totalCoachesRes,
+            totalEmployeesRes,
+        ] = await Promise.all([
+            supabase.from('organisations').select('id', { count: 'exact', head: true }),
+            supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 2),
+            supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 3),
+            supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 1),
+            supabase.from('organisations').select('id', { count: 'exact', head: true }).eq('type', 4), // Arena
+            supabase.from('user').select('id', { count: 'exact', head: true }),
+            supabase.from('courts').select('id', { count: 'exact', head: true }),
+            supabase.from('events').select('id', { count: 'exact', head: true }),
+            supabase.from('bookings').select('id', { count: 'exact', head: true }),
+            supabase
+            .from('bookings')
+            .select(`
+                id, 
+                booking_status, 
+                timeslots:timeslot_id(date), 
+                user:user_id(name), 
+                courts:court_id(name, organisations(name))
+            `)
+            .order('id', { ascending: false })
+            .limit(5),
+            supabase.from('user').select('id, name, email, created_at, profile_image_url').order('created_at', { ascending: false }).limit(5),
+            supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 2), // Admins
+            supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 6), // Sales
+            supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 5), // Coaches
+            supabase.from('user').select('id', { count: 'exact', head: true }).eq('user_type', 4), // Employees
+        ]);
+
+        setData({
+            totalLivingSpaces: totalOrgsRes.count ?? 0,
+            totalSchools: schoolsRes.count ?? 0,
+            totalHospitality: hospitalityRes.count ?? 0,
+            totalResidences: residencesRes.count ?? 0,
+            totalArenas: arenaRes.count ?? 0,
+            totalUsers: usersRes.count ?? 0, 
+            totalCourts: courtsRes.count ?? 0, 
+            totalEvents: eventsRes.count ?? 0,
+            totalBookings: bookingsRes.count ?? 0,
+            totalAdmins: totalAdminsRes.count ?? 0,
+            totalSales: totalSalesRes.count ?? 0,
+            totalCoaches: totalCoachesRes.count ?? 0,
+            totalEmployees: totalEmployeesRes.count ?? 0,
+            recentBookings: recentBookingsRes.data || [],
+            recentUsers: recentUsersRes.data || [],
+        });
+        setLoading(false);
+    }
+    getSuperAdminDashboardData();
+  }, [supabase]);
+
+  if (loading) {
+      return (
+          <div className="space-y-8">
+              <div>
+                  <Skeleton className="h-8 w-64" />
+                  <Skeleton className="h-4 w-80 mt-2" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+              </div>
+          </div>
+      );
   }
 
   const { 
@@ -135,7 +141,7 @@ export default async function SuperAdminDashboardPage() {
       totalEmployees,
       recentBookings,
       recentUsers,
-    } = await getSuperAdminDashboardData();
+    } = data;
   
   const livingSpaceStats = [
       { label: 'Total Living Spaces', value: totalLivingSpaces, icon: Building, href: '/super-admin/organisations', color: 'text-orange-500' },
@@ -164,6 +170,9 @@ export default async function SuperAdminDashboardPage() {
       <div>
         <h1 className="text-2xl font-bold">Super Admin Dashboard</h1>
         <p className="text-muted-foreground">A high-level overview of platform-wide activity.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+            {format(currentDateTime, 'eeee, MMMM d, yyyy, hh:mm:ss a')}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -273,7 +282,7 @@ export default async function SuperAdminDashboardPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {recentUsers.length > 0 ? recentUsers.map((user) => (
+                        {recentUsers.length > 0 ? recentUsers.map((user: any) => (
                             <div key={user.id} className="flex items-center gap-4">
                                 <Avatar>
                                     <AvatarImage src={user.profile_image_url || undefined} alt={user.name || ''} />
