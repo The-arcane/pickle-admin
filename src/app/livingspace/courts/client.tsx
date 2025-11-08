@@ -179,7 +179,9 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                             <Button asChild variant="outline" className="h-8 text-xs bg-background">
                                <Link href={`/livingspace/courts/${court.id}/bookings`}>Bookings</Link>
                             </Button>
-                            <Button variant="outline" className="h-8 text-xs bg-background">Manage Slots</Button>
+                            <Button asChild variant="outline" className="h-8 text-xs bg-background">
+                              <Link href={`/livingspace/courts/${court.id}/slots`}>Manage Slots</Link>
+                            </Button>
                         </CardFooter>
                     </Card>
                 ))

@@ -123,7 +123,9 @@ export function CourtsClientPage({ courts, loading }: { courts: Court[], loading
                             <Button asChild variant="outline" className="h-8 text-xs bg-background">
                                <Link href={`/super-admin/courts/${court.id}/bookings`}>Bookings</Link>
                             </Button>
-                            <Button variant="outline" className="h-8 text-xs bg-background">Manage Slots</Button>
+                            <Button asChild variant="outline" className="h-8 text-xs bg-background">
+                              <Link href={`/super-admin/courts/${court.id}/slots`}>Manage Slots</Link>
+                            </Button>
                         </CardFooter>
                     </Card>
                 ))
