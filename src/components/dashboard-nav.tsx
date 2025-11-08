@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
     BarChart, Calendar, List, Settings, User, Users, PartyPopper, Home, Briefcase, 
-    Contact2, Radio, UserCheck, Building, ChevronDown, FolderKanban, Wrench, UsersRound 
+    Contact2, Radio, UserCheck, Building, ChevronDown, FolderKanban, Wrench, UsersRound,
+    Landmark, Receipt, ArrowRightLeft, Banknote, LifeBuoy, Ticket, Phone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
@@ -48,6 +49,26 @@ const navGroups = [
        { href: '/livingspace/coaches', label: 'Coaches', icon: Contact2, color: 'text-rose-500' },
     ]
   },
+  {
+    title: 'Financials',
+    icon: Landmark,
+    color: 'text-green-500',
+    items: [
+      { href: '/livingspace/invoices', label: 'Invoices', icon: Receipt, color: 'text-gray-500' },
+      { href: '/livingspace/transactions', label: 'Transactions', icon: ArrowRightLeft, color: 'text-gray-500' },
+      { href: '/livingspace/transfers', label: 'Transfers', icon: Banknote, color: 'text-gray-500' },
+      { href: '/livingspace/bank-details', label: 'Bank Details', icon: Landmark, color: 'text-gray-500' },
+    ]
+  },
+  {
+    title: 'Support',
+    icon: LifeBuoy,
+    color: 'text-blue-500',
+    items: [
+      { href: '/livingspace/support', label: 'Contact Us', icon: Phone, color: 'text-gray-500' },
+      { href: '/livingspace/raise-ticket', label: 'Raise a Ticket', icon: Ticket, color: 'text-gray-500' },
+    ]
+  },
 ];
 
 const bottomItems = [
@@ -59,7 +80,7 @@ const bottomItems = [
 export function DashboardNav() {
   const pathname = usePathname();
   const { setOpen } = useSheetContext();
-  const [openSections, setOpenSections] = useState<string[]>(['Management', 'Operations', 'Personnel']);
+  const [openSections, setOpenSections] = useState<string[]>(['Management', 'Operations', 'Personnel', 'Financials', 'Support']);
 
   const isActive = (href: string) => {
     return pathname === href || (href !== '/livingspace' && pathname.startsWith(href));
