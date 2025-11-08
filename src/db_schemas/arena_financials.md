@@ -311,3 +311,24 @@ using (
       and u.user_uuid = auth.uid()
   )
 );
+
+-- Function to get the current balance of an organization
+CREATE OR REPLACE FUNCTION get_organisation_balance(p_organisation_id bigint)
+RETURNS numeric AS $$
+DECLARE
+    total_credit numeric;
+    total_debit numeric;
+BEGIN
+    SELECT COALESCE(SUM(amount), 0)
+    INTO total_credit
+    FROM public.ledger_entries
+    WHERE organisation_id = p_organisation_id AND type = 'Credit';
+
+    SELECT COALESCE(SUM(amount), 0)
+    INTO total_debit
+    FROM public.ledger_entries
+    WHERE organisation_id = p_organisation_id AND type = 'Debit';
+
+    RETURN total_credit - total_debit;
+END;
+$$ LANGUAGE plpgsql;
