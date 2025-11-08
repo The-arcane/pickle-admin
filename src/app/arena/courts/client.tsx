@@ -178,13 +178,9 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                             </div>
                             <div className="flex items-center justify-between pt-2">
                                 <div className="flex items-center gap-2">
-                                     <Switch
-                                        checked={court.is_public ?? false}
-                                        onCheckedChange={(checked) => handleStatusToggle(court.id, checked)}
-                                        aria-label={`Toggle visibility for ${court.name}`}
-                                    />
-                                    {court.is_public ? <Globe className="h-4 w-4 text-green-500" /> : <ShieldOff className="h-4 w-4 text-red-500" />}
-                                    <span className="capitalize text-xs text-muted-foreground">{court.is_public ? 'Public' : 'Private'}</span>
+                                     {court.is_public ? 
+                                        <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs"><Globe className="h-3 w-3" /> Public</div> : 
+                                        <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-xs"><ShieldOff className="h-3 w-3" /> Private</div>}
                                 </div>
                                 <StatusBadge status={court.status} />
                             </div>
