@@ -1,6 +1,6 @@
 
 'use client';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,7 +35,7 @@ export function RaiseTicketForm({ organisationId }: { organisationId: number }) 
         return result;
     }
     
-    const [state, dispatch] = useFormState(formAction, { error: null, success: false });
+    const [state, dispatch] = useActionState(formAction, { error: null, success: false });
 
     return (
         <Card>
