@@ -124,7 +124,7 @@ export default function DashboardLayout({
             </div>
             <div className="mt-auto p-4">
                 <p className="text-xs text-muted-foreground capitalize">
-                  {organisationType && `${organisationType} | `}Version 16.6.39
+                  {organisationType && `${organisationType} | `}Version 16.6.63
                 </p>
             </div>
           </aside>
