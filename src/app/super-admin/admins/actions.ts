@@ -6,7 +6,7 @@ import { createServiceRoleServer } from '@/lib/supabase/server';
 
 // This action creates a user with user_type = 2 (Admin)
 export async function addAdmin(formData: FormData) {
-  const supabaseAdmin = createServiceRoleServer();
+  const supabaseAdmin = await createServiceRoleServer();
 
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
@@ -55,7 +55,7 @@ export async function addAdmin(formData: FormData) {
 
 // removeAdmin requires the service role key to delete a user from auth schema.
 export async function removeAdmin(formData: FormData) {
-    const supabaseAdmin = createServiceRoleServer(); 
+    const supabaseAdmin = await createServiceRoleServer(); 
 
     const userId = formData.get('user_id') as string;
 
