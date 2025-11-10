@@ -1,3 +1,4 @@
+
 'use server';
 
 import { createServiceRoleServer } from '@/lib/supabase/server';
@@ -35,7 +36,7 @@ async function handleImageUpload(supabase: any, file: File | null, orgId: string
 }
 
 export async function saveAdvertisement(formData: FormData) {
-    const supabase = createServiceRoleServer();
+    const supabase = await createServiceRoleServer();
     
     const id = formData.get('id') as string | null;
     const name = formData.get('name') as string;
@@ -90,7 +91,7 @@ export async function saveAdvertisement(formData: FormData) {
 
 
 export async function deleteAdvertisement(formData: FormData) {
-    const supabase = createServiceRoleServer();
+    const supabase = await createServiceRoleServer();
     const id = formData.get('id') as string;
     
     if (!id) {
@@ -110,7 +111,7 @@ export async function deleteAdvertisement(formData: FormData) {
 }
 
 export async function toggleAdStatus(id: number, currentStatusId: number) {
-    const supabase = createServiceRoleServer();
+    const supabase = await createServiceRoleServer();
 
     // Assuming 1 = Active, 2 = Offline
     const newStatusId = currentStatusId === 1 ? 2 : 1;

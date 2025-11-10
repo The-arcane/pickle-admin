@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -6,7 +7,7 @@ import { createServiceRoleServer } from '@/lib/supabase/server';
 
 // This action creates a user with user_type = 6 (Sales)
 export async function addSalesPerson(formData: FormData) {
-  const supabaseAdmin = createServiceRoleServer();
+  const supabaseAdmin = await createServiceRoleServer();
 
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
@@ -55,7 +56,7 @@ export async function addSalesPerson(formData: FormData) {
 
 // removeSalesPerson requires the service role key to delete a user from auth schema.
 export async function removeSalesPerson(formData: FormData) {
-    const supabaseAdmin = createServiceRoleServer(); 
+    const supabaseAdmin = await createServiceRoleServer(); 
 
     const userId = formData.get('user_id') as string;
 

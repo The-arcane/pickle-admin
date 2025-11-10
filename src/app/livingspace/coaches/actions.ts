@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { createServer, createServiceRoleServer } from '@/lib/supabase/server';
@@ -53,7 +54,7 @@ function getCoachDataFromFormData(formData: FormData) {
 
 export async function addCoach(formData: FormData) {
     console.log("Starting addCoach server action...");
-    const supabaseAdmin = createServiceRoleServer();
+    const supabaseAdmin = await createServiceRoleServer();
 
     try {
         const name = formData.get('name') as string;
@@ -169,7 +170,7 @@ export async function addCoach(formData: FormData) {
 }
 
 export async function updateCoach(formData: FormData) {
-    const supabase = createServer();
+    const supabase = await createServer();
     const id = Number(formData.get('id'));
 
     try {
