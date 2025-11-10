@@ -37,11 +37,11 @@ export default async function HospitalityPage() {
     console.error("Could not find 'hospitality' in organisation_types table.");
   }
 
-  // Fetch admin users (user_type 8) who are NOT linked to any organization yet.
+  // Fetch admin users (user_type 2) who are NOT linked to any organization yet.
   const { data: usersData, error: usersError } = await supabase
     .from('user')
     .select('id, name, email, user_organisations!left(user_id)')
-    .eq('user_type', 8)
+    .eq('user_type', 2)
     .is('user_organisations.user_id', null)
     .order('name');
   

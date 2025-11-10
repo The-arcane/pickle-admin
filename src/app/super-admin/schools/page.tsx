@@ -38,11 +38,11 @@ export default async function SchoolsPage() {
     console.error("Could not find 'education' in organisation_types table.");
   }
   
-  // Fetch Education Admin users (user_type 7) who are NOT linked to any organization yet.
+  // Fetch Admin users (user_type 2) who are NOT linked to any organization yet.
   const { data: usersData, error: usersError } = await supabase
     .from('user')
     .select('id, name, email, user_organisations!left(user_id)')
-    .eq('user_type', 7)
+    .eq('user_type', 2)
     .is('user_organisations.user_id', null)
     .order('name');
   
