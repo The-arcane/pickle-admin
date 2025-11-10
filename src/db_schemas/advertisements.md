@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS public.advertisement_placements (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Insert initial placement options
+-- Insert initial placement options. ON CONFLICT ensures this is safe to run multiple times.
 INSERT INTO public.advertisement_placements (name)
 VALUES
   ('Home Screen Banner'),
@@ -45,7 +45,9 @@ CREATE TABLE IF NOT EXISTS public.advertisements (
   status public.ad_status NOT NULL DEFAULT 'Draft',
   image_url TEXT NOT NULL,
   link_url TEXT,
-  target_segment TEXT NOT NULL DEFAULT 'all_users', -- e.g., 'all_users', 'new_users', 'role_admin'
+  -- Flexible text field for audience targeting. App logic will interpret these values.
+  -- Examples: 'all_users', 'new_users_30_days', 'role_admin', 'org_type_school'
+  target_segment TEXT NOT NULL DEFAULT 'all_users',
   is_global BOOLEAN NOT NULL DEFAULT FALSE,
   impressions BIGINT NOT NULL DEFAULT 0,
   clicks BIGINT NOT NULL DEFAULT 0,
