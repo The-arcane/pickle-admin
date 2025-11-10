@@ -41,21 +41,21 @@ import { useRouter } from 'next/navigation';
 import { StatusBadge } from '@/components/status-badge';
 
 
-export function OrganisationsClientPage({ initialOrganizations, users }: { initialOrganizations: Organization[], users: User[] }) {
+export function SalesOrganisationsClientPage({ initialOrganizations, users }: { initialOrganizations: Organization[], users: User[] }) {
   const [organizations, setOrganizations] = useState<Organization[]>(initialOrganizations);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
   const { refreshOrganizations } = useOrganization();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     setOrganizations(initialOrganizations);
   }, [initialOrganizations]);
 
   const onActionFinish = () => {
-    // Instead of re-fetching, we just refresh the page which triggers a new server render
     router.refresh();
-    refreshOrganizations(); // This updates the global context
+    refreshOrganizations();
     setIsFormDialogOpen(false);
   };
   
@@ -160,13 +160,20 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
         org={editingOrg}
         users={users}
         onFinished={onActionFinish}
+        orgType={1} // Residences/Living Space
+        dialogTitle={editingOrg ? 'Edit Living Space' : 'Add New Living Space'}
+        dialogDescription={editingOrg ? 'Update details for this Living Space.' : 'Fill in the details for the new Living Space.'}
       />
     </>
   );
 }
 
 
-function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: { isOpen: boolean, setIsOpen: (open: boolean) => void, org: Organization | null, users: User[], onFinished: () => void }) {
+export function OrganizationFormDialog({ 
+    isOpen, setIsOpen, org, users, onFinished, orgType, dialogTitle, dialogDescription 
+}: { 
+    isOpen: boolean, setIsOpen: (open: boolean) => void, org: Organization | null, users: User[], onFinished: () => void, orgType: number, dialogTitle: string, dialogDescription: string 
+}) {
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(org?.logo || null);
@@ -174,6 +181,9 @@ function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: {
     useEffect(() => {
         if (isOpen) {
             setLogoPreview(org?.logo || null);
+        } else {
+            // Reset preview when dialog is closed
+            setLogoPreview(null);
         }
     }, [isOpen, org]);
 
@@ -194,13 +204,14 @@ function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: {
     };
     
     async function handleFormAction(formData: FormData) {
+        formData.append('type', orgType.toString());
         const action = org ? updateOrganization : addOrganization;
         const result = await action(formData);
 
         if (result?.error) {
             toast({ variant: 'destructive', title: 'Error', description: result.error });
         } else {
-            toast({ title: 'Success', description: `Living Space ${org ? 'updated' : 'created'} successfully.` });
+            toast({ title: 'Success', description: `Organization ${org ? 'updated' : 'created'} successfully.` });
             onFinished();
         }
     }
@@ -209,8 +220,8 @@ function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>{org ? 'Edit Living Space' : 'Add New Living Space'}</DialogTitle>
-                    <DialogDescription>{org ? 'Update details for this Living Space.' : 'Fill in the details for the new Living Space.'}</DialogDescription>
+                    <DialogTitle>{dialogTitle}</DialogTitle>
+                    <DialogDescription>{dialogDescription}</DialogDescription>
                 </DialogHeader>
                 <form ref={formRef} action={handleFormAction} className="grid gap-4 py-4">
                     {org && <input type="hidden" name="id" value={org.id} />}
@@ -226,7 +237,7 @@ function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: {
                         <Label htmlFor="user_id">Owner</Label>
                         <Select name="user_id" defaultValue={org?.user_id?.toString()} required>
                           <SelectTrigger id="user_id"><SelectValue placeholder="Select an owner" /></SelectTrigger>
-                          <SelectContent>{users.map(user => <SelectItem key={user.id} value={user.id.toString()}>{user.name}</SelectItem>)}</SelectContent>
+                          <SelectContent>{users.map(user => <SelectItem key={user.id} value={user.id.toString()}>{user.name} ({user.email})</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
@@ -236,7 +247,7 @@ function OrganizationFormDialog({ isOpen, setIsOpen, org, users, onFinished }: {
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                        <Button type="submit">Save Living Space</Button>
+                        <Button type="submit">Save</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

@@ -45,17 +45,19 @@ export async function addOrganization(formData: FormData) {
   const address = formData.get('address') as string;
   const userId = formData.get('user_id') as string;
   const logoFile = formData.get('logo') as File | null;
+  const type = Number(formData.get('type'));
 
-  if (!name || !address || !userId) {
-      return { error: 'Name, Address, and Owner are required.' };
+  if (!name || !address || !userId || !type) {
+      return { error: 'Name, Address, Owner, and Type are required.' };
   }
   
   try {
-    const insertData: { name: string; address: string; user_id: number; logo?: string; type: number } = {
+    const insertData: { name: string; address: string; user_id: number; logo?: string, is_active: boolean, type: number } = {
         name,
         address,
         user_id: Number(userId),
-        type: 1, // Set type to 1 for residences
+        is_active: false,
+        type: type,
     };
 
     // 1. Insert the organization record. This will fire the trigger.
@@ -71,13 +73,13 @@ export async function addOrganization(formData: FormData) {
             return { error: 'The selected user does not exist or cannot be assigned as an owner.' };
         }
         if (orgInsertError.message.includes('user_organisations_user_id_key') || orgInsertError.message.includes('already an admin')) {
-            return { error: 'This user is already an admin of another Living Space.' };
+            return { error: 'This user is already an admin of another organization.' };
         }
-        return { error: `Failed to create Living Space: ${orgInsertError.message}` };
+        return { error: `Failed to create organization: ${orgInsertError.message}` };
     }
 
     if (!newOrg) {
-        return { error: 'Failed to create Living Space. No data was returned after insert.' };
+        return { error: 'Failed to create organization. No data was returned after insert.' };
     }
 
     // 2. If a logo is provided, upload it and then UPDATE the record.
@@ -92,7 +94,7 @@ export async function addOrganization(formData: FormData) {
             if (updateError) {
                  // Non-fatal error, the org was created.
                  console.error('Error updating org with logo:', updateError);
-                 return { error: `Living Space created, but failed to save logo: ${updateError.message}` };
+                 return { error: `Organization created, but failed to save logo: ${updateError.message}` };
             }
         }
     }
@@ -102,6 +104,7 @@ export async function addOrganization(formData: FormData) {
   }
   
   revalidatePath('/super-admin/organisations');
+  revalidatePath('/super-admin/arena');
   return { success: true };
 }
 
@@ -114,15 +117,17 @@ export async function updateOrganization(formData: FormData) {
     const address = formData.get('address') as string;
     const userId = formData.get('user_id') as string;
     const logoFile = formData.get('logo') as File | null;
+    const type = Number(formData.get('type'));
 
-    if (!id || !name || !address || !userId) {
-        return { error: 'ID, Name, Address, and Owner are required.' };
+    if (!id || !name || !address || !userId || !type) {
+        return { error: 'ID, Name, Address, Owner, and Type are required.' };
     }
     try {
-        const updateData: { name: string; address: string; user_id: number; logo?: string } = {
+        const updateData: { name: string; address: string; user_id: number; logo?: string; type: number; } = {
             name,
             address,
             user_id: Number(userId),
+            type: type,
         };
         
         // Upload new logo if provided
@@ -142,9 +147,9 @@ export async function updateOrganization(formData: FormData) {
             console.error('Error updating organization:', error);
             // Provide a more user-friendly error message
             if (error.message.includes('user_organisations_user_id_key')) {
-                return { error: 'This user is already an admin of another Living Space.' };
+                return { error: 'This user is already an admin of another organization.' };
             }
-            return { error: `Failed to update Living Space: ${error.message}` };
+            return { error: `Failed to update organization: ${error.message}` };
         }
     } catch(e: any) {
         return { error: `An unexpected error occurred: ${e.message}`};
@@ -161,7 +166,7 @@ export async function toggleOrganizationStatus(formData: FormData) {
     const currentStatus = formData.get('is_active') === 'true';
 
     if (!id) {
-        return { error: 'Living Space ID is missing.' };
+        return { error: 'Organization ID is missing.' };
     }
 
     const { error } = await supabase
@@ -175,5 +180,5 @@ export async function toggleOrganizationStatus(formData: FormData) {
     }
 
     revalidatePath('/super-admin/organisations');
-    return { success: true, message: `Living Space status updated to ${!currentStatus ? 'Active' : 'Inactive'}.` };
+    return { success: true, message: `Organization status updated to ${!currentStatus ? 'Active' : 'Inactive'}.` };
 }
