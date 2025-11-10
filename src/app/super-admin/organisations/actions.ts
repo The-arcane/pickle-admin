@@ -81,21 +81,28 @@ export async function addOrganization(formData: FormData) {
     if (!newOrg) {
         return { error: 'Failed to create organization. No data was returned after insert.' };
     }
+    
+    let userTypeToSet: number | null = null;
+    if (type === 4) { // Arena
+      userTypeToSet = 9; // Arena Admin
+    } else if (type === 1) { // Living Space
+      userTypeToSet = 2; // Living Space Admin
+    }
 
-    // If it's an Arena, update the user's type
-    if (type === 4) { // Arena type is 4
+    if (userTypeToSet) {
         const { error: userUpdateError } = await supabase
             .from('user')
-            .update({ user_type: 9 }) // Arena Admin user type is 9
+            .update({ user_type: userTypeToSet })
             .eq('id', Number(userId));
 
         if (userUpdateError) {
-            console.error('Error updating user type to Arena Admin:', userUpdateError);
-            // Optionally, rollback the organization creation here if desired
+            console.error(`Error updating user type to ${userTypeToSet}:`, userUpdateError);
+            // Rollback the organization creation
             await supabase.from('organisations').delete().eq('id', newOrg.id);
-            return { error: 'Failed to assign Arena Admin role. Organization creation was rolled back.' };
+            return { error: `Failed to assign admin role. Organization creation was rolled back.` };
         }
     }
+
 
     // 2. If a logo is provided, upload it and then UPDATE the record.
     if (logoFile && logoFile.size > 0) {
