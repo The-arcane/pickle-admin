@@ -128,8 +128,7 @@ export function EditCourtClientPage({ court, organisations, sports, organisation
         formData.append('contact', JSON.stringify(contact));
         formData.append('availability', JSON.stringify(availability.filter(a => a.date)));
         formData.append('unavailability', JSON.stringify(unavailability.filter(u => u.day_of_week !== undefined && u.start_time && u.end_time)));
-        formData.append('organisation_id', organisationId.toString());
-
+        
         const action = isAdding ? addCourt : updateCourt;
         if (!isAdding && court) {
             formData.append('id', court.id.toString());
@@ -280,17 +279,14 @@ export function EditCourtClientPage({ court, organisations, sports, organisation
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="flex items-center justify-between rounded-lg border p-4">
                                     <Label htmlFor="has_floodlights" className="text-base font-medium flex items-center gap-2"><Lightbulb className="h-4 w-4"/> Floodlights</Label>
-                                    <input type="hidden" name="has_floodlights" value="false" />
                                     <Switch id="has_floodlights" name="has_floodlights" defaultChecked={court?.has_floodlights ?? false}/>
                                 </div>
                                 <div className="flex items-center justify-between rounded-lg border p-4">
                                     <Label htmlFor="is_equipment_available" className="text-base font-medium">Equipment</Label>
-                                    <input type="hidden" name="is_equipment_available" value="false" />
                                     <Switch id="is_equipment_available" name="is_equipment_available" defaultChecked={court?.is_equipment_available ?? false}/>
                                 </div>
                                 <div className="flex items-center justify-between rounded-lg border p-4">
                                     <Label htmlFor="is_public" className="text-base font-medium flex items-center gap-2"><Globe className="h-4 w-4"/> Public</Label>
-                                    <input type="hidden" name="is_public" value="false" />
                                     <Switch id="is_public" name="is_public" defaultChecked={court?.is_public ?? true}/>
                                 </div>
                             </div>
@@ -401,7 +397,6 @@ export function EditCourtClientPage({ court, organisations, sports, organisation
                                     <Label htmlFor="one_booking_per_user_per_day" className="text-base font-medium">One Booking Per Day</Label>
                                     <p className="text-xs text-muted-foreground">Limit users to one booking on this court per calendar day.</p>
                                 </div>
-                                <input type="hidden" name="one_booking_per_user_per_day" value="false" />
                                 <Switch id="one_booking_per_user_per_day" name="one_booking_per_user_per_day" defaultChecked={court?.one_booking_per_user_per_day ?? false} />
                             </div>
                              <div className="flex items-center justify-between rounded-lg border p-4">
@@ -409,7 +404,6 @@ export function EditCourtClientPage({ court, organisations, sports, organisation
                                     <Label htmlFor="is_booking_rolling" className="text-base font-medium">Rolling 24-Hour Window</Label>
                                     <p className="text-xs text-muted-foreground">Users can only book a slot if it's within 24 hours of the current time.</p>
                                 </div>
-                                <input type="hidden" name="is_booking_rolling" value="false" />
                                 <Switch id="is_booking_rolling" name="is_booking_rolling" defaultChecked={court?.is_booking_rolling ?? false} />
                             </div>
                         </CardContent>

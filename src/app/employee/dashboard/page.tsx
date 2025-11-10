@@ -105,7 +105,7 @@ export default function EmployeeDashboardPage() {
         {organisationLogo && (
             <Image
                 src={organisationLogo}
-                alt="Living Space Logo"
+                alt="Organization Logo"
                 width={40}
                 height={40}
                 className="rounded-md object-cover"

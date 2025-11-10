@@ -16,7 +16,7 @@ export default async function ArenaEditCoachPage({ params }: { params: { id: str
 
     const { data: userRecord } = await supabase
         .from('user')
-        .select('id, organisation_id')
+        .select('id')
         .eq('user_uuid', user.id)
         .single();
     

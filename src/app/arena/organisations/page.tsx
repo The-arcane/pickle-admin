@@ -32,7 +32,7 @@ export default async function OrganisationPage() {
     if (!orgLink?.organisation_id) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
-                <p className="text-muted-foreground">You are not associated with an Arena.</p>
+                <p className="text-muted-foreground">You are not associated with a Sports Venue.</p>
             </div>
         );
     }
@@ -44,7 +44,7 @@ export default async function OrganisationPage() {
         .single();
 
     if (error || !org) {
-        return <p>Could not load Arena details.</p>
+        return <p>Could not load Sports Venue details.</p>
     }
 
     // Fetch buildings and their nested data
