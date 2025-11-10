@@ -82,6 +82,21 @@ export async function addOrganization(formData: FormData) {
         return { error: 'Failed to create organization. No data was returned after insert.' };
     }
 
+    // If it's an Arena, update the user's type
+    if (type === 4) { // Arena type is 4
+        const { error: userUpdateError } = await supabase
+            .from('user')
+            .update({ user_type: 9 }) // Arena Admin user type is 9
+            .eq('id', Number(userId));
+
+        if (userUpdateError) {
+            console.error('Error updating user type to Arena Admin:', userUpdateError);
+            // Optionally, rollback the organization creation here if desired
+            await supabase.from('organisations').delete().eq('id', newOrg.id);
+            return { error: 'Failed to assign Arena Admin role. Organization creation was rolled back.' };
+        }
+    }
+
     // 2. If a logo is provided, upload it and then UPDATE the record.
     if (logoFile && logoFile.size > 0) {
         const logoUrl = await handleLogoUpload(supabase, logoFile, newOrg.id.toString());
@@ -161,7 +176,7 @@ export async function updateOrganization(formData: FormData) {
 }
 
 export async function toggleOrganizationStatus(formData: FormData) {
-    const supabase = await createServiceRoleServer();
+    const supabase = createServiceRoleServer();
     const id = formData.get('id') as string;
     const currentStatus = formData.get('is_active') === 'true';
 
@@ -182,3 +197,4 @@ export async function toggleOrganizationStatus(formData: FormData) {
     revalidatePath('/super-admin/organisations');
     return { success: true, message: `Organization status updated to ${!currentStatus ? 'Active' : 'Inactive'}.` };
 }
+
