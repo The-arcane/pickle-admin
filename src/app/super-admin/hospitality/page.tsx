@@ -37,15 +37,16 @@ export default async function HospitalityPage() {
     console.error("Could not find 'hospitality' in organisation_types table.");
   }
 
-  // Fetch admin users (user_type 8 for Hospitality) to populate the owner dropdown.
+  // Fetch admin users (user_type 8) who are NOT linked to any organization yet.
   const { data: usersData, error: usersError } = await supabase
     .from('user')
-    .select('id, name, email')
+    .select('id, name, email, user_organisations!left(user_id)')
     .eq('user_type', 8)
+    .is('user_organisations.user_id', null)
     .order('name');
   
   if (usersError) {
-      console.error("Error fetching hospitality admin users:", usersError);
+      console.error("Error fetching unassigned hospitality admin users:", usersError);
   }
   
   return <HospitalityClientPage orgs={orgsData} users={usersData || []} />;

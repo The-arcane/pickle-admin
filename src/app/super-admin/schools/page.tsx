@@ -38,15 +38,16 @@ export default async function SchoolsPage() {
     console.error("Could not find 'education' in organisation_types table.");
   }
   
-  // Fetch Education Admin users (user_type 7) to populate the owner dropdown.
+  // Fetch Education Admin users (user_type 7) who are NOT linked to any organization yet.
   const { data: usersData, error: usersError } = await supabase
     .from('user')
-    .select('id, name, email')
-    .eq('user_type', 7) // Education Admin
+    .select('id, name, email, user_organisations!left(user_id)')
+    .eq('user_type', 7)
+    .is('user_organisations.user_id', null)
     .order('name');
   
   if (usersError) {
-      console.error("Error fetching education admin users:", usersError);
+      console.error("Error fetching unassigned education admin users:", usersError);
   }
   
   return <SchoolsClientPage schools={schoolsData} users={usersData || []} />;

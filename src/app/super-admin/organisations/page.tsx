@@ -36,10 +36,16 @@ export default async function OrganizationsPage() {
         console.error("Could not find 'residences' in organisation_types table.");
     }
     
-    // Fetch all admin users to populate the "owner" dropdown in the form
-    const { data: usersData, error: usersError } = await supabase.from('user').select('id, name').eq('user_type', 2).order('name');
+    // Fetch admin users (user_type 2) who are NOT linked to any organization yet.
+    const { data: usersData, error: usersError } = await supabase
+        .from('user')
+        .select('id, name, email, user_organisations!left(user_id)')
+        .eq('user_type', 2)
+        .is('user_organisations.user_id', null)
+        .order('name');
+        
     if(usersError) {
-        console.error("Error fetching users:", usersError);
+        console.error("Error fetching unassigned users:", usersError);
     }
     
     return (
