@@ -96,7 +96,7 @@ export default function DashboardLayout({
         <div className="flex h-screen w-full items-center justify-center">
             <div className="flex flex-col items-center gap-4">
                 <Skeleton className="h-10 w-48" />
-                <p className="text-muted-foreground">Loading Living Space...</p>
+                <p className="text-muted-foreground">Loading Living Space Panel...</p>
             </div>
         </div>
     );
