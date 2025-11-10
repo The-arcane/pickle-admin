@@ -34,6 +34,7 @@ export default function MobileAdsPage() {
   const [selectedAd, setSelectedAd] = useState<any | null>(null);
 
   const mobileAdType = adTypes.find(t => t.type_name === 'mobile');
+  const mobilePlacements = placements.filter(p => p.type_id === mobileAdType?.id);
 
   const fetchData = useCallback(async () => {
     if (!selectedOrgId || !mobileAdType) {
@@ -196,7 +197,7 @@ export default function MobileAdsPage() {
                 ad={selectedAd}
                 adTypeId={mobileAdType.id}
                 orgId={selectedOrgId}
-                placements={placements}
+                placements={mobilePlacements}
                 statuses={statuses}
                 audiences={audiences}
                 onFinished={onActionFinish}

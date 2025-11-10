@@ -34,6 +34,7 @@ export default function WebAdsPage() {
   const [selectedAd, setSelectedAd] = useState<any | null>(null);
 
   const webAdType = adTypes.find(t => t.type_name === 'web');
+  const webPlacements = placements.filter(p => p.type_id === webAdType?.id);
 
   const fetchData = useCallback(async () => {
     if (!selectedOrgId || !webAdType) {
@@ -196,7 +197,7 @@ export default function WebAdsPage() {
                 ad={selectedAd}
                 adTypeId={webAdType.id}
                 orgId={selectedOrgId}
-                placements={placements}
+                placements={webPlacements}
                 statuses={statuses}
                 audiences={audiences}
                 onFinished={onActionFinish}
