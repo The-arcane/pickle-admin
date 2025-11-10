@@ -46,8 +46,8 @@ export default function WebAdsPage() {
     const { data, error } = await supabase
         .from('advertisements')
         .select('*, placement:advertisement_placements(name), status:advertisement_status(status_name)')
-        .eq('organisation_id', selectedOrgId)
         .eq('type_id', webAdType.id)
+        .or(`organisation_id.eq.${selectedOrgId},is_global.eq.true`)
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -157,6 +157,12 @@ export default function WebAdsPage() {
                                         <StatusBadge status={ad.status.status_name} />
                                     </div>
                                     <p className="text-sm text-muted-foreground">{ad.placement.name}</p>
+                                    {ad.is_global && (
+                                        <div className="flex items-center gap-2 text-xs text-blue-500 font-medium">
+                                            <Globe className="h-3 w-3" />
+                                            <span>Global Ad (Added by Super-admin)</span>
+                                        </div>
+                                    )}
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2">
                                         <span><strong>Impressions:</strong> {ad.impressions.toLocaleString()}</span>
                                         <span><strong>Clicks:</strong> {ad.clicks.toLocaleString()}</span>
