@@ -13,17 +13,27 @@ export default async function BookingsPage() {
     return redirect('/login');
   }
 
-  const { data: adminProfile } = await supabase
+  const { data: userProfile } = await supabase
     .from('user')
-    .select('organisation_id')
+    .select('id')
     .eq('user_uuid', user.id)
     .single();
 
-  if (!adminProfile || !adminProfile.organisation_id) {
+  if (!userProfile) {
+    return redirect('/login?error=Your%20admin%20account%20is%20not%20found.');
+  }
+
+  const { data: orgLink } = await supabase
+    .from('user_organisations')
+    .select('organisation_id')
+    .eq('user_id', userProfile.id)
+    .maybeSingle();
+
+  if (!orgLink?.organisation_id) {
     return redirect('/login?error=Your%20admin%20account%20is%20not%20associated%20with%20a%20Living%20Space.');
   }
   
-  const organisationId = adminProfile.organisation_id;
+  const organisationId = orgLink.organisation_id;
 
   // Fetch all necessary data in parallel
   const [
