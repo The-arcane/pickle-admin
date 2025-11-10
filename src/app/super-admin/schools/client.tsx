@@ -1,27 +1,23 @@
+
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
-import { useToast } from "@/hooks/use-toast";
-import { addSchool, removeSchool, importSchoolsFromCSV } from './actions';
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MoreHorizontal, PlusCircle, Trash2, School, FileUp, Download } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from "@/hooks/use-toast";
+import { removeSchool, importSchoolsFromCSV } from './actions';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { OrganizationFormDialog } from '@/app/super-admin/organisations/client';
 import { StatusBadge } from '@/components/status-badge';
-import { Trash2, PlusCircle, MoreHorizontal, School, FileUp, Download } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import Image from 'next/image';
+import type { User } from '@/types';
 
 type School = {
     id: number;
@@ -34,15 +30,6 @@ type School = {
         email: string | null;
     } | null;
 };
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button type="submit" disabled={pending}>
-            {pending ? 'Creating...' : 'Create School & Admin'}
-        </Button>
-    )
-}
 
 function CsvSubmitButton() {
     const { pending } = useFormStatus();
@@ -63,36 +50,21 @@ function getInitials(name: string | undefined | null) {
 };
 
 
-export function SchoolsClientPage({ schools }: { schools: School[] }) {
+export function SchoolsClientPage({ schools, users }: { schools: School[], users: User[] }) {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
     const [deletingSchool, setDeletingSchool] = useState<School | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const { toast } = useToast();
-    const formRef = useRef<HTMLFormElement>(null);
     const csvFormRef = useRef<HTMLFormElement>(null);
     const router = useRouter();
-    const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
-    const handleAddFormAction = async (formData: FormData) => {
-        if (formData.get('admin_password') !== formData.get('confirm_password')) {
-            toast({ variant: "destructive", title: "Error", description: "Passwords do not match." });
-            return;
-        }
+    const onActionFinish = () => {
+        router.refresh();
+        setIsAddDialogOpen(false);
+    };
 
-        const result = await addSchool(formData);
-        if (result.error) {
-            toast({ variant: "destructive", title: "Error", description: result.error });
-        } else {
-            toast({ title: "Success", description: result.message });
-            setIsAddDialogOpen(false);
-            formRef.current?.reset();
-            setLogoPreview(null);
-            router.refresh();
-        }
-    }
-    
     const openDeleteDialog = (school: School) => {
         setDeletingSchool(school);
         setIsDeleteDialogOpen(true);
@@ -137,23 +109,6 @@ export function SchoolsClientPage({ schools }: { schools: School[] }) {
         link.click();
         document.body.removeChild(link);
     };
-
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-             if (file.size > 2 * 1024 * 1024) { // 2MB limit
-                toast({
-                    variant: 'destructive',
-                    title: 'File Too Large',
-                    description: 'The logo image cannot exceed 2MB.',
-                });
-                e.target.value = '';
-                return;
-            }
-            setLogoPreview(URL.createObjectURL(file));
-        }
-    }
-
 
     return (
         <div className="space-y-6">
@@ -234,59 +189,16 @@ export function SchoolsClientPage({ schools }: { schools: School[] }) {
                 </CardContent>
             </Card>
 
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogContent className="sm:max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Add New School</DialogTitle>
-                        <DialogDescription>
-                            Create a new school organization and its primary admin user.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <form ref={formRef} action={handleAddFormAction} className="space-y-6 py-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-4 p-4 border rounded-lg">
-                                 <h3 className="font-semibold text-lg">School Details</h3>
-                                <div className="space-y-2">
-                                    <Label htmlFor="org_name">School Name</Label>
-                                    <Input id="org_name" name="org_name" required />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="org_address">Address</Label>
-                                    <Input id="org_address" name="org_address" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="logo">Logo (Max 2MB)</Label>
-                                    <Input id="logo" name="logo" type="file" accept="image/*" onChange={handleLogoChange} />
-                                    {logoPreview && <Image src={logoPreview} alt="Logo preview" width={80} height={80} className="mt-2 rounded-md object-cover" />}
-                                </div>
-                            </div>
-                            <div className="space-y-4 p-4 border rounded-lg">
-                                <h3 className="font-semibold text-lg">Admin User Details</h3>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="admin_name">Admin Full Name</Label>
-                                    <Input id="admin_name" name="admin_name" required />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="admin_email">Admin Email</Label>
-                                    <Input id="admin_email" name="admin_email" type="email" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="admin_password">Password</Label>
-                                    <Input id="admin_password" name="admin_password" type="password" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="confirm_password">Confirm Password</Label>
-                                    <Input id="confirm_password" name="confirm_password" type="password" required />
-                                </div>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                            <SubmitButton />
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+            <OrganizationFormDialog 
+                isOpen={isAddDialogOpen} 
+                setIsOpen={setIsAddDialogOpen}
+                org={null}
+                users={users}
+                onFinished={onActionFinish}
+                orgType={2} // Education org type
+                dialogTitle="Add New School"
+                dialogDescription="Create a new school organization and assign an owner."
+            />
             
              <Dialog open={isImportDialogOpen} onOpenChange={(isOpen) => {
                 setIsImportDialogOpen(isOpen);
