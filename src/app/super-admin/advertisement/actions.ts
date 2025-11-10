@@ -41,28 +41,33 @@ export async function saveAdvertisement(formData: FormData) {
     const id = formData.get('id') as string | null;
     const name = formData.get('name') as string;
     const orgId = formData.get('organisation_id') as string;
+    const isGlobal = formData.get('is_global') === 'on';
 
-    if (!name || !orgId) {
+    // A global ad does not need an orgId, but a non-global one does.
+    if (!name || (!isGlobal && !orgId)) {
         return { error: 'Advertisement name and organization are required.' };
     }
 
     try {
         const payload: any = {
             name,
-            organisation_id: Number(orgId),
+            // If it's a global ad, set organisation_id to null. Otherwise, use the provided orgId.
+            organisation_id: isGlobal ? null : Number(orgId),
             placement_id: Number(formData.get('placement_id')),
             type_id: Number(formData.get('type_id')),
             status_id: Number(formData.get('status_id')),
             target_audience_id: Number(formData.get('target_audience_id')) || null,
             link_url: formData.get('link_url') as string,
-            is_global: formData.get('is_global') === 'on',
+            is_global: isGlobal,
             start_date: formData.get('start_date') || null,
             end_date: formData.get('end_date') || null,
         };
 
         const imageFile = formData.get('image_file') as File | null;
         if (imageFile && imageFile.size > 0) {
-            const imageUrl = await handleImageUpload(supabase, imageFile, orgId, name);
+            // Use 'global' as folder for global ads, or orgId for specific ones.
+            const uploadFolderId = isGlobal ? 'global' : orgId;
+            const imageUrl = await handleImageUpload(supabase, imageFile, uploadFolderId, name);
             if(imageUrl) payload.image_url = imageUrl;
         } else if (formData.get('remove_image') === 'true') {
             payload.image_url = null;
@@ -131,5 +136,3 @@ export async function toggleAdStatus(id: number, currentStatusId: number) {
     revalidatePath('/super-admin/advertisement/mobile');
     return { success: true, message: 'Ad status updated.' };
 }
-
-    
