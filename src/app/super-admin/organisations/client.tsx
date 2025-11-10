@@ -237,7 +237,7 @@ export function OrganizationFormDialog({
                         <Label htmlFor="user_id">Owner</Label>
                         <Select name="user_id" defaultValue={org?.user_id?.toString()} required>
                           <SelectTrigger id="user_id"><SelectValue placeholder="Select an owner" /></SelectTrigger>
-                          <SelectContent>{users.map(user => <SelectItem key={user.id} value={user.id.toString()}>{user.name} ({user.email})</SelectItem>)}</SelectContent>
+                          <SelectContent>{(users || []).map(user => <SelectItem key={user.id} value={user.id.toString()}>{user.name} ({user.email})</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">

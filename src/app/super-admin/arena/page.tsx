@@ -37,5 +37,16 @@ export default async function ArenaPage() {
     console.error("Could not find 'public arena' in organisation_types table.");
   }
   
-  return <ArenaClientPage orgs={orgsData} />;
+  // Fetch admin users (user_type 9 for Arena) to populate the owner dropdown.
+  const { data: usersData, error: usersError } = await supabase
+    .from('user')
+    .select('id, name, email')
+    .eq('user_type', 9)
+    .order('name');
+  
+  if (usersError) {
+      console.error("Error fetching arena admin users:", usersError);
+  }
+  
+  return <ArenaClientPage orgs={orgsData} users={usersData || []} />;
 }
