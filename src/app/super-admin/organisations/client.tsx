@@ -41,7 +41,7 @@ import { useRouter } from 'next/navigation';
 import { StatusBadge } from '@/components/status-badge';
 
 
-export function SalesOrganisationsClientPage({ initialOrganizations, users }: { initialOrganizations: Organization[], users: User[] }) {
+export function OrganisationsClientPage({ initialOrganizations, users }: { initialOrganizations: Organization[], users: User[] }) {
   const [organizations, setOrganizations] = useState<Organization[]>(initialOrganizations);
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
