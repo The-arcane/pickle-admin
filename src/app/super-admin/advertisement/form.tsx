@@ -12,10 +12,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { saveAdvertisement } from './actions';
-import { FileUp } from 'lucide-react';
+import { FileUp, CalendarIcon, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -43,6 +42,7 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
 }) {
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
     const isEditing = !!ad;
     
     // State for all form fields
@@ -50,6 +50,7 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
     const [linkUrl, setLinkUrl] = useState(ad?.link_url || '');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(ad?.image_url || null);
+    const [isImageRemoved, setIsImageRemoved] = useState(false);
 
     const [placementId, setPlacementId] = useState(ad?.placement_id?.toString() || '');
     const [audienceId, setAudienceId] = useState(ad?.target_audience_id?.toString() || '');
@@ -62,7 +63,9 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
         if (ad) {
             setName(ad.name || '');
             setLinkUrl(ad.link_url || '');
+            setImageFile(null);
             setImagePreview(ad.image_url || null);
+            setIsImageRemoved(false);
             setPlacementId(ad.placement_id?.toString() || '');
             setAudienceId(ad.target_audience_id?.toString() || '');
             setStatusId(ad.status_id?.toString() || statuses.find(s => s.status_name === 'Active')?.id.toString() || '');
@@ -75,6 +78,7 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
             setLinkUrl('');
             setImageFile(null);
             setImagePreview(null);
+            setIsImageRemoved(false);
             setPlacementId('');
             setAudienceId('');
             setStatusId(statuses.find(s => s.status_name === 'Active')?.id.toString() || '');
@@ -82,7 +86,7 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
             setStartDate(undefined);
             setEndDate(undefined);
         }
-    }, [ad, statuses]);
+    }, [ad, statuses, isOpen]);
 
     const handleFormAction = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -94,7 +98,12 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
 
         formData.append('name', name);
         formData.append('link_url', linkUrl);
-        if (imageFile) formData.append('image_file', imageFile);
+        if (imageFile) {
+            formData.append('image_file', imageFile);
+        } else if (isImageRemoved) {
+            // Signal to backend to remove the image URL
+            formData.append('remove_image', 'true');
+        }
         
         formData.append('placement_id', placementId);
         formData.append('target_audience_id', audienceId);
@@ -122,8 +131,18 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
             }
             setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
+            setIsImageRemoved(false);
         }
     };
+    
+    const handleRemoveImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        if (imageInputRef.current) {
+            imageInputRef.current.value = '';
+        }
+        setIsImageRemoved(true); // Flag that the existing image should be removed
+    }
 
     return (
          <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -151,8 +170,16 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="image_file">Ad Creative (Image, Max 2MB)</Label>
-                                <Input id="image_file" name="image_file" type="file" accept="image/*" onChange={handleImageChange} />
-                                {imagePreview && <Image src={imagePreview} alt="Ad preview" width={200} height={100} className="mt-2 rounded-md object-cover border" />}
+                                <Input ref={imageInputRef} id="image_file" name="image_file" type="file" accept="image/*" onChange={handleImageChange} />
+                                {imagePreview && (
+                                    <div className="relative mt-2 w-fit">
+                                        <Image src={imagePreview} alt="Ad preview" width={200} height={100} className="rounded-md object-cover border" />
+                                        <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={handleRemoveImage}>
+                                            <X className="h-4 w-4" />
+                                            <span className="sr-only">Remove Image</span>
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         </TabsContent>
                         <TabsContent value="targeting" className="py-4 space-y-4">
@@ -186,11 +213,11 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Start Date (Optional)</Label>
-                                    <Popover><PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{startDate ? format(startDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={setStartDate} /></PopoverContent></Popover>
+                                    <Popover><PopoverTrigger asChild><Button type="button" variant="outline" className={cn("w-full justify-start text-left font-normal", !startDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{startDate ? format(startDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={setStartDate} /></PopoverContent></Popover>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>End Date (Optional)</Label>
-                                    <Popover><PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{endDate ? format(endDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={setEndDate} /></PopoverContent></Popover>
+                                    <Popover><PopoverTrigger asChild><Button type="button" variant="outline" className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{endDate ? format(endDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={setEndDate} /></PopoverContent></Popover>
                                 </div>
                             </div>
                         </TabsContent>
@@ -204,3 +231,5 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
         </Dialog>
     );
 }
+
+    

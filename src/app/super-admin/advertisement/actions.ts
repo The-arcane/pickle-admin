@@ -64,6 +64,8 @@ export async function saveAdvertisement(formData: FormData) {
         if (imageFile && imageFile.size > 0) {
             const imageUrl = await handleImageUpload(supabase, imageFile, orgId, name);
             if(imageUrl) payload.image_url = imageUrl;
+        } else if (formData.get('remove_image') === 'true') {
+            payload.image_url = null;
         }
 
         if (id) {
@@ -129,3 +131,5 @@ export async function toggleAdStatus(id: number, currentStatusId: number) {
     revalidatePath('/super-admin/advertisement/mobile');
     return { success: true, message: 'Ad status updated.' };
 }
+
+    
