@@ -1,56 +1,122 @@
 
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Smartphone, PlusCircle, FileUp, MoreHorizontal, Edit, Trash2, Power, PowerOff } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Smartphone, PlusCircle, MoreHorizontal, Edit, Trash2, Power, PowerOff } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { useOrganization } from "@/hooks/use-organization";
 import { StatusBadge } from "@/components/status-badge";
-
-const mockMobileAds = [
-    {
-        id: 'M-AD-001',
-        name: 'Summer Splash Banner',
-        placement: 'Home Screen Banner',
-        status: 'Active',
-        impressions: 15200,
-        clicks: 340,
-        ctr: '2.24%',
-        image: 'https://placehold.co/800x200/E2E8F0/4A5568.png?text=Summer+Sale'
-    },
-    {
-        id: 'M-AD-002',
-        name: 'New Court Pop-up',
-        placement: 'Booking Confirmation Pop-up',
-        status: 'Active',
-        impressions: 8900,
-        clicks: 512,
-        ctr: '5.75%',
-        image: 'https://placehold.co/400x400/E2E8F0/4A5568.png?text=New+Court+Open!'
-    },
-    {
-        id: 'M-AD-003',
-        name: 'Profile Footer Ad',
-        placement: 'Profile Page Footer',
-        status: 'Offline',
-        impressions: 22500,
-        clicks: 150,
-        ctr: '0.67%',
-        image: 'https://placehold.co/800x100/E2E8F0/4A5568.png?text=Get+Premium'
-    }
-];
+import { createClient } from "@/lib/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { AdFormDialog } from "../form";
+import { deleteAdvertisement, toggleAdStatus } from "../actions";
 
 export default function MobileAdsPage() {
+  const supabase = createClient();
   const { selectedOrgId } = useOrganization();
+  const { toast } = useToast();
+
+  const [ads, setAds] = useState<any[]>([]);
+  const [adTypes, setAdTypes] = useState<any[]>([]);
+  const [statuses, setStatuses] = useState<any[]>([]);
+  const [placements, setPlacements] = useState<any[]>([]);
+  const [audiences, setAudiences] = useState<any[]>([]);
+  
+  const [loading, setLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [selectedAd, setSelectedAd] = useState<any | null>(null);
+
+  const mobileAdType = adTypes.find(t => t.type_name === 'mobile');
+
+  const fetchData = useCallback(async () => {
+    if (!selectedOrgId || !mobileAdType) {
+        setAds([]);
+        setLoading(false);
+        return;
+    }
+
+    const { data, error } = await supabase
+        .from('advertisements')
+        .select('*, placement:advertisement_placements(name), status:advertisement_status(status_name)')
+        .eq('organisation_id', selectedOrgId)
+        .eq('type_id', mobileAdType.id)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching mobile ads:", error);
+    } else {
+        setAds(data || []);
+    }
+    setLoading(false);
+  }, [selectedOrgId, supabase, mobileAdType]);
+
+  useEffect(() => {
+    async function fetchMetadata() {
+        const [typesRes, statusRes, placementRes, audienceRes] = await Promise.all([
+            supabase.from('advertisement_types').select('*'),
+            supabase.from('advertisement_status').select('*'),
+            supabase.from('advertisement_placements').select('*'),
+            supabase.from('advertisement_audiences').select('*'),
+        ]);
+        if (typesRes.error) console.error(typesRes.error.message);
+        else setAdTypes(typesRes.data);
+        
+        if (statusRes.error) console.error(statusRes.error.message);
+        else setStatuses(statusRes.data);
+
+        if (placementRes.error) console.error(placementRes.error.message);
+        else setPlacements(placementRes.data);
+
+        if (audienceRes.error) console.error(audienceRes.error.message);
+        else setAudiences(audienceRes.data);
+    }
+    fetchMetadata();
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const onActionFinish = () => {
+    fetchData();
+    setIsFormOpen(false);
+    setIsDeleteOpen(false);
+    setSelectedAd(null);
+  }
+
+  const openFormDialog = (ad: any | null) => {
+    setSelectedAd(ad);
+    setIsFormOpen(true);
+  }
+
+  const openDeleteDialog = (ad: any) => {
+    setSelectedAd(ad);
+    setIsDeleteOpen(true);
+  }
+
+  const handleDelete = async () => {
+    if (!selectedAd) return;
+    const formData = new FormData();
+    formData.append('id', selectedAd.id);
+    const result = await deleteAdvertisement(formData);
+    if(result.error) toast({ variant: 'destructive', title: 'Error', description: result.error });
+    else toast({ title: 'Success', description: result.message });
+    onActionFinish();
+  }
+
+  const handleToggleStatus = async (ad: any) => {
+    const result = await toggleAdStatus(ad.id, ad.status_id);
+    if(result.error) toast({ variant: 'destructive', title: 'Error', description: result.error });
+    else toast({ title: 'Success', description: result.message });
+    onActionFinish();
+  }
 
   return (
     <div className="space-y-6">
@@ -59,88 +125,9 @@ export default function MobileAdsPage() {
                 title="Mobile App Advertisements"
                 description="Manage ads displayed within the mobile app."
             />
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button disabled={!selectedOrgId}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Create Mobile Ad
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-xl">
-                    <DialogHeader>
-                        <DialogTitle>Create New Mobile Ad</DialogTitle>
-                        <DialogDescription>
-                            Follow the steps to define your new advertisement.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <Tabs defaultValue="placement" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="placement">Placement</TabsTrigger>
-                            <TabsTrigger value="content">Content</TabsTrigger>
-                            <TabsTrigger value="audience">Audience</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="placement" className="py-4">
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="ad-name">Ad Name</Label>
-                                    <Input id="ad-name" placeholder="e.g., Summer Sale Banner" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="placement">Placement</Label>
-                                    <Select>
-                                        <SelectTrigger id="placement">
-                                            <SelectValue placeholder="Select a screen location" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="home_banner">Home Screen Banner</SelectItem>
-                                            <SelectItem value="booking_interstitial">Booking Confirmation Pop-up</SelectItem>
-                                            <SelectItem value="profile_footer">Profile Page Footer</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                        </TabsContent>
-                        <TabsContent value="content" className="py-4">
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="ad-image">Ad Creative (Image)</Label>
-                                    <div className="flex items-center gap-2">
-                                        <Input id="ad-image" type="file" className="flex-1" />
-                                        <Button variant="outline" size="icon"><FileUp className="h-4 w-4" /></Button>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">Recommended size: 800x200px for banners.</p>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="link-url">Link URL</Label>
-                                    <Input id="link-url" placeholder="https://example.com/special-offer" />
-                                </div>
-                            </div>
-                        </TabsContent>
-                        <TabsContent value="audience" className="py-4">
-                             <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="target-users">Target Users</Label>
-                                    <Select>
-                                        <SelectTrigger id="target-users">
-                                            <SelectValue placeholder="Select user segment" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Users</SelectItem>
-                                            <SelectItem value="new">New Users (Last 30 days)</SelectItem>
-                                            <SelectItem value="active">Active Bookers</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                        </TabsContent>
-                    </Tabs>
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button type="button" variant="outline">Cancel</Button>
-                        </DialogClose>
-                        <Button type="submit">Save Ad</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <Button disabled={!selectedOrgId || loading} onClick={() => openFormDialog(null)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Create Mobile Ad
+            </Button>
         </div>
 
         <Card>
@@ -153,21 +140,26 @@ export default function MobileAdsPage() {
                     <div className="text-center text-muted-foreground py-10">
                         <p>Please select a Living Space to view its ads.</p>
                     </div>
-                 ) : mockMobileAds.length > 0 ? (
+                 ) : loading ? (
                     <div className="grid grid-cols-1 gap-6">
-                        {mockMobileAds.map(ad => (
+                       <Skeleton className="h-32 w-full rounded-lg" />
+                       <Skeleton className="h-32 w-full rounded-lg" />
+                    </div>
+                 ) : ads.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-6">
+                        {ads.map(ad => (
                             <Card key={ad.id} className="flex flex-col md:flex-row gap-4 p-4">
-                                <Image src={ad.image} alt={ad.name} width={200} height={100} className="rounded-md object-cover md:w-48" data-ai-hint="advertisement banner" />
+                                <Image src={ad.image_url} alt={ad.name} width={200} height={100} className="rounded-md object-cover md:w-48" data-ai-hint="advertisement banner" />
                                 <div className="flex-1 space-y-2">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="text-lg">{ad.name}</CardTitle>
-                                        <StatusBadge status={ad.status} />
+                                        <StatusBadge status={ad.status.status_name} />
                                     </div>
-                                    <p className="text-sm text-muted-foreground">{ad.placement}</p>
+                                    <p className="text-sm text-muted-foreground">{ad.placement.name}</p>
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2">
                                         <span><strong>Impressions:</strong> {ad.impressions.toLocaleString()}</span>
                                         <span><strong>Clicks:</strong> {ad.clicks.toLocaleString()}</span>
-                                        <span><strong>CTR:</strong> {ad.ctr}</span>
+                                        <span><strong>CTR:</strong> {ad.impressions > 0 ? ((ad.clicks / ad.impressions) * 100).toFixed(2) : '0.00'}%</span>
                                     </div>
                                 </div>
                                 <div className="flex items-start">
@@ -176,13 +168,13 @@ export default function MobileAdsPage() {
                                             <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem><Edit className="mr-2 h-4 w-4"/>Edit Ad</DropdownMenuItem>
-                                            <DropdownMenuItem>
-                                                {ad.status === 'Active' ? <PowerOff className="mr-2 h-4 w-4" /> : <Power className="mr-2 h-4 w-4" />}
-                                                Set {ad.status === 'Active' ? 'Offline' : 'Online'}
+                                            <DropdownMenuItem onClick={() => openFormDialog(ad)}><Edit className="mr-2 h-4 w-4"/>Edit Ad</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleToggleStatus(ad)}>
+                                                {ad.status_id === 1 ? <PowerOff className="mr-2 h-4 w-4" /> : <Power className="mr-2 h-4 w-4" />}
+                                                Set {ad.status_id === 1 ? 'Offline' : 'Online'}
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
-                                            <DropdownMenuItem className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Ad</DropdownMenuItem>
+                                            <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(ad)}><Trash2 className="mr-2 h-4 w-4"/>Delete Ad</DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
@@ -196,6 +188,33 @@ export default function MobileAdsPage() {
                 )}
             </CardContent>
         </Card>
+        
+        {isFormOpen && mobileAdType && (
+             <AdFormDialog
+                isOpen={isFormOpen}
+                setIsOpen={setIsFormOpen}
+                ad={selectedAd}
+                adTypeId={mobileAdType.id}
+                orgId={selectedOrgId}
+                placements={placements}
+                statuses={statuses}
+                audiences={audiences}
+                onFinished={onActionFinish}
+             />
+        )}
+       
+        <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>This will permanently delete the ad "{selectedAd?.name}". This action cannot be undone.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }
