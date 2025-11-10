@@ -36,6 +36,17 @@ export default async function HospitalityPage() {
   } else {
     console.error("Could not find 'hospitality' in organisation_types table.");
   }
+
+  // Fetch admin users (user_type 8 for Hospitality) to populate the owner dropdown.
+  const { data: usersData, error: usersError } = await supabase
+    .from('user')
+    .select('id, name, email')
+    .eq('user_type', 8)
+    .order('name');
   
-  return <HospitalityClientPage orgs={orgsData} />;
+  if (usersError) {
+      console.error("Error fetching hospitality admin users:", usersError);
+  }
+  
+  return <HospitalityClientPage orgs={orgsData} users={usersData || []} />;
 }

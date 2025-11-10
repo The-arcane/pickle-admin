@@ -1,28 +1,20 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
-import { useFormStatus } from 'react-dom';
-import { useToast } from "@/hooks/use-toast";
-import { addHospitalityOrg, removeHospitalityOrg } from './actions';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { StatusBadge } from '@/components/status-badge';
-import { Trash2, PlusCircle, MoreHorizontal, Hotel } from 'lucide-react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import Image from 'next/image';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { MoreHorizontal, PlusCircle, Trash2, Hotel } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from "@/hooks/use-toast";
+import { removeHospitalityOrg } from './actions';
+import type { User } from '@/types';
+import { StatusBadge } from '@/components/status-badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { OrganizationFormDialog } from '@/app/super-admin/organisations/client';
 
 type HospitalityOrg = {
     id: number;
@@ -36,15 +28,6 @@ type HospitalityOrg = {
     } | null;
 };
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button type="submit" disabled={pending}>
-            {pending ? 'Creating...' : 'Create Org & Admin'}
-        </Button>
-    )
-}
-
 function getInitials(name: string | undefined | null) {
   if (!name) return '';
   const names = name.split(' ').filter(Boolean);
@@ -55,33 +38,18 @@ function getInitials(name: string | undefined | null) {
 };
 
 
-export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
+export function HospitalityClientPage({ orgs, users }: { orgs: HospitalityOrg[], users: User[] }) {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [deletingOrg, setDeletingOrg] = useState<HospitalityOrg | null>(null);
     const { toast } = useToast();
-    const formRef = useRef<HTMLFormElement>(null);
     const router = useRouter();
-    const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
-    const handleAddFormAction = async (formData: FormData) => {
-        if (formData.get('admin_password') !== formData.get('confirm_password')) {
-            toast({ variant: "destructive", title: "Error", description: "Passwords do not match." });
-            return;
-        }
+    const onActionFinish = () => {
+        router.refresh();
+        setIsAddDialogOpen(false);
+    };
 
-        const result = await addHospitalityOrg(formData);
-        if (result.error) {
-            toast({ variant: "destructive", title: "Error", description: result.error });
-        } else {
-            toast({ title: "Success", description: result.message });
-            setIsAddDialogOpen(false);
-            formRef.current?.reset();
-            setLogoPreview(null);
-            router.refresh();
-        }
-    }
-    
     const openDeleteDialog = (org: HospitalityOrg) => {
         setDeletingOrg(org);
         setIsDeleteDialogOpen(true);
@@ -103,22 +71,6 @@ export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
         router.refresh();
     }
 
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-             if (file.size > 2 * 1024 * 1024) { // 2MB limit
-                toast({
-                    variant: 'destructive',
-                    title: 'File Too Large',
-                    description: 'The logo image cannot exceed 2MB.',
-                });
-                e.target.value = '';
-                return;
-            }
-            setLogoPreview(URL.createObjectURL(file));
-        }
-    }
-
 
     return (
         <div className="space-y-6">
@@ -127,7 +79,7 @@ export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
                     <Hotel className="h-8 w-8 text-purple-500" />
                     <div>
                         <h1 className="text-2xl font-bold">Hospitality</h1>
-                        <p className="text-muted-foreground">Manage hospitality-type Living Spaces.</p>
+                        <p className="text-muted-foreground">Manage hospitality-type organizations.</p>
                     </div>
                 </div>
                 <Button onClick={() => setIsAddDialogOpen(true)}>
@@ -139,7 +91,7 @@ export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Living Space</TableHead>
+                                <TableHead>Organization</TableHead>
                                 <TableHead>Admin</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
@@ -185,7 +137,7 @@ export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={4} className="text-center h-24">
-                                        No hospitality Living Spaces found.
+                                        No hospitality-type organizations found.
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -194,65 +146,22 @@ export function HospitalityClientPage({ orgs }: { orgs: HospitalityOrg[] }) {
                 </CardContent>
             </Card>
 
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogContent className="sm:max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Add New Hospitality Org</DialogTitle>
-                        <DialogDescription>
-                            Create a new hospitality Living Space and its primary admin user.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <form ref={formRef} action={handleAddFormAction} className="space-y-6 py-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-4 p-4 border rounded-lg">
-                                 <h3 className="font-semibold text-lg">Living Space Details</h3>
-                                <div className="space-y-2">
-                                    <Label htmlFor="org_name">Name</Label>
-                                    <Input id="org_name" name="org_name" required />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="org_address">Address</Label>
-                                    <Input id="org_address" name="org_address" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="logo">Logo (Max 2MB)</Label>
-                                    <Input id="logo" name="logo" type="file" accept="image/*" onChange={handleLogoChange} />
-                                    {logoPreview && <Image src={logoPreview} alt="Logo preview" width={80} height={80} className="mt-2 rounded-md object-cover" data-ai-hint="logo" />}
-                                </div>
-                            </div>
-                            <div className="space-y-4 p-4 border rounded-lg">
-                                <h3 className="font-semibold text-lg">Admin User Details</h3>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="admin_name">Admin Full Name</Label>
-                                    <Input id="admin_name" name="admin_name" required />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="admin_email">Admin Email</Label>
-                                    <Input id="admin_email" name="admin_email" type="email" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="admin_password">Password</Label>
-                                    <Input id="admin_password" name="admin_password" type="password" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="confirm_password">Confirm Password</Label>
-                                    <Input id="confirm_password" name="confirm_password" type="password" required />
-                                </div>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                            <SubmitButton />
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+            <OrganizationFormDialog 
+                isOpen={isAddDialogOpen} 
+                setIsOpen={setIsAddDialogOpen}
+                org={null} // Always for adding new
+                users={users}
+                onFinished={onActionFinish}
+                orgType={3} // Hospitality org type
+                dialogTitle="Add New Hospitality Org"
+                dialogDescription="Create a new Hospitality organization and assign an owner."
+            />
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will remove the hospitality Living Space. This action cannot be undone.</AlertDialogDescription>
+                        <AlertDialogDescription>This will remove the hospitality organization. This action cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
