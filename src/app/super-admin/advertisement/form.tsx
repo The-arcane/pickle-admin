@@ -44,25 +44,64 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
     const isEditing = !!ad;
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [startDate, setStartDate] = useState<Date | undefined>();
-    const [endDate, setEndDate] = useState<Date | undefined>();
+    
+    // State for all form fields
+    const [name, setName] = useState(ad?.name || '');
+    const [linkUrl, setLinkUrl] = useState(ad?.link_url || '');
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(ad?.image_url || null);
+
+    const [placementId, setPlacementId] = useState(ad?.placement_id?.toString() || '');
+    const [audienceId, setAudienceId] = useState(ad?.target_audience_id?.toString() || '');
+    const [statusId, setStatusId] = useState(ad?.status_id?.toString() || statuses.find(s => s.status_name === 'Active')?.id.toString() || '');
+    const [isGlobal, setIsGlobal] = useState(ad?.is_global || false);
+    const [startDate, setStartDate] = useState<Date | undefined>(ad?.start_date ? new Date(ad.start_date) : undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(ad?.end_date ? new Date(ad.end_date) : undefined);
 
     useEffect(() => {
-        if(ad) {
-            setImagePreview(ad.image_url);
+        if (ad) {
+            setName(ad.name || '');
+            setLinkUrl(ad.link_url || '');
+            setImagePreview(ad.image_url || null);
+            setPlacementId(ad.placement_id?.toString() || '');
+            setAudienceId(ad.target_audience_id?.toString() || '');
+            setStatusId(ad.status_id?.toString() || statuses.find(s => s.status_name === 'Active')?.id.toString() || '');
+            setIsGlobal(ad.is_global || false);
             setStartDate(ad.start_date ? new Date(ad.start_date) : undefined);
             setEndDate(ad.end_date ? new Date(ad.end_date) : undefined);
         } else {
+            // Reset for new ad
+            setName('');
+            setLinkUrl('');
+            setImageFile(null);
             setImagePreview(null);
+            setPlacementId('');
+            setAudienceId('');
+            setStatusId(statuses.find(s => s.status_name === 'Active')?.id.toString() || '');
+            setIsGlobal(false);
             setStartDate(undefined);
             setEndDate(undefined);
         }
-    }, [ad]);
+    }, [ad, statuses]);
 
-    const handleFormAction = async (formData: FormData) => {
-        if(startDate) formData.set('start_date', startDate.toISOString());
-        if(endDate) formData.set('end_date', endDate.toISOString());
+    const handleFormAction = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        const formData = new FormData();
+        if (ad?.id) formData.append('id', ad.id);
+        formData.append('type_id', adTypeId.toString());
+        if (orgId) formData.append('organisation_id', orgId.toString());
+
+        formData.append('name', name);
+        formData.append('link_url', linkUrl);
+        if (imageFile) formData.append('image_file', imageFile);
+        
+        formData.append('placement_id', placementId);
+        formData.append('target_audience_id', audienceId);
+        formData.append('status_id', statusId);
+        if(isGlobal) formData.append('is_global', 'on');
+        if(startDate) formData.append('start_date', startDate.toISOString());
+        if(endDate) formData.append('end_date', endDate.toISOString());
 
         const result = await saveAdvertisement(formData);
         if (result.error) {
@@ -81,11 +120,10 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
                 e.target.value = '';
                 return;
             }
+            setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
         }
     };
-    
-    const activeStatusId = statuses.find(s => s.status_name === 'Active')?.id;
 
     return (
          <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -96,11 +134,7 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
                         Fill in the details for your ad.
                     </DialogDescription>
                 </DialogHeader>
-                <form ref={formRef} action={handleFormAction} className="space-y-4">
-                    <input type="hidden" name="id" value={ad?.id || ''} />
-                    <input type="hidden" name="type_id" value={adTypeId} />
-                    <input type="hidden" name="organisation_id" value={orgId || ''} />
-
+                <form ref={formRef} onSubmit={handleFormAction} className="space-y-4">
                     <Tabs defaultValue="content" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="content">Content</TabsTrigger>
@@ -109,11 +143,11 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
                         <TabsContent value="content" className="py-4 space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="name">Ad Name</Label>
-                                <Input id="name" name="name" placeholder="e.g., Summer Sale Banner" defaultValue={ad?.name} required />
+                                <Input id="name" name="name" placeholder="e.g., Summer Sale Banner" value={name} onChange={e => setName(e.target.value)} required />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="link_url">Link URL</Label>
-                                <Input id="link_url" name="link_url" placeholder="https://example.com/special-offer" defaultValue={ad?.link_url} />
+                                <Input id="link_url" name="link_url" placeholder="https://example.com/special-offer" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="image_file">Ad Creative (Image, Max 2MB)</Label>
@@ -124,7 +158,7 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
                         <TabsContent value="targeting" className="py-4 space-y-4">
                              <div className="space-y-2">
                                 <Label htmlFor="placement_id">Placement</Label>
-                                <Select name="placement_id" defaultValue={ad?.placement_id?.toString()}>
+                                <Select name="placement_id" value={placementId} onValueChange={setPlacementId}>
                                     <SelectTrigger id="placement_id">
                                         <SelectValue placeholder="Select a screen location" />
                                     </SelectTrigger>
@@ -133,20 +167,20 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="target_audience_id">Audience</Label>
-                                <Select name="target_audience_id" defaultValue={ad?.target_audience_id?.toString()}>
+                                <Select name="target_audience_id" value={audienceId} onValueChange={setAudienceId}>
                                     <SelectTrigger id="target_audience_id"><SelectValue placeholder="Select user segment" /></SelectTrigger>
                                     <SelectContent>{audiences.map(a => <SelectItem key={a.id} value={a.id.toString()}>{a.name}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="status_id">Status</Label>
-                                <Select name="status_id" defaultValue={ad?.status_id?.toString() || activeStatusId?.toString()}>
+                                <Select name="status_id" value={statusId} onValueChange={setStatusId}>
                                     <SelectTrigger id="status_id"><SelectValue placeholder="Select status" /></SelectTrigger>
                                     <SelectContent>{statuses.map(s => <SelectItem key={s.id} value={s.id.toString()}>{s.status_name}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <Checkbox id="is_global" name="is_global" defaultChecked={ad?.is_global} />
+                                <Checkbox id="is_global" name="is_global" checked={isGlobal} onCheckedChange={checked => setIsGlobal(Boolean(checked))} />
                                 <Label htmlFor="is_global">Make this a Global Ad (shows for all organizations)</Label>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -170,4 +204,3 @@ export function AdFormDialog({ isOpen, setIsOpen, ad, adTypeId, orgId, placement
         </Dialog>
     );
 }
-
