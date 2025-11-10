@@ -36,22 +36,26 @@ export default async function OrganizationsPage() {
         console.error("Could not find 'residences' in organisation_types table.");
     }
     
-    // Fetch admin users (user_type 2) who are NOT linked to any organization yet.
-    const { data: usersData, error: usersError } = await supabase
-    .from('user')
-    .select('id, name, email,user_organisations!left(user_id)')
-    .eq('user_type', 2)
-    .is('user_organisations.user_id', null)
-    .order('name');
-        
-    if(usersError) {
-        console.error("Error fetching unassigned users:", usersError);
+    // Fetch all admin users (user_type 2)
+    const { data: allAdmins, error: usersError } = await supabase.from('user').select('id, name, email').eq('user_type', 2).order('name');
+    if (usersError) {
+        console.error("Error fetching admin users:", usersError);
     }
+
+    // Fetch all user_organisation links to find assigned admins
+    const { data: assignedLinks, error: linksError } = await supabase.from('user_organisations').select('user_id');
+    if(linksError) {
+        console.error("Error fetching assigned user links:", linksError);
+    }
+    const assignedUserIds = new Set((assignedLinks || []).map(link => link.user_id));
+
+    // Filter for unassigned admins
+    const unassignedAdmins = (allAdmins || []).filter(admin => !assignedUserIds.has(admin.id));
     
     return (
         <OrganisationsClientPage 
             initialOrganizations={orgsData as Organization[] || []} 
-            users={usersData as User[] || []} 
+            users={unassignedAdmins as User[] || []} 
         />
     );
 }

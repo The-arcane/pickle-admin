@@ -2,6 +2,7 @@
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { ArenaClientPage } from './client';
+import type { User } from '@/types';
 
 export default async function ArenaPage() {
   const supabase = await createServer();
@@ -37,17 +38,19 @@ export default async function ArenaPage() {
     console.error("Could not find 'public arena' in organisation_types table.");
   }
   
-  // Fetch admin users (user_type 2) who are NOT linked to any organization yet.
-  const { data: usersData, error: usersError } = await supabase
-    .from('user')
-    .select('id, name, email,user_organisations!left(user_id)')
-    .eq('user_type', 2)
-    .is('user_organisations.user_id', null)
-    .order('name');
-  
+  // Fetch admin users (user_type 9) who are NOT linked to any organization yet.
+  const { data: allAdmins, error: usersError } = await supabase.from('user').select('id, name, email').eq('user_type', 9).order('name');
   if (usersError) {
-      console.error("Error fetching unassigned arena admin users:", usersError);
+      console.error("Error fetching arena admin users:", usersError);
   }
   
-  return <ArenaClientPage orgs={orgsData} users={usersData || []} />;
+  const { data: assignedLinks, error: linksError } = await supabase.from('user_organisations').select('user_id');
+  if(linksError) {
+      console.error("Error fetching assigned user links:", linksError);
+  }
+  const assignedUserIds = new Set((assignedLinks || []).map(link => link.user_id));
+
+  const unassignedAdmins = (allAdmins || []).filter(admin => !assignedUserIds.has(admin.id));
+  
+  return <ArenaClientPage orgs={orgsData} users={unassignedAdmins as User[]} />;
 }
