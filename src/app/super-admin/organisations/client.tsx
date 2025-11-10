@@ -93,7 +93,7 @@ export function OrganisationsClientPage({ initialOrganizations, users }: { initi
                 <p className="text-muted-foreground">View and manage all Living Spaces in the system.</p>
             </div>
         </div>
-        <Button size="sm" className="gap-1" onClick={openAddDialog}><PlusCircle className="h-4 w-4" /> Add Living Space</Button>
+        <Button onClick={openAddDialog} className="h-8 text-xs"><PlusCircle className="mr-2 h-4 w-4" /> Add Living Space</Button>
       </div>
       <Card className="overflow-hidden">
         <Table>

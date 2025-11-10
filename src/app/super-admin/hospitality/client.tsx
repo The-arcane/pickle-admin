@@ -82,8 +82,8 @@ export function HospitalityClientPage({ orgs, users }: { orgs: HospitalityOrg[],
                         <p className="text-muted-foreground">Manage hospitality-type organizations.</p>
                     </div>
                 </div>
-                <Button onClick={() => setIsAddDialogOpen(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Hospitality Org
+                <Button onClick={() => setIsAddDialogOpen(true)} className="h-8 text-xs">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Hospitality
                 </Button>
             </div>
             <Card>

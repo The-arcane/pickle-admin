@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -11,7 +11,7 @@ import { MoreHorizontal, PlusCircle, Trash2, Shield } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
 import { removeArenaOrg } from './actions';
-import type { Organization, User } from '@/types';
+import type { User } from '@/types';
 import { StatusBadge } from '@/components/status-badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { OrganizationFormDialog } from '@/app/super-admin/organisations/client';
@@ -80,7 +80,7 @@ export function ArenaClientPage({ orgs, users }: { orgs: ArenaOrg[], users: User
                         <p className="text-muted-foreground">Manage Arena-type organizations.</p>
                     </div>
                 </div>
-                <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Button onClick={() => setIsAddDialogOpen(true)} className="h-8 text-xs">
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Arena
                 </Button>
             </div>
