@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createServiceRoleServer } from '@/lib/supabase/server';
 
 export async function removeArenaOrg(formData: FormData) {
-    const supabaseAdmin = createServiceRoleServer();
+    const supabaseAdmin = await createServiceRoleServer();
     const orgId = formData.get('org_id') as string;
 
     if (!orgId) {
