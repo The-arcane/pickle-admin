@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { createServiceRoleServer } from '@/lib/supabase/server';
@@ -39,7 +40,7 @@ async function handleImageUpload(supabase: any, file: File | null, orgId: string
 
 // Action for saving only text content
 export async function saveWebsiteTextDetails(formData: FormData) {
-    const supabase = createServiceRoleServer();
+    const supabase = await createServiceRoleServer();
     const orgId = Number(formData.get('org_id'));
 
     if (!orgId) return { error: 'Organization ID is missing.' };
@@ -69,7 +70,7 @@ export async function saveWebsiteTextDetails(formData: FormData) {
 
 // A generic action to handle a single image upload and update the DB
 export async function saveWebsiteImage(formData: FormData) {
-    const supabase = createServiceRoleServer();
+    const supabase = await createServiceRoleServer();
     const orgId = Number(formData.get('org_id'));
     const imageType = formData.get('image_type') as 'logo' | 'bg_image' | 'vis_image' | 'mis_image';
     const imageFile = formData.get('image_file') as File | null;
