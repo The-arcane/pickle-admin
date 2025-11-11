@@ -89,7 +89,7 @@ export default function SuperAdminLayout({
                 <SuperAdminNav />
             </div>
              <div className="mt-auto p-4">
-                <p className="text-xs text-muted-foreground">Version 16.6.69</p>
+                <p className="text-xs text-muted-foreground">Version 16.6.91</p>
             </div>
           </aside>
           <div className="flex flex-col sm:pl-60 flex-1">
@@ -115,7 +115,7 @@ export default function SuperAdminLayout({
                         <SuperAdminNav />
                     </div>
                      <div className="mt-auto p-4">
-                        <p className="text-xs text-muted-foreground">Version 16.6.69</p>
+                        <p className="text-xs text-muted-foreground">Version 16.6.91</p>
                     </div>
                 </SheetContent>
               </Sheet>
