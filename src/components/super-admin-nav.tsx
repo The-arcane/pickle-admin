@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { 
     BarChart, Settings, User, Building, Users, List, Calendar, PartyPopper, Home, ShieldCheck, 
     TrendingUp, School, Hotel, Shield, ChevronDown, FolderKanban, UsersRound, Activity,
-    Landmark, ArrowRightLeft, Banknote, Receipt, LifeBuoy, Ticket, MessageSquare, Megaphone, Smartphone, Globe
+    Landmark, ArrowRightLeft, Banknote, Receipt, LifeBuoy, Ticket, MessageSquare, Megaphone, Smartphone, Globe, Percent
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSheetContext } from '@/hooks/use-sheet-context';
@@ -59,6 +59,7 @@ const navGroups = [
       { href: '/super-admin/transactions', label: 'Transactions', icon: ArrowRightLeft, color: 'text-gray-500' },
       { href: '/super-admin/payments', label: 'Payments', icon: Banknote, color: 'text-gray-500' },
       { href: '/super-admin/invoices', label: 'Invoices', icon: Receipt, color: 'text-gray-500' },
+      { href: '/super-admin/coupons', label: 'Coupons', icon: Percent, color: 'text-yellow-500' },
     ]
   },
   {
