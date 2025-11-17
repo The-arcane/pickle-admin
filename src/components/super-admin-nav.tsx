@@ -52,6 +52,15 @@ const navGroups = [
     ]
   },
   {
+    title: 'Advertisement',
+    icon: Megaphone,
+    color: 'text-cyan-500',
+    items: [
+      { href: '/super-admin/advertisement/mobile', label: 'Mobile App Ads', icon: Smartphone, color: 'text-gray-500' },
+      { href: '/super-admin/advertisement/web', label: 'Web App Ads', icon: Globe, color: 'text-gray-500' },
+    ]
+  },
+  {
     title: 'Financials',
     icon: Landmark,
     color: 'text-green-500',
@@ -60,15 +69,6 @@ const navGroups = [
       { href: '/super-admin/payments', label: 'Payments', icon: Banknote, color: 'text-gray-500' },
       { href: '/super-admin/invoices', label: 'Invoices', icon: Receipt, color: 'text-gray-500' },
       { href: '/super-admin/coupons', label: 'Coupons', icon: Percent, color: 'text-yellow-500' },
-    ]
-  },
-  {
-    title: 'Advertisement',
-    icon: Megaphone,
-    color: 'text-cyan-500',
-    items: [
-      { href: '/super-admin/advertisement/mobile', label: 'Mobile App Ads', icon: Smartphone, color: 'text-gray-500' },
-      { href: '/super-admin/advertisement/web', label: 'Web App Ads', icon: Globe, color: 'text-gray-500' },
     ]
   },
   {
