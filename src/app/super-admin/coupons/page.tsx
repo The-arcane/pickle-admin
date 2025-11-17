@@ -171,7 +171,7 @@ function CouponFormDialog({ isOpen, setIsOpen, coupon, onFinished, organizations
     const [discountType, setDiscountType] = useState(coupon?.discount_type || 'percentage');
     const [validFrom, setValidFrom] = useState<Date | undefined>(coupon?.valid_from ? new Date(coupon.valid_from) : new Date());
     const [validUntil, setValidUntil] = useState<Date | undefined>(coupon?.valid_until ? new Date(coupon.valid_until) : undefined);
-    const [isGlobal, setIsGlobal] = useState(coupon?.organisation_id === null);
+    const [isGlobal, setIsGlobal] = useState(coupon?.is_global ?? false);
     const [orgId, setOrgId] = useState<string>(coupon?.organisation_id?.toString() || '');
     
     // State for multi-select
@@ -282,15 +282,24 @@ function CouponFormDialog({ isOpen, setIsOpen, coupon, onFinished, organizations
                                 <CardHeader><CardTitle>Applicability</CardTitle></CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="flex items-center space-x-2"><Checkbox id="is_global" name="is_global" checked={isGlobal} onCheckedChange={(checked) => setIsGlobal(Boolean(checked))} /><Label htmlFor="is_global">Global Coupon (applies to all)</Label></div>
-                                    <div className="space-y-2"><Label htmlFor="organisation_id">Organization</Label><Select name="organisation_id" disabled={isGlobal} value={orgId} onValueChange={setOrgId}><SelectTrigger><SelectValue placeholder="Select an organization" /></SelectTrigger><SelectContent>{organizations.map(org => <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>)}</SelectContent></Select></div>
+                                    
+                                    {isGlobal ? (
+                                        <div className="space-y-2 pt-2 border-t">
+                                            <div className="flex items-center space-x-2"><Checkbox id="applies_to_courts" name="applies_to_courts" defaultChecked={coupon?.applies_to_courts ?? true} /><Label htmlFor="applies_to_courts">Applies to All Courts</Label></div>
+                                            <div className="flex items-center space-x-2"><Checkbox id="applies_to_events" name="applies_to_events" defaultChecked={coupon?.applies_to_events ?? true} /><Label htmlFor="applies_to_events">Applies to All Events</Label></div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2"><Label htmlFor="organisation_id">Organization</Label><Select name="organisation_id" disabled={isGlobal} value={orgId} onValueChange={setOrgId}><SelectTrigger><SelectValue placeholder="Select an organization" /></SelectTrigger><SelectContent>{organizations.map(org => <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>)}</SelectContent></Select></div>
+                                    )}
+
                                 </CardContent>
                             </Card>
                             {!isGlobal && orgId && (
                                 <Card>
                                     <CardHeader><CardTitle>Scope</CardTitle><CardDescription>Leave blank to apply to all courts/events in the selected organization.</CardDescription></CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div><Label>Applicable Courts</Label><Button variant="link" size="sm" className="ml-2 h-auto p-0" onClick={() => handleSelectAll('courts')}>Select All</Button><ScrollArea className="h-24 rounded-md border p-2 mt-1"><div className="space-y-1">{courts.map(c => (<div key={c.id} className="flex items-center gap-2 text-sm"><Checkbox id={`c_${c.id}`} checked={selectedCourts.includes(c.id)} onCheckedChange={(checked) => setSelectedCourts(p => checked ? [...p, c.id] : p.filter(id => id !== c.id))} /><Label htmlFor={`c_${c.id}`} className="font-normal">{c.name}</Label></div>))}</div></ScrollArea></div>
-                                        <div><Label>Applicable Events</Label><Button variant="link" size="sm" className="ml-2 h-auto p-0" onClick={() => handleSelectAll('events')}>Select All</Button><ScrollArea className="h-24 rounded-md border p-2 mt-1"><div className="space-y-1">{events.map(e => (<div key={e.id} className="flex items-center gap-2 text-sm"><Checkbox id={`e_${e.id}`} checked={selectedEvents.includes(e.id)} onCheckedChange={(checked) => setSelectedEvents(p => checked ? [...p, e.id] : p.filter(id => id !== e.id))} /><Label htmlFor={`e_${e.id}`} className="font-normal">{e.title}</Label></div>))}</div></ScrollArea></div>
+                                        <div><Label>Applicable Courts</Label><Button type="button" variant="link" size="sm" className="ml-2 h-auto p-0" onClick={() => handleSelectAll('courts')}>Select All</Button><ScrollArea className="h-24 rounded-md border p-2 mt-1"><div className="space-y-1">{courts.map(c => (<div key={c.id} className="flex items-center gap-2 text-sm"><Checkbox id={`c_${c.id}`} checked={selectedCourts.includes(c.id)} onCheckedChange={(checked) => setSelectedCourts(p => checked ? [...p, c.id] : p.filter(id => id !== c.id))} /><Label htmlFor={`c_${c.id}`} className="font-normal">{c.name}</Label></div>))}</div></ScrollArea></div>
+                                        <div><Label>Applicable Events</Label><Button type="button" variant="link" size="sm" className="ml-2 h-auto p-0" onClick={() => handleSelectAll('events')}>Select All</Button><ScrollArea className="h-24 rounded-md border p-2 mt-1"><div className="space-y-1">{events.map(e => (<div key={e.id} className="flex items-center gap-2 text-sm"><Checkbox id={`e_${e.id}`} checked={selectedEvents.includes(e.id)} onCheckedChange={(checked) => setSelectedEvents(p => checked ? [...p, e.id] : p.filter(id => id !== e.id))} /><Label htmlFor={`e_${e.id}`} className="font-normal">{e.title}</Label></div>))}</div></ScrollArea></div>
                                     </CardContent>
                                 </Card>
                             )}

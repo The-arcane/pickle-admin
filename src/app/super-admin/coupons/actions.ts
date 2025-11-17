@@ -22,7 +22,10 @@ export async function saveCoupon(formData: FormData) {
             valid_until: formData.get('valid_until') || null,
             max_usage_count: formData.get('max_usage_count') ? Number(formData.get('max_usage_count')) : null,
             is_active: formData.get('is_active') === 'on',
+            is_global: isGlobal,
             organisation_id: isGlobal ? null : Number(formData.get('organisation_id')),
+            applies_to_courts: isGlobal ? formData.get('applies_to_courts') === 'on' : null,
+            applies_to_events: isGlobal ? formData.get('applies_to_events') === 'on' : null,
         };
 
         const applicableCourtIds = JSON.parse(formData.get('applicable_courts') as string || '[]') as number[];
@@ -42,22 +45,27 @@ export async function saveCoupon(formData: FormData) {
             couponId = data.id;
         }
 
-        // Sync court applicability
-        await supabase.from('coupon_courts').delete().eq('coupon_id', couponId);
-        if (applicableCourtIds.length > 0) {
-            const courtLinks = applicableCourtIds.map(court_id => ({ coupon_id: couponId, court_id }));
-            const { error: courtLinkError } = await supabase.from('coupon_courts').insert(courtLinks);
-            if (courtLinkError) throw courtLinkError;
-        }
+        // Sync court applicability only if NOT a global coupon
+        if (!isGlobal) {
+            await supabase.from('coupon_courts').delete().eq('coupon_id', couponId);
+            if (applicableCourtIds.length > 0) {
+                const courtLinks = applicableCourtIds.map(court_id => ({ coupon_id: couponId, court_id }));
+                const { error: courtLinkError } = await supabase.from('coupon_courts').insert(courtLinks);
+                if (courtLinkError) throw courtLinkError;
+            }
 
-        // Sync event applicability
-        await supabase.from('coupon_events').delete().eq('coupon_id', couponId);
-        if (applicableEventIds.length > 0) {
-            const eventLinks = applicableEventIds.map(event_id => ({ coupon_id: couponId, event_id }));
-            const { error: eventLinkError } = await supabase.from('coupon_events').insert(eventLinks);
-            if (eventLinkError) throw eventLinkError;
+            // Sync event applicability only if NOT a global coupon
+            await supabase.from('coupon_events').delete().eq('coupon_id', couponId);
+            if (applicableEventIds.length > 0) {
+                const eventLinks = applicableEventIds.map(event_id => ({ coupon_id: couponId, event_id }));
+                const { error: eventLinkError } = await supabase.from('coupon_events').insert(eventLinks);
+                if (eventLinkError) throw eventLinkError;
+            }
+        } else {
+            // If it's a global coupon, ensure no specific links exist
+            await supabase.from('coupon_courts').delete().eq('coupon_id', couponId);
+            await supabase.from('coupon_events').delete().eq('coupon_id', couponId);
         }
-
 
     } catch (e: any) {
         console.error('Error saving coupon:', e);

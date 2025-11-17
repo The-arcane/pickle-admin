@@ -1,3 +1,4 @@
+
 -- Enum for discount type
 DO $$
 BEGIN
@@ -22,6 +23,9 @@ CREATE TABLE IF NOT EXISTS public.coupons (
   max_usage_count INT,
   current_usage_count INT NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  is_global BOOLEAN NOT NULL DEFAULT FALSE,
+  applies_to_courts BOOLEAN, -- For global coupons: applies to all court bookings
+  applies_to_events BOOLEAN, -- For global coupons: applies to all event bookings
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
