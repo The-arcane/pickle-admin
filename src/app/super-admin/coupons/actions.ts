@@ -9,7 +9,8 @@ export async function saveCoupon(formData: FormData) {
     const id = formData.get('id') as string | null;
 
     try {
-        const payload = {
+        const isGlobal = formData.get('is_global') === 'on';
+        const payload: any = {
             code: (formData.get('code') as string)?.toUpperCase(),
             description: formData.get('description') as string,
             discount_type: formData.get('discount_type') as 'percentage' | 'fixed',
@@ -21,15 +22,43 @@ export async function saveCoupon(formData: FormData) {
             valid_until: formData.get('valid_until') || null,
             max_usage_count: formData.get('max_usage_count') ? Number(formData.get('max_usage_count')) : null,
             is_active: formData.get('is_active') === 'on',
+            organisation_id: isGlobal ? null : Number(formData.get('organisation_id')),
         };
 
+        const applicableCourtIds = JSON.parse(formData.get('applicable_courts') as string || '[]') as number[];
+        const applicableEventIds = JSON.parse(formData.get('applicable_events') as string || '[]') as number[];
+
+        let couponId: number;
+
         if (id) {
-            const { error } = await supabase.from('coupons').update(payload).eq('id', id);
+            // Update
+            const { data, error } = await supabase.from('coupons').update(payload).eq('id', id).select('id').single();
             if (error) throw error;
+            couponId = data.id;
         } else {
-            const { error } = await supabase.from('coupons').insert(payload);
+            // Insert
+            const { data, error } = await supabase.from('coupons').insert(payload).select('id').single();
             if (error) throw error;
+            couponId = data.id;
         }
+
+        // Sync court applicability
+        await supabase.from('coupon_courts').delete().eq('coupon_id', couponId);
+        if (applicableCourtIds.length > 0) {
+            const courtLinks = applicableCourtIds.map(court_id => ({ coupon_id: couponId, court_id }));
+            const { error: courtLinkError } = await supabase.from('coupon_courts').insert(courtLinks);
+            if (courtLinkError) throw courtLinkError;
+        }
+
+        // Sync event applicability
+        await supabase.from('coupon_events').delete().eq('coupon_id', couponId);
+        if (applicableEventIds.length > 0) {
+            const eventLinks = applicableEventIds.map(event_id => ({ coupon_id: couponId, event_id }));
+            const { error: eventLinkError } = await supabase.from('coupon_events').insert(eventLinks);
+            if (eventLinkError) throw eventLinkError;
+        }
+
+
     } catch (e: any) {
         console.error('Error saving coupon:', e);
         if (e.code === '23505') { // Unique constraint violation
@@ -50,6 +79,7 @@ export async function deleteCoupon(formData: FormData) {
         return { error: 'Coupon ID is missing.' };
     }
 
+    // Deletion will cascade to join tables
     const { error } = await supabase.from('coupons').delete().eq('id', id);
 
     if (error) {
