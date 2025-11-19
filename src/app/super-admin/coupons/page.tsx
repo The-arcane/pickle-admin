@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Edit, Trash2, Percent, CalendarIcon } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Percent, CalendarIcon, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -43,6 +43,8 @@ export default function CouponsPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [selectedCoupon, setSelectedCoupon] = useState<any | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
 
     const fetchData = async () => {
         setLoading(true);
@@ -63,6 +65,20 @@ export default function CouponsPage() {
     useEffect(() => {
         fetchData();
     }, [supabase]);
+
+    const filteredCoupons = useMemo(() => {
+        return coupons.filter(c => {
+            const searchMatch = !searchQuery || 
+                                c.code.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                c.description?.toLowerCase().includes(searchQuery.toLowerCase());
+            
+            const statusMatch = statusFilter === 'all' || 
+                                (statusFilter === 'active' && c.is_active) ||
+                                (statusFilter === 'inactive' && !c.is_active);
+
+            return searchMatch && statusMatch;
+        });
+    }, [coupons, searchQuery, statusFilter]);
     
     const onActionFinish = () => {
         fetchData();
@@ -109,8 +125,30 @@ export default function CouponsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>All Coupons</CardTitle>
+                    <CardDescription>A list of all coupons in the system.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="relative flex-grow">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search by code or description..." 
+                                className="pl-10"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="w-full sm:w-[180px]">
+                                <SelectValue placeholder="Filter by status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="inactive">Inactive</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -124,7 +162,7 @@ export default function CouponsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {coupons.map(c => (
+                            {filteredCoupons.map(c => (
                                 <TableRow key={c.id}>
                                     <TableCell className="font-mono">{c.code}</TableCell>
                                     <TableCell>{c.description}</TableCell>
@@ -139,6 +177,9 @@ export default function CouponsPage() {
                                 </TableRow>
                             ))}
                             {coupons.length === 0 && <TableRow><TableCell colSpan={7} className="text-center h-24">No coupons created yet.</TableCell></TableRow>}
+                             {coupons.length > 0 && filteredCoupons.length === 0 && (
+                                <TableRow><TableCell colSpan={7} className="text-center h-24">No coupons match your search.</TableCell></TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
