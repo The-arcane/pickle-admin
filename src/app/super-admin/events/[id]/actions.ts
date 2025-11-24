@@ -15,7 +15,7 @@ async function handleEventImageUpload(supabase: any, file: File | null, eventId:
     if (!file || file.size === 0) {
         return null;
     }
-    
+
     if (file.size > MAX_FILE_SIZE_BYTES) {
         throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
     }
@@ -46,7 +46,6 @@ function getEventDataFromFormData(formData: FormData) {
     const isFree = formData.get('is_free') === 'true';
     const organiserType = formData.get('organiser_type');
     const organiserUserId = formData.get('organiser_user_id');
-    const organiserOrgId = formData.get('organiser_org_id');
     
     const getNullOrNumber = (key: string) => {
         const val = formData.get(key);
@@ -60,7 +59,6 @@ function getEventDataFromFormData(formData: FormData) {
         type: formData.get('type') as string,
         access_type: formData.get('access_type') as 'public' | 'private' | 'invite-only',
         organiser_user_id: organiserType === 'user' && organiserUserId ? Number(organiserUserId) : null,
-        organiser_org_id: organiserType === 'organisation' && organiserOrgId ? Number(organiserOrgId) : null,
         start_time: formData.get('start_time') as string,
         end_time: formData.get('end_time') as string,
         timezone: formData.get('timezone') as string,
@@ -94,18 +92,22 @@ export async function addEvent(formData: FormData) {
   
   try {
     const eventData = getEventDataFromFormData(formData);
-    
-    if (!eventData.organiser_org_id && !eventData.organiser_user_id) {
+    const organiserType = formData.get('organiser_type');
+    const organisationId = formData.get('organiser_org_id') as string;
+
+    const fullEventData = {
+        ...eventData,
+        organiser_org_id: organiserType === 'organisation' && organisationId ? Number(organisationId) : null,
+    };
+
+    if (!fullEventData.organiser_org_id && !fullEventData.organiser_user_id) {
         return { error: 'An event must have an organizer (either an organization or a user).' };
     }
-    
-    const coverImageFile = formData.get('cover_image_file') as File | null;
-    let coverImageUrl: string | null = null;
     
     // --- 1. Insert the main event record (without image first) ---
     const { data: newEvent, error: eventError } = await supabase
       .from('events')
-      .insert(eventData)
+      .insert(fullEventData)
       .select()
       .single();
 
@@ -115,20 +117,20 @@ export async function addEvent(formData: FormData) {
     }
     
     const eventId = newEvent.id;
+    const eventUpdateData: { cover_image?: string } = {};
 
     // --- 2. Upload image and prepare update payload ---
-    if (coverImageFile && coverImageFile.size > 0) {
-        coverImageUrl = await handleEventImageUpload(supabase, coverImageFile, eventId.toString());
-    }
+    const coverImageFile = formData.get('cover_image_file') as File | null;
+    const coverImageUrl = await handleEventImageUpload(supabase, coverImageFile, eventId.toString());
+    if (coverImageUrl) eventUpdateData.cover_image = coverImageUrl;
     
     // --- 3. Update event with image URL if it was uploaded ---
-    if (coverImageUrl) {
+    if (Object.keys(eventUpdateData).length > 0) {
         const { error: imageUpdateError } = await supabase
             .from('events')
-            .update({ cover_image: coverImageUrl })
+            .update(eventUpdateData)
             .eq('id', eventId);
         if (imageUpdateError) {
-            // Non-fatal, as the event was already created
             console.error('Error updating event with image:', imageUpdateError);
             return { error: `Event added, but failed to save cover image: ${imageUpdateError.message}` };
         }
@@ -140,7 +142,7 @@ export async function addEvent(formData: FormData) {
     const whatToBring = JSON.parse(formData.get('what_to_bring') as string) as Partial<WhatToBringItem>[];
 
     if (subEvents.length > 0) {
-      const mainEventDateString = eventData.start_time ? new Date(eventData.start_time).toISOString().split('T')[0] : null;
+      const mainEventDateString = fullEventData.start_time ? new Date(fullEventData.start_time).toISOString().split('T')[0] : null;
       const createTimestamp = (timeStr: string | null | undefined) => !timeStr || !mainEventDateString ? null : new Date(`${mainEventDateString}T${timeStr}:00.000Z`).toISOString();
       
       const toInsert = subEvents.filter(s => s.title).map(item => ({ 
@@ -169,7 +171,7 @@ export async function addEvent(formData: FormData) {
   }
 
   revalidatePath(`${basePath}/events`);
-  return { success: true };
+  redirect(`${basePath}/events`);
 }
 
 export async function updateEvent(formData: FormData) {
@@ -250,7 +252,7 @@ export async function updateEvent(formData: FormData) {
 
   revalidatePath(`${basePath}/events`);
   revalidatePath(`${basePath}/events/${id}`);
-  return { success: true };
+  redirect(`${basePath}/events`);
 }
 
 
@@ -416,4 +418,30 @@ export async function cancelEventBooking(formData: FormData) {
     revalidatePath('/arena/bookings');
     revalidatePath('/livingspace');
     return { success: true, message: 'Event booking has been cancelled.' };
+}
+
+export async function toggleEventPublicStatus(formData: FormData) {
+    const supabase = await createServer();
+    const id = formData.get('id') as string;
+    const currentStatus = formData.get('is_public') === 'true';
+
+    if (!id) {
+        return { error: 'Event ID is missing.' };
+    }
+
+    const { error } = await supabase
+        .from('events')
+        .update({ is_public: !currentStatus })
+        .eq('id', id);
+    
+    if (error) {
+        console.error('Error updating event status:', error);
+        return { error: `Failed to update event status: ${error.message}` };
+    }
+
+    revalidatePath('/livingspace/events');
+    revalidatePath('/arena/events');
+    revalidatePath('/super-admin/events');
+
+    return { success: true, message: 'Event visibility updated.' };
 }

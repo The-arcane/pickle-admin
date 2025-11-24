@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -6,11 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { MoreHorizontal, Pencil, Search, Trash2, PartyPopper } from 'lucide-react';
+import { MoreHorizontal, Pencil, Search, Trash2, PartyPopper, Globe, ShieldOff } from 'lucide-react';
 import { StatusBadge } from '@/components/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { deleteEvent } from './actions';
+import { deleteEvent, toggleEventPublicStatus } from '@/app/super-admin/events/[id]/actions';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,6 +84,21 @@ export function EventsClientPage({ events, basePath = '/livingspace' }: { events
         setDeletingEventId(null);
         router.refresh();
     }
+    
+    async function handleTogglePublic(event: Event) {
+        const formData = new FormData();
+        formData.append('id', event.id.toString());
+        formData.append('is_public', (event.is_public ?? false).toString());
+        
+        const result = await toggleEventPublicStatus(formData);
+        if (result.error) {
+            toast({ variant: 'destructive', title: 'Error', description: result.error });
+        } else {
+            toast({ title: 'Success', description: result.message });
+            router.refresh();
+        }
+    }
+
 
   return (
     <>
@@ -117,6 +135,7 @@ export function EventsClientPage({ events, basePath = '/livingspace' }: { events
                             <TableHead>Event</TableHead>
                             <TableHead className="hidden md:table-cell">Dates</TableHead>
                             <TableHead className="hidden sm:table-cell">Location</TableHead>
+                            <TableHead>Visibility</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -128,6 +147,7 @@ export function EventsClientPage({ events, basePath = '/livingspace' }: { events
                                     <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                                     <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
                                     <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                                     <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
                                     <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
                                 </TableRow>
@@ -138,6 +158,19 @@ export function EventsClientPage({ events, basePath = '/livingspace' }: { events
                             <TableCell className="font-medium">{event.title}</TableCell>
                             <TableCell className="hidden md:table-cell">{event.dates}</TableCell>
                             <TableCell className="hidden sm:table-cell">{event.location}</TableCell>
+                             <TableCell>
+                                <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id={`public-toggle-${event.id}`}
+                                        checked={event.is_public ?? false}
+                                        onCheckedChange={() => handleTogglePublic(event)}
+                                    />
+                                    <Label htmlFor={`public-toggle-${event.id}`} className="flex items-center gap-1.5 text-xs">
+                                        {event.is_public ? <Globe className="h-3 w-3 text-green-600" /> : <ShieldOff className="h-3 w-3 text-red-600" />}
+                                        {event.is_public ? 'Public' : 'Private'}
+                                    </Label>
+                                </div>
+                            </TableCell>
                             <TableCell>
                                 <StatusBadge status={event.status} />
                             </TableCell>
@@ -169,7 +202,7 @@ export function EventsClientPage({ events, basePath = '/livingspace' }: { events
                         ))
                         ) : (
                             <TableRow>
-                            <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
+                            <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
                                 No events found matching your criteria.
                             </TableCell>
                             </TableRow>

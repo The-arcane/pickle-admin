@@ -314,7 +314,7 @@ async function handleGalleryImageUpload(supabase: any, file: File, courtId: stri
     const filePath = `public/${courtId}/gallery/${fileName}`;
     
     const { error: uploadError } = await supabase.storage
-        .from('court-images') // Use courts bucket for gallery
+        .from('court-images')
         .upload(filePath, file);
 
     if (uploadError) {
