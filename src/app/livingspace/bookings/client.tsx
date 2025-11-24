@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { StatusBadge } from '@/components/status-badge';
 import { Calendar as CalendarIcon, Pencil, Search, X, PartyPopper, Info, Trash2 } from 'lucide-react';
 import { addBooking, updateBooking, getTimeslots, cancelBooking, updateEventBookingStatus } from './actions';
-import { cancelEventBooking } from '../events/actions';
+import { cancelEventBooking } from '@/app/super-admin/events/[id]/actions';
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, formatISO, isEqual, startOfDay, addDays } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
