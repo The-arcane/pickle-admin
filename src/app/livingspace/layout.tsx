@@ -106,7 +106,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
                     <UserNav user={profile} basePath="/livingspace" />
                 </div>
                 </header>
-                <main className="flex-1 p-4 sm:p-6">
+                <main className="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
                     {children}
                 </main>
             </div>

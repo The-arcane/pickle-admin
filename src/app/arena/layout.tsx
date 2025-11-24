@@ -137,7 +137,7 @@ export default function ArenaLayout({
                 <UserNav user={profile} basePath="/arena" />
               </div>
             </header>
-            <main className="flex-1 p-4 sm:p-6">
+            <main className="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
               {children}
             </main>
           </div>
