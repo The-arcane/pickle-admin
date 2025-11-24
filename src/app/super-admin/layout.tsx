@@ -56,7 +56,7 @@ export default function SuperAdminLayout({
   return (
     <OrganizationProvider>
        <SheetContext.Provider value={{ open: isSheetOpen, setOpen: setIsSheetOpen }}>
-        <div className="flex h-screen w-full bg-muted/40">
+        <div className="flex min-h-screen w-full flex-col bg-muted/40">
           <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-background sm:flex">
             <div className="flex h-16 shrink-0 items-center border-b px-6">
               <Link href="/super-admin/dashboard" className="flex items-center gap-2 font-semibold text-primary">
@@ -71,7 +71,7 @@ export default function SuperAdminLayout({
                 <p className="text-xs text-muted-foreground">Version 16.6.91</p>
             </div>
           </aside>
-          <div className="flex flex-col sm:pl-60 flex-1">
+          <div className="flex flex-col sm:pl-60">
             <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-6 shrink-0">
               <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
@@ -103,7 +103,7 @@ export default function SuperAdminLayout({
                 <UserNav user={profile} basePath="/super-admin" />
               </div>
             </header>
-            <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <main className="flex-1 p-4 sm:p-6">
               {children}
             </main>
           </div>
