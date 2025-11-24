@@ -272,7 +272,7 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
                                 <div className="space-y-2"><Label htmlFor="max_players">Max Players</Label><Input id="max_players" name="max_players" type="number" defaultValue={court?.max_players ?? undefined} /></div>
                                 <div className="space-y-2"><Label htmlFor="audience_capacity">Audience Capacity</Label><Input id="audience_capacity" name="audience_capacity" type="number" defaultValue={court?.audience_capacity ?? undefined} /></div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="flex items-center justify-between rounded-lg border p-4">
                                     <Label htmlFor="has_floodlights" className="text-base font-medium flex items-center gap-2"><Lightbulb className="h-4 w-4"/> Floodlights</Label>
                                     <input type="hidden" name="has_floodlights" value="false" />
@@ -280,7 +280,7 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
                                 </div>
                                 <div className="flex items-center justify-between rounded-lg border p-4">
                                     <Label htmlFor="is_equipment_available" className="text-base font-medium">Equipment</Label>
-                                    <input type="hidden" name="is_equipment_available" value="false" />
+                                     <input type="hidden" name="is_equipment_available" value="false" />
                                     <Switch id="is_equipment_available" name="is_equipment_available" defaultChecked={court?.is_equipment_available ?? false}/>
                                 </div>
                                 <div className="flex items-center justify-between rounded-lg border p-4">
@@ -588,7 +588,7 @@ export function EditCourtClientPage({ court, organisation, sports, organisationI
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-muted-foreground text-center py-4">No gallery images have been uploaded for this court.</p>
+                                <p className="text-sm text-muted-foreground text-center">No gallery images have been uploaded for this court.</p>
                             )}
                         </CardContent>
                     </Card>

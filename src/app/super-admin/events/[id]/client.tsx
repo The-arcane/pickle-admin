@@ -53,7 +53,6 @@ export function EditEventClientPage({ event, organisations, users, categories, t
     const [isClient, setIsClient] = useState(false);
     const { selectedOrgId: orgIdFromHook } = useOrganization();
     
-    // Determine the org ID to use: initial prop for arena/livingspace, or hook for super-admin
     const selectedOrgId = basePath === '/super-admin' ? orgIdFromHook : initialOrganisationId;
 
     // Form State
@@ -377,7 +376,7 @@ export function EditEventClientPage({ event, organisations, users, categories, t
                                 <Label>What to Bring</Label>
                                 {whatToBring.map((item, index) => (
                                     <div key={index} className="flex items-center gap-2">
-                                        <Input value={item.item || ''} onChange={(e) => handleBringItemChange(index, e.target.value)} placeholder="e.g., Water Bottle" />
+                                        <Input value={item.item || ''} onChange={(e) => handleBringItemChange(index, value)} placeholder="e.g., Water Bottle" />
                                         <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveBringItem(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
                                     </div>
                                 ))}
