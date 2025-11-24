@@ -1,7 +1,23 @@
 
+
 'use server';
 
-// This file is intentionally blank. The logic has been consolidated into 
-// the actions file at /src/app/super-admin/courts/[id]/actions.ts
-// to avoid code duplication and ensure consistent behavior.
-// The relevant client component now imports its actions from that single source of truth.
+import { createServer } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
+
+export async function toggleCourtPublicStatus(courtId: number, isPublic: boolean) {
+    const supabase = await createServer();
+
+    const { error } = await supabase
+        .from('courts')
+        .update({ is_public: isPublic })
+        .eq('id', courtId);
+
+    if (error) {
+        console.error('Error toggling court status:', error);
+        return { error: `Failed to toggle court status: ${error.message}` };
+    }
+
+    revalidatePath('/livingspace/courts');
+    return { success: true };
+}

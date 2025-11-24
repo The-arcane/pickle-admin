@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatusBadge } from '@/components/status-badge';
 import { useToast } from '@/hooks/use-toast';
 import { updateCourtStatus } from '@/app/super-admin/courts/actions';
+import { toggleCourtPublicStatus } from './actions';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,6 +75,15 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
         } else {
           toast({ title: 'Success', description: result.message });
         }
+    };
+    
+    const handlePublicToggle = async (courtId: number, currentStatus: boolean) => {
+      const result = await toggleCourtPublicStatus(courtId, !currentStatus);
+      if (result.error) {
+        toast({ variant: 'destructive', title: 'Error', description: result.error });
+      } else {
+        toast({ title: 'Success', description: 'Court visibility updated.' });
+      }
     };
 
 
@@ -167,10 +179,16 @@ export function CourtsClientPage({ courts, organisations, sports }: { courts: Co
                                 <p className="truncate">{court.address}</p>
                             </div>
                             <div className="flex items-center justify-between pt-2">
-                                <div className="flex items-center gap-2">
-                                     {court.is_public ? 
-                                        <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs"><Globe className="h-3 w-3" /> Public</div> : 
-                                        <div className="flex items-center gap-1 text-red-600 dark:text-red-400 text-xs"><ShieldOff className="h-3 w-3" /> Private</div>}
+                               <div className="flex items-center space-x-2">
+                                    <Switch
+                                        id={`public-toggle-${court.id}`}
+                                        checked={court.is_public ?? false}
+                                        onCheckedChange={() => handlePublicToggle(court.id, court.is_public ?? false)}
+                                    />
+                                    <Label htmlFor={`public-toggle-${court.id}`} className="flex items-center gap-1.5 text-xs">
+                                        {court.is_public ? <Globe className="h-3 w-3 text-green-600" /> : <ShieldOff className="h-3 w-3 text-red-600" />}
+                                        {court.is_public ? 'Public' : 'Private'}
+                                    </Label>
                                 </div>
                                 <StatusBadge status={court.status} />
                             </div>
