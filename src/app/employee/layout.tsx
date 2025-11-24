@@ -1,5 +1,7 @@
 
-import { createServer } from '@/lib/supabase/server';
+'use client';
+import { useAuth } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/client';
 import { redirect } from 'next/navigation';
 import { Cuboid, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -7,49 +9,69 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { UserNav } from '@/components/user-nav';
 import { EmployeeNav } from '@/components/employee-nav';
+import { useState, useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export const dynamic = 'force-dynamic';
-
-export default async function EmployeeLayout({
+export default function EmployeeLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createServer();
+  const { loading, session, profile } = useAuth();
+  const [organisationName, setOrganisationName] = useState('Lumen');
 
-  const { data: { user } } = await supabase.auth.getUser();
+  useEffect(() => {
+    const fetchOrgData = async () => {
+        if (profile) {
+            const supabase = createClient();
+            const { data: orgLink } = await supabase
+                .from('user_organisations')
+                .select('organisation_id')
+                .eq('user_id', profile.id)
+                .maybeSingle();
 
-  if (!user) {
-    return redirect('/login?type=employee');
+            if (orgLink?.organisation_id) {
+                const { data: orgData } = await supabase
+                    .from('organisations')
+                    .select('name')
+                    .eq('id', orgLink.organisation_id)
+                    .single();
+                setOrganisationName(orgData?.name || 'Lumen');
+            }
+        }
+    };
+    fetchOrgData();
+  }, [profile]);
+  
+  if (loading) {
+      return (
+          <div className="flex h-screen w-full items-center justify-center">
+               <div className="flex flex-col items-center gap-4">
+                  <Skeleton className="h-10 w-48" />
+                  <p className="text-muted-foreground">Loading Employee Panel...</p>
+              </div>
+          </div>
+      );
   }
 
-  // Fetch user profile
-  const { data: userProfile } = await supabase
-    .from('user')
-    .select('id, name, email, profile_image_url, user_type')
-    .eq('user_uuid', user.id)
-    .single();
-
-  if (!userProfile) {
-    await supabase.auth.signOut();
-    return redirect('/login?type=employee&error=Access%20Denied');
+  if (!session) {
+    redirect('/login?type=employee');
+    return null;
   }
 
-  // Fetch organization link to get the ID
-  const { data: orgLink } = await supabase
-    .from('user_organisations')
-    .select('organisation_id')
-    .eq('user_id', userProfile.id)
-    .maybeSingle();
+  if (profile && profile.user_type !== 4) {
+      redirect('/');
+      return null;
+  }
 
-  let organisationName = 'Lumen';
-  if (orgLink?.organisation_id) {
-    const { data: orgData } = await supabase
-        .from('organisations')
-        .select('name')
-        .eq('id', orgLink.organisation_id)
-        .single();
-    organisationName = orgData?.name || 'Lumen';
+  if(!profile) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+           <div className="flex flex-col items-center gap-4">
+              <p className="text-muted-foreground">Error loading profile. Redirecting...</p>
+          </div>
+      </div>
+    );
   }
 
   return (
@@ -90,12 +112,10 @@ export default async function EmployeeLayout({
             </SheetContent>
           </Sheet>
           
-          <div className="sm:hidden">
-             {/* This div is to push the UserNav to the right on mobile when the SheetTrigger is not displayed */}
-          </div>
+          <div className="sm:hidden" />
 
           <div className="ml-auto">
-            <UserNav user={userProfile} basePath="/employee" />
+            <UserNav user={profile} basePath="/employee" />
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">

@@ -1,5 +1,6 @@
 
 'use client';
+import { useAuth } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/client';
 import { redirect } from 'next/navigation';
 import { Shield, PanelLeft } from 'lucide-react';
@@ -8,78 +9,48 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { UserNav } from '@/components/user-nav';
 import { ArenaNav } from '@/components/arena-nav';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SheetContext } from '@/hooks/use-sheet-context';
 import { OrganizationProvider } from '@/hooks/use-organization';
-
-type UserProfile = {
-  id: number;
-  name: string;
-  email: string;
-  profile_image_url: string | null;
-  user_type: number;
-};
 
 export default function ArenaLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const { loading, session, profile } = useAuth();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [organisationName, setOrganisationName] = useState('Arena');
   const [organisationType, setOrganisationType] = useState<string | null>(null);
 
-  const supabase = useMemo(() => createClient(), []);
-
-  const getInitialData = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      redirect('/login?type=arena');
-      return;
-    }
-    
-    const { data: profile } = await supabase
-      .from('user')
-      .select('id, name, email, profile_image_url, user_type')
-      .eq('user_uuid', user.id)
-      .single();
-
-    if (!profile) {
-      redirect('/login?type=arena&error=Could%20not%20find%20user%20profile');
-      return;
-    }
-    
-    setUserProfile(profile as UserProfile);
-
-    const { data: orgLink } = await supabase
-        .from('user_organisations')
-        .select('organisation_id')
-        .eq('user_id', profile.id)
-        .maybeSingle();
-
-    if (orgLink?.organisation_id) {
-        const { data: orgData } = await supabase
-            .from('organisations')
-            .select('name, organisation_types(type_name)')
-            .eq('id', orgLink.organisation_id)
-            .maybeSingle();
-        
-        if (orgData) {
-            setOrganisationName(orgData.name);
-            setOrganisationType((orgData.organisation_types as any)?.type_name || null);
-        }
-    }
-    
-    setLoading(false);
-  }, [supabase]);
-
   useEffect(() => {
-    getInitialData();
-  }, [getInitialData]);
+    const fetchOrgData = async () => {
+        if (profile) {
+            const supabase = createClient();
+            const { data: orgLink } = await supabase
+                .from('user_organisations')
+                .select('organisation_id')
+                .eq('user_id', profile.id)
+                .maybeSingle();
+
+            if (orgLink?.organisation_id) {
+                const { data: orgData } = await supabase
+                    .from('organisations')
+                    .select('name, organisation_types(type_name)')
+                    .eq('id', orgLink.organisation_id)
+                    .maybeSingle();
+                
+                if (orgData) {
+                    setOrganisationName(orgData.name);
+                    setOrganisationType((orgData.organisation_types as any)?.type_name || null);
+                }
+            }
+        }
+    };
+    fetchOrgData();
+  }, [profile]);
+
 
   if (loading) {
     return (
@@ -92,8 +63,24 @@ export default function ArenaLayout({
     );
   }
   
-  if (!userProfile) {
-    return null; // Redirect is handled in getInitialData
+  if (!session) {
+    redirect('/login?type=arena');
+    return null;
+  }
+  
+  if (profile && profile.user_type !== 9) {
+      redirect('/');
+      return null;
+  }
+
+  if(!profile) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+           <div className="flex flex-col items-center gap-4">
+              <p className="text-muted-foreground">Error loading profile. Redirecting...</p>
+          </div>
+      </div>
+    );
   }
 
   return (
@@ -147,7 +134,7 @@ export default function ArenaLayout({
               </Sheet>
               
               <div className="ml-auto">
-                <UserNav user={userProfile} basePath="/arena" />
+                <UserNav user={profile} basePath="/arena" />
               </div>
             </header>
             <main className="flex-1 overflow-y-auto p-4 sm:p-6">

@@ -1,6 +1,6 @@
 
 'use client';
-import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { Shield, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -9,68 +9,47 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { UserNav } from '@/components/user-nav';
 import { SuperAdminNav } from '@/components/super-admin-nav';
 import { OrganizationProvider } from '@/hooks/use-organization';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SheetContext } from '@/hooks/use-sheet-context';
-
-type UserProfile = {
-  name: string;
-  email: string;
-  profile_image_url: string | null;
-  user_type: number;
-};
 
 export default function SuperAdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const { loading, session, profile } = useAuth();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const supabase = useMemo(() => createClient(), []);
-
-  const getInitialData = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      redirect('/login?type=super-admin');
-      return;
-    }
-    
-    const { data: profile } = await supabase
-      .from('user')
-      .select('name, email, profile_image_url, user_type')
-      .eq('user_uuid', user.id)
-      .single();
-
-    if (!profile) {
-      redirect('/login?type=super-admin&error=Could%20not%20find%20user%20profile');
-      return;
-    }
-    
-    setUserProfile(profile as UserProfile);
-    setLoading(false);
-  }, [supabase]);
-
-  useEffect(() => {
-    getInitialData();
-  }, [getInitialData]);
 
   if (loading) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
              <div className="flex flex-col items-center gap-4">
                 <Skeleton className="h-10 w-48" />
-                <p className="text-muted-foreground">Loading Super Admin Dashboard...</p>
+                <p className="text-muted-foreground">Loading Super Admin Panel...</p>
             </div>
         </div>
     );
   }
+
+  if (!session) {
+    redirect('/login?type=super-admin');
+    return null;
+  }
   
-  if (!userProfile) {
-    return null; // Redirect is handled in getInitialData
+  if (profile && profile.user_type !== 3) {
+      redirect('/');
+      return null;
+  }
+  
+  if(!profile) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+           <div className="flex flex-col items-center gap-4">
+              <p className="text-muted-foreground">Error loading profile. Redirecting...</p>
+          </div>
+      </div>
+    );
   }
 
 
@@ -121,7 +100,7 @@ export default function SuperAdminLayout({
               </Sheet>
               
               <div className="ml-auto">
-                <UserNav user={userProfile} basePath="/super-admin" />
+                <UserNav user={profile} basePath="/super-admin" />
               </div>
             </header>
             <main className="flex-1 overflow-y-auto p-4 sm:p-6">

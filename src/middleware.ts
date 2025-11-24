@@ -2,8 +2,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
+// This middleware is now simplified. Its primary job is to refresh the user's
+// session by reading and writing cookies. The complex logic for redirects
+// and role-based access control has been moved to the client-side layouts,
+// which is a more stable architecture for the App Router.
+
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next({
+  let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -18,92 +23,30 @@ export async function middleware(request: NextRequest) {
         return request.cookies.get(name)?.value;
       },
       set(name: string, value: string, options) {
+        // If the cookie is set, update the request and response cookies.
         request.cookies.set({ name, value, ...options });
+        response = NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        });
         response.cookies.set({ name, value, ...options });
       },
       remove(name: string, options) {
+        // If the cookie is removed, update the request and response cookies.
         request.cookies.set({ name, value: '', ...options });
+        response = NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        });
         response.cookies.set({ name, value: '', ...options });
       },
     },
   });
   
-  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  response.headers.set('Pragma', 'no-cache');
-  response.headers.set('Expires', '0');
-  response.headers.set('Surrogate-Control', 'no-store');
-
-  const { data: { session } } = await supabase.auth.getSession();
-  const { pathname } = request.nextUrl;
-
-  const user = session?.user;
-  const siteUrl = request.nextUrl.origin;
-  const loginUrl = '/';
-
-  const protectedPaths = {
-      livingspace: '/livingspace',
-      superAdmin: '/super-admin',
-      employee: '/employee',
-      sales: '/sales',
-      education: '/education',
-      hospitality: '/hospitality',
-      arena: '/arena',
-  };
-
-  // If user is not logged in and is trying to access a protected route, redirect to login page at root
-  if (!user && Object.values(protectedPaths).some(p => pathname.startsWith(p))) {
-      return NextResponse.redirect(new URL(loginUrl, siteUrl));
-  }
-  
-  // If user is logged in, fetch their profile
-  if (user) {
-    const { data: userProfile } = await supabase
-      .from('user')
-      .select('id, user_type')
-      .eq('user_uuid', user.id)
-      .single();
-
-    if (!userProfile) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/?error=User%20profile%20not%20found.', siteUrl));
-    }
-    
-    const { user_type } = userProfile;
-    
-    // If a logged-in user tries to access the root (login page), redirect them to their dashboard
-    if (pathname === '/') {
-      if (user_type === 2) return NextResponse.redirect(new URL(protectedPaths.livingspace, siteUrl));
-      if (user_type === 3) return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
-      if (user_type === 4) return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
-      if (user_type === 6) return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
-      if (user_type === 7) return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
-      if (user_type === 8) return NextResponse.redirect(new URL(protectedPaths.hospitality, siteUrl));
-      if (user_type === 9) return NextResponse.redirect(new URL(protectedPaths.arena, siteUrl));
-    }
-    
-    // Role-based access control - redirect if they are in the wrong panel
-    if (user_type === 2 && !pathname.startsWith(protectedPaths.livingspace) && !pathname.startsWith('/o/')) {
-        return NextResponse.redirect(new URL(protectedPaths.livingspace, siteUrl));
-    }
-    if (user_type === 3 && !pathname.startsWith(protectedPaths.superAdmin) && !pathname.startsWith('/o/')) {
-        return NextResponse.redirect(new URL(protectedPaths.superAdmin, siteUrl));
-    }
-    if (user_type === 4 && !pathname.startsWith(protectedPaths.employee) && !pathname.startsWith('/o/')) {
-        return NextResponse.redirect(new URL(protectedPaths.employee, siteUrl));
-    }
-    if (user_type === 6 && !pathname.startsWith(protectedPaths.sales) && !pathname.startsWith('/o/')) {
-        return NextResponse.redirect(new URL(protectedPaths.sales, siteUrl));
-    }
-    if (user_type === 7 && !pathname.startsWith(protectedPaths.education) && !pathname.startsWith('/o/')) {
-        return NextResponse.redirect(new URL(protectedPaths.education, siteUrl));
-    }
-    if (user_type === 8 && !pathname.startsWith(protectedPaths.hospitality) && !pathname.startsWith('/o/')) {
-        return NextResponse.redirect(new URL(protectedPaths.hospitality, siteUrl));
-    }
-    if (user_type === 9 && !pathname.startsWith(protectedPaths.arena) && !pathname.startsWith('/o/')) {
-        return NextResponse.redirect(new URL(protectedPaths.arena, siteUrl));
-    }
-  }
+  // Refresh the session. This will update the auth cookie if needed.
+  await supabase.auth.getUser();
 
   return response;
 }
@@ -115,10 +58,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - api/ (API routes)
-     * - o/ (Public Living Space pages)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
