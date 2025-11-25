@@ -2,6 +2,7 @@
 'use server';
 
 import { createServer } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 export async function login(formData: FormData) {
@@ -13,11 +14,9 @@ export async function login(formData: FormData) {
         email,
         password,
     });
-    
-    const loginUrl = '/';
 
     if (error || !user) {
-        return redirect(`${loginUrl}?error=${encodeURIComponent(error?.message || 'Invalid login credentials.')}`);
+        return redirect(`/?error=${encodeURIComponent(error?.message || 'Invalid login credentials.')}`);
     }
 
     const { data: userProfile, error: profileError } = await supabase
@@ -28,52 +27,28 @@ export async function login(formData: FormData) {
     
     if (profileError || !userProfile) {
         await supabase.auth.signOut();
-        return redirect(`${loginUrl}?error=${encodeURIComponent('Could not retrieve user profile. Please contact an administrator.')}`);
+        return redirect(`/?error=${encodeURIComponent('Could not retrieve user profile. Please contact an administrator.')}`);
     }
 
     const { id: userId, user_type } = userProfile;
     
-    // Check for organization link for admin and employee roles
-    // Super Admins (3), Sales (6), Hospitality (8), and Arena (9) are exempt from this check for now
-    if (user_type === 2 || user_type === 4 || user_type === 7) { 
-        const { data: orgLink } = await supabase
-            .from('user_organisations')
-            .select('organisation_id')
-            .eq('user_id', userId)
-            .maybeSingle();
-
-        if (!orgLink?.organisation_id) {
-             await supabase.auth.signOut();
-             return redirect(`${loginUrl}?error=${encodeURIComponent('Your account is not associated with a Living Space.')}`);
-        }
-        
-        // For education users, verify the organization type
-        if (user_type === 7) {
-            const { data: orgType } = await supabase
-                .from('organisations')
-                .select('type')
-                .eq('id', orgLink.organisation_id)
-                .single();
-            
-            // Assuming '2' is the ID for 'education' in organisation_types
-            if (orgType?.type !== 2) {
-                 await supabase.auth.signOut();
-                 return redirect(`${loginUrl}?error=${encodeURIComponent('Your Living Space is not configured for the Education panel.')}`);
-            }
-        }
-    }
-
-    // Redirect based on the verified user_type
+    // Determine the redirect path based on user_type
+    let redirectPath = '/';
     switch (user_type) {
-        case 2: return redirect('/livingspace');
-        case 3: return redirect('/super-admin/dashboard');
-        case 4: return redirect('/employee/dashboard');
-        case 6: return redirect('/sales/dashboard');
-        case 7: return redirect('/education/dashboard');
-        case 8: return redirect('/hospitality/dashboard');
-        case 9: return redirect('/arena/dashboard');
+        case 2: redirectPath = '/livingspace'; break;
+        case 3: redirectPath = '/super-admin/dashboard'; break;
+        case 4: redirectPath = '/employee/dashboard'; break;
+        case 6: redirectPath = '/sales/dashboard'; break;
+        case 7: redirectPath = '/education/dashboard'; break;
+        case 8: redirectPath = '/hospitality/dashboard'; break;
+        case 9: redirectPath = '/arena/dashboard'; break;
         default:
              await supabase.auth.signOut();
-             return redirect(`${loginUrl}?error=${encodeURIComponent('Invalid user role.')}`);
+             return redirect(`/?error=${encodeURIComponent('Invalid user role.')}`);
     }
+
+    // Revalidate the path to ensure the client-side cache is updated,
+    // then perform the redirect. This helps prevent redirect loops.
+    revalidatePath('/', 'layout');
+    redirect(redirectPath);
 }
