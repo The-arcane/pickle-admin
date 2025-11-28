@@ -24,6 +24,12 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+
+  const handleFormAction = async (formData: FormData) => {
+      await login(formData);
+      router.refresh();
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -43,7 +49,7 @@ export function LoginForm() {
               <AlertDescription>{decodeURIComponent(error)}</AlertDescription>
             </Alert>
           )}
-          <form action={login} className="space-y-6">
+          <form action={handleFormAction} className="space-y-6">
             <input type="hidden" name="userType" value="any" />
             <div className="space-y-4">
               <div className="space-y-2">
@@ -78,7 +84,7 @@ export function LoginForm() {
             </div>
             <SubmitButton />
           </form>
-          <p className="mt-4 text-center text-xs text-muted-foreground">Version 16.6.91</p>
+          <p className="mt-4 text-center text-xs text-muted-foreground">Version 16.6.93</p>
         </CardContent>
       </Card>
     </div>

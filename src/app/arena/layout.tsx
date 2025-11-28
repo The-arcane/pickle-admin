@@ -99,7 +99,7 @@ export default function ArenaLayout({
             </div>
             <div className="mt-auto p-4">
                 <p className="text-xs text-muted-foreground capitalize">
-                  {organisationType && `${organisationType} | `}Version 16.6.91
+                  {organisationType && `${organisationType} | `}Version 16.6.93
                 </p>
             </div>
           </aside>
@@ -127,7 +127,7 @@ export default function ArenaLayout({
                     </div>
                      <div className="mt-auto p-4">
                         <p className="text-xs text-muted-foreground capitalize">
-                          {organisationType && `${organisationType} | `}Version 16.6.91
+                          {organisationType && `${organisationType} | `}Version 16.6.93
                         </p>
                     </div>
                 </SheetContent>
@@ -137,7 +137,7 @@ export default function ArenaLayout({
                 <UserNav user={profile} basePath="/arena" />
               </div>
             </header>
-            <main className="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
+            <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
               {children}
             </main>
           </div>
