@@ -1,18 +1,26 @@
 
+
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { ThemeSelect } from '@/components/theme-select';
 import { LogoutButton } from '@/components/logout-button';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function EducationSettingsPage() {
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your application preferences.
-        </p>
-      </div>
+      <div className="flex items-center justify-between">
+            <div>
+                <h1 className="text-2xl font-bold">Settings</h1>
+                <p className="text-muted-foreground">
+                Manage your application preferences.
+                </p>
+            </div>
+             <Button variant="ghost" asChild>
+                <Link href="/education/dashboard">← Go Back</Link>
+            </Button>
+        </div>
 
       <Separator />
 

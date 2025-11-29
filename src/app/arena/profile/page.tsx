@@ -1,4 +1,5 @@
 
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { createServer } from '@/lib/supabase/server';
 import { User } from 'lucide-react';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
 export default async function ArenaProfilePage() {
   const supabase = await createServer();
@@ -33,13 +35,18 @@ export default async function ArenaProfilePage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <User className="h-8 w-8 text-slate-500" />
-        <div>
-            <h1 className="text-2xl font-bold">Admin Profile</h1>
-            <p className="text-muted-foreground">View your profile information.</p>
+       <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <User className="h-8 w-8 text-slate-500" />
+                <div>
+                    <h1 className="text-2xl font-bold">Admin Profile</h1>
+                    <p className="text-muted-foreground">View your profile information.</p>
+                </div>
+            </div>
+            <Button variant="ghost" asChild>
+                <Link href="/arena/dashboard">← Go Back</Link>
+            </Button>
         </div>
-      </div>
 
       <div className="space-y-1">
         <p className="text-sm">{userProfile.email}</p>

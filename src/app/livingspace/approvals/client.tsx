@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -204,9 +205,13 @@ export function ApprovalsClientPage({ approvals, buildings }: { approvals: Appro
         }
     
         if (result?.error) {
-            toast({ variant: 'destructive', title: 'Error', description: result.error });
+            toast({ variant: "destructive", title: "Error", description: result.error });
         } else if (result?.success) {
-            toast({ title: 'Success', description: result.message });
+            toast({ title: "Success", description: result.message });
+            toast({
+                title: "Update Successful",
+                description: "Status updated successfully."
+            });
         }
     
         setIsAlertOpen(false);

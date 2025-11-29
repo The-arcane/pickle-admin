@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -258,6 +259,12 @@ export function BookingsClientPage({
             toast({ variant: "destructive", title: errorTitle, description: result.error });
         } else {
             toast({ title: "Success", description: successMsg });
+            if (successMsg === 'Event booking status updated.') {
+                toast({
+                    title: "Update Successful",
+                    description: "Status updated successfully."
+                });
+            }
             setIsAddDialogOpen(false);
             setIsCourtEditDialogOpen(false);
             setIsEventEditDialogOpen(false);
@@ -621,7 +628,7 @@ export function BookingsClientPage({
                             <DialogTitle>Manage Event Booking</DialogTitle>
                             <DialogDescription>Update the status for this booking.</DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={(e) => { e.preventDefault(); handleFormSubmit(updateEventBookingStatus(new FormData(e.currentTarget)), "Event booking updated.", "Update Failed"); }}>
+                        <form onSubmit={(e) => { e.preventDefault(); handleFormSubmit(updateEventBookingStatus(new FormData(e.currentTarget)), "Event booking status updated.", "Update Failed"); }}>
                             <input type="hidden" name="id" value={selectedEventBooking.id} />
                             <div className="space-y-4 py-4">
                                 <div className="font-medium">

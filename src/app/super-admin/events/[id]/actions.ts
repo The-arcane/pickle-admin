@@ -20,25 +20,20 @@ async function handleEventImageUpload(supabase: any, file: File | null, eventId:
         throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
     }
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `cover-${Date.now()}.${fileExt}`;
-    // Store images in a public folder, organized by event ID
-    const filePath = `public/${eventId}/${fileName}`;
-    
-    const { error: uploadError } = await supabase.storage
-        .from('events') // The bucket for main cover images
-        .upload(filePath, file);
+    const bucket = "events";
+    const filePath = `public/${eventId}/cover-${Date.now()}-${file.name}`;
 
-    if (uploadError) {
-        console.error(`Error uploading event cover image:`, uploadError);
-        throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
-    }
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file, { upsert: true });
 
-    const { data: publicUrlData } = await supabase.storage
-        .from('events')
-        .getPublicUrl(filePath);
+    if (error) throw error;
+
+    const publicUrl = supabase.storage
+      .from(bucket)
+      .getPublicUrl(filePath).data.publicUrl;
     
-    return publicUrlData.publicUrl;
+    return publicUrl;
 }
 
 
@@ -258,35 +253,6 @@ export async function updateEvent(formData: FormData) {
 
 // --- Gallery Actions ---
 
-async function handleEventGalleryImageUpload(supabase: any, file: File, eventId: string): Promise<string | null> {
-    if (!file || file.size === 0) {
-        return null;
-    }
-
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-        throw new Error(`File size cannot exceed ${MAX_FILE_SIZE_MB}MB.`);
-    }
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `gallery-${Date.now()}.${fileExt}`;
-    const filePath = `public/${eventId}/gallery/${fileName}`;
-    
-    const { error: uploadError } = await supabase.storage
-        .from('event-gallery') // Use event-gallery bucket
-        .upload(filePath, file);
-
-    if (uploadError) {
-        console.error(`Error uploading event gallery image:`, uploadError);
-        throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
-    }
-
-    const { data: publicUrlData } = await supabase.storage
-        .from('event-gallery')
-        .getPublicUrl(filePath);
-    
-    return publicUrlData.publicUrl;
-}
-
 export async function addEventGalleryImages(formData: FormData) {
     const supabase = await createServer();
     const eventId = formData.get('event_id') as string;
@@ -298,16 +264,31 @@ export async function addEventGalleryImages(formData: FormData) {
     }
 
     try {
-        const uploadPromises = images
-            .filter(img => img.size > 0)
-            .map(img => handleEventGalleryImageUpload(supabase, img, eventId));
-        
-        const imageUrls = await Promise.all(uploadPromises);
+        const galleryBucket = "event-gallery";
+        const galleryUrls: string[] = [];
 
-        const validUrls = imageUrls.filter((url): url is string => url !== null);
+        for (const img of images.filter(i => i.size > 0)) {
+            if (img.size > MAX_FILE_SIZE_BYTES) {
+                console.warn(`Skipping file ${img.name} as it exceeds the size limit.`);
+                continue;
+            }
+            const galleryPath = `public/${eventId}/gallery-${Date.now()}-${img.name}`;
+
+            const { error: gError } = await supabase.storage
+                .from(galleryBucket)
+                .upload(galleryPath, img, { upsert: true });
+            
+            if (gError) throw gError;
+
+            const galleryUrl = supabase.storage
+                .from(galleryBucket)
+                .getPublicUrl(galleryPath).data.publicUrl;
+            
+            galleryUrls.push(galleryUrl);
+        }
         
-        if (validUrls.length > 0) {
-            const recordsToInsert = validUrls.map(url => ({
+        if (galleryUrls.length > 0) {
+            const recordsToInsert = galleryUrls.map(url => ({
                 event_id: Number(eventId),
                 image_url: url
             }));

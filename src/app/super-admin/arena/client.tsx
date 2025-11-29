@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -168,5 +169,5 @@ export function ArenaClientPage({ orgs, users }: { orgs: ArenaOrg[], users: User
                 </AlertDialogContent>
             </AlertDialog>
         </div>
-    );
+    )
 }

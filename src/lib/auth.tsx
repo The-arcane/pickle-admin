@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
@@ -55,8 +56,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loadSession();
     });
 
+     const interval = setInterval(() => {
+        supabase.auth.refreshSession();
+      }, 10 * 60 * 1000);
+
     return () => {
       listener?.subscription.unsubscribe();
+       clearInterval(interval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

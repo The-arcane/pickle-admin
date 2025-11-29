@@ -70,7 +70,7 @@ export async function addBooking(formData: FormData) {
   revalidatePath('/livingspace/bookings');
   revalidatePath('/livingspace');
   revalidatePath('/arena/bookings');
-  return { success: true };
+  return { success: true, message: 'Booking created successfully.' };
 }
 
 export async function updateBooking(formData: FormData) {
@@ -116,7 +116,7 @@ export async function updateBooking(formData: FormData) {
   revalidatePath('/livingspace/bookings');
   revalidatePath('/livingspace');
   revalidatePath('/arena/bookings');
-  return { success: true };
+  return { success: true, message: 'Booking updated successfully.' };
 }
 
 export async function cancelBooking(formData: FormData) {
@@ -316,4 +316,3 @@ export async function getTimeslots(courtId: number, date: string, targetUserId?:
       };
     });
   }
-

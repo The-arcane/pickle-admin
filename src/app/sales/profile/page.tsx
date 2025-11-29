@@ -1,9 +1,11 @@
 
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createServer } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
 export default async function SalesProfilePage() {
   const supabase = await createServer();
@@ -31,10 +33,15 @@ export default async function SalesProfilePage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Sales Profile</h1>
-        <p className="text-muted-foreground">View your profile information.</p>
-      </div>
+       <div className="flex items-center justify-between">
+            <div>
+                <h1 className="text-2xl font-bold">Sales Profile</h1>
+                <p className="text-muted-foreground">View your profile information.</p>
+            </div>
+             <Button variant="ghost" asChild>
+                <Link href="/sales/dashboard">← Go Back</Link>
+            </Button>
+        </div>
 
       <div className="space-y-1">
         <p className="text-sm">{userProfile.email}</p>

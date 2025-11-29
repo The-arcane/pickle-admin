@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -147,7 +148,6 @@ export default function SuperAdminDashboardPage() {
       { label: 'Total Living Spaces', value: totalLivingSpaces, icon: Building, href: '/super-admin/organisations', color: 'text-orange-500' },
       { label: 'Total Schools', value: totalSchools, icon: School, href: '/super-admin/schools', color: 'text-blue-500' },
       { label: 'Total Hospitality', value: totalHospitality, icon: Hotel, href: '/super-admin/hospitality', color: 'text-purple-500' },
-      { label: 'Total Residences', value: totalResidences, icon: Home, href: '/super-admin/residences', color: 'text-teal-500' },
       { label: 'Total Arenas', value: totalArenas, icon: Shield, href: '/super-admin/arena', color: 'text-gray-500' },
       { label: 'Total Users', value: totalUsers, icon: Users, href: '/super-admin/users', color: 'text-violet-500' },
   ];
@@ -175,7 +175,7 @@ export default function SuperAdminDashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {livingSpaceStats.map((stat, i) => (
           <Link href={stat.href} key={i}>
             <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">

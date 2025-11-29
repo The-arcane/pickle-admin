@@ -33,11 +33,11 @@ async function handleImageUpload(supabase: any, file: File | null, courtId: stri
         throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
     }
 
-    const { data: publicUrlData } = supabase.storage
-        .from('court-images')
-        .getPublicUrl(filePath);
-    
-    return publicUrlData.publicUrl;
+    const { data } = supabase.storage
+      .from("court-images")
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
 }
 
 
