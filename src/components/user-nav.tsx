@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,25 +15,26 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LogOut, Settings, User } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { usePathname } from 'next/navigation';
 
-type UserProfile = {
-  name: string;
-  email: string;
-  profile_image_url: string | null;
-};
+export function UserNav() {
+  const { profile, logout } = useAuth();
+  const pathname = usePathname();
 
-export function UserNav({ user, basePath = '/dashboard' }: { user: UserProfile, basePath?: string }) {
-  const router = useRouter();
+  const getBasePath = () => {
+    if (pathname.startsWith('/super-admin')) return '/super-admin';
+    if (pathname.startsWith('/livingspace')) return '/livingspace';
+    if (pathname.startsWith('/arena')) return '/arena';
+    if (pathname.startsWith('/education')) return '/education';
+    if (pathname.startsWith('/hospitality')) return '/hospitality';
+    if (pathname.startsWith('/sales')) return '/sales';
+    if (pathname.startsWith('/employee')) return '/employee';
+    return '/';
+  }
 
-  const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/'); // Redirect to the root login page
-    router.refresh(); // Force a refresh to clear all client-side state
-  };
+  const basePath = getBasePath();
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | null) => {
     if (!name) return '';
     const names = name.split(' ').filter(Boolean);
     if (names.length > 1) {
@@ -47,16 +48,16 @@ export function UserNav({ user, basePath = '/dashboard' }: { user: UserProfile, 
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user.profile_image_url || undefined} alt={user.name} />
-            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+            <AvatarImage src={profile?.profile_image_url || undefined} alt={profile?.name || ''} />
+            <AvatarFallback>{getInitials(profile?.name || null)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+            <p className="text-sm font-medium leading-none">{profile?.name || 'User'}</p>
+            <p className="text-xs leading-none text-muted-foreground">{profile?.email || 'No email'}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -75,7 +76,7 @@ export function UserNav({ user, basePath = '/dashboard' }: { user: UserProfile, 
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
+        <DropdownMenuItem onClick={logout}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

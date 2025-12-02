@@ -1,28 +1,35 @@
 
 'use client';
 import { useAuth } from '@/lib/auth';
-import { createClient } from '@/lib/supabase/client';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Shield, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { UserNav } from '@/components/user-nav';
 import { ArenaNav } from '@/components/arena-nav';
-import { useState, useEffect, useCallback } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState, useEffect } from 'react';
 import { SheetContext } from '@/hooks/use-sheet-context';
 import { OrganizationProvider } from '@/hooks/use-organization';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ArenaLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { loading, session, profile } = useAuth();
+  const { session, profile, loading } = useAuth();
+  const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [organisationName, setOrganisationName] = useState('Arena');
   const [organisationType, setOrganisationType] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!session || !profile || profile.user_type !== 9) {
+      router.replace("/login?type=arena");
+    }
+  }, [loading, session, profile, router]);
 
   useEffect(() => {
     const fetchOrgData = async () => {
@@ -51,36 +58,12 @@ export default function ArenaLayout({
     fetchOrgData();
   }, [profile]);
 
-
-  if (loading) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center">
-             <div className="flex flex-col items-center gap-4">
-                <Skeleton className="h-10 w-48" />
-                <p className="text-muted-foreground">Loading Arena Panel...</p>
-            </div>
-        </div>
-    );
+  if (loading || !session || !profile) {
+    return <div className="flex h-screen items-center justify-center">Loading…</div>;
   }
   
-  if (!session) {
-    redirect('/login?type=arena');
+  if (profile.user_type !== 9) {
     return null;
-  }
-  
-  if (profile && profile.user_type !== 9) {
-      redirect('/');
-      return null;
-  }
-
-  if(!profile) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-           <div className="flex flex-col items-center gap-4">
-              <p className="text-muted-foreground">Error loading profile. Redirecting...</p>
-          </div>
-      </div>
-    );
   }
 
   return (
@@ -134,7 +117,7 @@ export default function ArenaLayout({
               </Sheet>
               
               <div className="ml-auto">
-                <UserNav user={profile} basePath="/arena" />
+                <UserNav />
               </div>
             </header>
             <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">

@@ -2,7 +2,7 @@
 'use client';
 import { useAuth } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/client';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Cuboid, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -10,15 +10,22 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { UserNav } from '@/components/user-nav';
 import { EmployeeNav } from '@/components/employee-nav';
 import { useState, useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export default function EmployeeLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { loading, session, profile } = useAuth();
+  const { session, profile, loading } = useAuth();
+  const router = useRouter();
   const [organisationName, setOrganisationName] = useState('Lumen');
+
+  useEffect(() => {
+    if (loading) return;
+    if (!session || !profile || profile.user_type !== 4) {
+      router.replace("/login?type=employee");
+    }
+  }, [loading, session, profile, router]);
 
   useEffect(() => {
     const fetchOrgData = async () => {
@@ -43,35 +50,12 @@ export default function EmployeeLayout({
     fetchOrgData();
   }, [profile]);
   
-  if (loading) {
-      return (
-          <div className="flex h-screen w-full items-center justify-center">
-               <div className="flex flex-col items-center gap-4">
-                  <Skeleton className="h-10 w-48" />
-                  <p className="text-muted-foreground">Loading Employee Panel...</p>
-              </div>
-          </div>
-      );
+  if (loading || !session || !profile) {
+    return <div className="flex h-screen items-center justify-center">Loading…</div>;
   }
-
-  if (!session) {
-    redirect('/login?type=employee');
+  
+  if (profile.user_type !== 4) {
     return null;
-  }
-
-  if (profile && profile.user_type !== 4) {
-      redirect('/');
-      return null;
-  }
-
-  if(!profile) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-           <div className="flex flex-col items-center gap-4">
-              <p className="text-muted-foreground">Error loading profile. Redirecting...</p>
-          </div>
-      </div>
-    );
   }
 
   return (
@@ -115,7 +99,7 @@ export default function EmployeeLayout({
           <div className="sm:hidden" />
 
           <div className="ml-auto">
-            <UserNav user={profile} basePath="/employee" />
+            <UserNav />
           </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">

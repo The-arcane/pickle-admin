@@ -1,18 +1,16 @@
 
 'use client';
-
 import { useAuth } from '@/lib/auth';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Cuboid, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { UserNav } from '@/components/user-nav';
 import { DashboardNav } from '@/components/dashboard-nav';
-import { useState, useEffect } from 'react';
+import { OrganizationProvider } from '@/hooks/use-organization';
 import { SheetContext } from '@/hooks/use-sheet-context';
-import { Skeleton } from '@/components/ui/skeleton';
-import { OrganizationProvider, useOrganization } from '@/hooks/use-organization';
 import { createClient } from '@/lib/supabase/client';
 
 
@@ -52,10 +50,6 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
         fetchOrgData();
     }, [profile]);
     
-    if (!profile) {
-        return <div className="flex h-screen w-full items-center justify-center">Loading profile...</div>;
-    }
-
     return (
         <SheetContext.Provider value={{ open: isSheetOpen, setOpen: setIsSheetOpen }}>
             <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -103,7 +97,7 @@ function InnerLayout({ children }: { children: React.ReactNode }) {
                 <div className="sm:hidden" />
 
                 <div className="ml-auto">
-                    <UserNav user={profile} basePath="/livingspace" />
+                    <UserNav />
                 </div>
                 </header>
                 <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
@@ -120,27 +114,22 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { loading, session, profile } = useAuth();
-  
-  if (loading) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-                <Skeleton className="h-10 w-48" />
-                <p className="text-muted-foreground">Loading Living Space Panel...</p>
-            </div>
-        </div>
-    );
-  }
+  const { session, profile, loading } = useAuth();
+  const router = useRouter();
 
-  if (!session) {
-      redirect('/login');
-      return null;
+  useEffect(() => {
+    if (loading) return;
+    if (!session || !profile || profile.user_type !== 2) {
+      router.replace("/login?type=livingspace");
+    }
+  }, [loading, session, profile, router]);
+
+  if (loading || !session || !profile) {
+    return <div className="flex h-screen items-center justify-center">Loading…</div>;
   }
   
-  if (profile && profile.user_type !== 2) {
-      redirect('/');
-      return null;
+  if (profile.user_type !== 2) {
+    return null;
   }
 
   return (

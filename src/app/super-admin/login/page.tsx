@@ -1,12 +1,15 @@
 
 'use client';
-import { SuperAdminLoginForm } from './client';
-import { Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
+// Redirect to the main login page
 export default function SuperAdminLoginPage() {
-    return (
-      <Suspense fallback={<div>Loading...</div>}>
-        <SuperAdminLoginForm />
-      </Suspense>
-    );
+    const router = useRouter();
+
+    useEffect(() => {
+        router.replace('/login?type=super-admin');
+    }, [router]);
+
+    return null;
 }

@@ -1,15 +1,14 @@
 
 'use client';
 import { useAuth } from '@/lib/auth';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { TrendingUp, PanelLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { UserNav } from '@/components/user-nav';
 import { SalesNav } from '@/components/sales-nav';
-import { useState } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState, useEffect } from 'react';
 import { SheetContext } from '@/hooks/use-sheet-context';
 
 export default function SalesLayout({
@@ -17,40 +16,24 @@ export default function SalesLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { loading, session, profile } = useAuth();
+  const { session, profile, loading } = useAuth();
+  const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  if (loading) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center">
-             <div className="flex flex-col items-center gap-4">
-                <Skeleton className="h-10 w-48" />
-                <p className="text-muted-foreground">Loading Sales Panel...</p>
-            </div>
-        </div>
-    );
+  useEffect(() => {
+    if (loading) return;
+    if (!session || !profile || profile.user_type !== 6) {
+      router.replace("/login?type=sales");
+    }
+  }, [loading, session, profile, router]);
+
+  if (loading || !session || !profile) {
+    return <div className="flex h-screen items-center justify-center">Loading…</div>;
   }
   
-  if (!session) {
-    redirect('/login?type=sales');
+  if (profile.user_type !== 6) {
     return null;
   }
-
-  if (profile && profile.user_type !== 6) {
-      redirect('/');
-      return null;
-  }
-  
-  if(!profile) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-           <div className="flex flex-col items-center gap-4">
-              <p className="text-muted-foreground">Error loading profile. Redirecting...</p>
-          </div>
-      </div>
-    );
-  }
-
 
   return (
    <SheetContext.Provider value={{ open: isSheetOpen, setOpen: setIsSheetOpen }}>
@@ -92,7 +75,7 @@ export default function SalesLayout({
           </Sheet>
           
           <div className="ml-auto">
-            <UserNav user={profile} basePath="/sales" />
+            <UserNav />
           </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
