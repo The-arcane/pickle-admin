@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -52,7 +53,7 @@ export default function ResourcesPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <BookCopy className="h-8 w-8 text-orange-500" />
                     <div>
@@ -62,7 +63,7 @@ export default function ResourcesPage() {
                 </div>
                 <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                     <DialogTrigger asChild>
-                        <Button className="h-8 text-xs">
+                        <Button className="h-8 text-xs w-full sm:w-auto">
                             <PlusCircle className="mr-2 h-4 w-4" /> Add Resource
                         </Button>
                     </DialogTrigger>
@@ -110,13 +111,13 @@ export default function ResourcesPage() {
 
             <Card>
                 <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                          <div>
                             <CardTitle>Resource Library</CardTitle>
                             <CardDescription>All available training materials.</CardDescription>
                          </div>
                          <Select value={levelFilter} onValueChange={setLevelFilter}>
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-full sm:w-[180px]">
                                 <SelectValue placeholder="Filter by level..."/>
                             </SelectTrigger>
                             <SelectContent>

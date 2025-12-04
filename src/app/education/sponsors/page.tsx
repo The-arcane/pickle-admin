@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -39,7 +40,7 @@ export default function SponsorshipPage() {
         };
 
         if (editingSponsor) {
-            setSponsors(prev => prev.map(s => s.id === editingSponsor.id ? newSponsor : s));
+            setSponsors(prev => prev.map(s => s.id === editingSponsor.id ? newSponsor : item));
             toast({ title: 'Sponsor Updated', description: `${newSponsor.name} has been updated.` });
         } else {
             setSponsors(prev => [...prev, newSponsor]);
@@ -55,13 +56,13 @@ export default function SponsorshipPage() {
         setEditingSponsor(sponsor);
         setLogoPreview(sponsor.logo);
         setIsFormOpen(true);
-    };
+    }
     
     const openAddForm = () => {
         setEditingSponsor(null);
         setLogoPreview(null);
         setIsFormOpen(true);
-    };
+    }
     
     const handleGenerateCertificate = (sponsorName: string) => {
         toast({
@@ -79,7 +80,7 @@ export default function SponsorshipPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <Handshake className="h-8 w-8 text-green-500" />
                     <div>
@@ -87,7 +88,7 @@ export default function SponsorshipPage() {
                         <p className="text-muted-foreground">Track and manage sponsorships for your school's activities.</p>
                     </div>
                 </div>
-                <Button onClick={openAddForm} className="h-8 text-xs">
+                <Button onClick={openAddForm} className="h-8 text-xs w-full sm:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Sponsor
                 </Button>
             </div>
@@ -102,8 +103,8 @@ export default function SponsorshipPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Sponsor</TableHead>
-                                <TableHead>Pledged</TableHead>
-                                <TableHead>Received</TableHead>
+                                <TableHead className="hidden sm:table-cell">Pledged</TableHead>
+                                <TableHead className="hidden sm:table-cell">Received</TableHead>
                                 <TableHead>Progress</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -112,8 +113,8 @@ export default function SponsorshipPage() {
                             {sponsors.map((sponsor) => (
                                 <TableRow key={sponsor.id}>
                                     <TableCell className="font-medium">{sponsor.name}</TableCell>
-                                    <TableCell>₹{sponsor.pledged.toLocaleString()}</TableCell>
-                                    <TableCell>₹{sponsor.received.toLocaleString()}</TableCell>
+                                    <TableCell className="hidden sm:table-cell">₹{sponsor.pledged.toLocaleString()}</TableCell>
+                                    <TableCell className="hidden sm:table-cell">₹{sponsor.received.toLocaleString()}</TableCell>
                                     <TableCell>
                                         <Progress value={(sponsor.received / sponsor.pledged) * 100} className="w-full" />
                                     </TableCell>

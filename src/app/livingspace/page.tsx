@@ -254,8 +254,8 @@ export default function DashboardPage() {
             <Image
               src={organisationLogo}
               alt="Living Space Logo"
-              width={100}
-              height={100}
+              width={40}
+              height={40}
               className="rounded-md object-cover"
               data-ai-hint="logo"
             />

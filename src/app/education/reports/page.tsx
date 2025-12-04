@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +31,7 @@ const topPerformers = [
 export default function ReportsPage() {
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <ChartIcon className="h-8 w-8 text-green-500" />
                     <div>
@@ -38,9 +39,9 @@ export default function ReportsPage() {
                         <p className="text-muted-foreground">Key metrics and performance overview.</p>
                     </div>
                 </div>
-                 <div className="flex gap-2">
-                    <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export as PDF</Button>
-                    <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export as Excel</Button>
+                 <div className="flex gap-2 w-full sm:w-auto">
+                    <Button variant="outline" className="flex-1"><Download className="mr-2 h-4 w-4" /> Export as PDF</Button>
+                    <Button variant="outline" className="flex-1"><Download className="mr-2 h-4 w-4" /> Export as Excel</Button>
                 </div>
             </div>
 

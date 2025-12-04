@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from "react";
@@ -37,10 +38,10 @@ export default function SuperAdminInvoicesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Invoice ID</TableHead>
-                  <TableHead>Organization</TableHead>
+                  <TableHead className="hidden sm:table-cell">Organization</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Amount (₹)</TableHead>
-                  <TableHead>Due Date</TableHead>
+                  <TableHead className="hidden md:table-cell">Due Date</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -48,10 +49,10 @@ export default function SuperAdminInvoicesPage() {
                 {mockInvoices.map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-mono">{invoice.id}</TableCell>
-                    <TableCell>{invoice.organisation}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{invoice.organisation}</TableCell>
                     <TableCell>{invoice.customer}</TableCell>
                     <TableCell>{invoice.amount.toLocaleString()}</TableCell>
-                    <TableCell>{invoice.dueDate}</TableCell>
+                    <TableCell className="hidden md:table-cell">{invoice.dueDate}</TableCell>
                     <TableCell><StatusBadge status={invoice.status} /></TableCell>
                   </TableRow>
                 ))}

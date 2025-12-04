@@ -1,4 +1,5 @@
 
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,7 +16,7 @@ const mockPayments = [
 export default function SuperAdminPaymentsPage() {
   return (
     <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
                 <Banknote className="h-8 w-8 text-green-500" />
                 <div>
@@ -23,7 +24,7 @@ export default function SuperAdminPaymentsPage() {
                     <p className="text-muted-foreground">Monitor and manage payouts to all Living Spaces.</p>
                 </div>
             </div>
-            <Button>Initiate Bulk Payout</Button>
+            <Button className="w-full sm:w-auto">Initiate Bulk Payout</Button>
         </div>
 
         <Card>

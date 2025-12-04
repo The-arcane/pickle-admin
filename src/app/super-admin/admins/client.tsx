@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -117,7 +118,7 @@ export function AdminsClientPage({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <ShieldCheck className="h-8 w-8 text-red-500" />
                     <div>
@@ -125,7 +126,7 @@ export function AdminsClientPage({
                         <p className="text-muted-foreground">Manage admin users across all organizations.</p>
                     </div>
                 </div>
-                <Button onClick={() => setIsInviteDialogOpen(true)} className="h-8 text-xs">
+                <Button onClick={() => setIsInviteDialogOpen(true)} className="h-8 text-xs w-full sm:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Admin
                 </Button>
             </div>
@@ -135,9 +136,9 @@ export function AdminsClientPage({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>User</TableHead>
-                                <TableHead>Organization</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Joined At</TableHead>
+                                <TableHead className="hidden sm:table-cell">Organization</TableHead>
+                                <TableHead className="hidden md:table-cell">Status</TableHead>
+                                <TableHead className="hidden lg:table-cell">Joined At</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -157,9 +158,9 @@ export function AdminsClientPage({
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell>{admin.organisationName}</TableCell>
-                                        <TableCell><StatusBadge status={admin.is_deleted ? 'Inactive' : 'Active'} /></TableCell>
-                                        <TableCell>
+                                        <TableCell className="hidden sm:table-cell">{admin.organisationName}</TableCell>
+                                        <TableCell className="hidden md:table-cell"><StatusBadge status={admin.is_deleted ? 'Inactive' : 'Active'} /></TableCell>
+                                        <TableCell className="hidden lg:table-cell">
                                             {isClient ? format(new Date(admin.created_at), 'PPp') : <Skeleton className="h-5 w-32" />}
                                         </TableCell>
                                         <TableCell className="text-right">

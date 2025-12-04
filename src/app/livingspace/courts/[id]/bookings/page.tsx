@@ -1,4 +1,5 @@
 
+
 import { createServer } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -100,8 +101,8 @@ export default async function CourtBookingsPage({ params }: { params: { id: stri
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-3">
-                <Button asChild variant="outline" size="icon">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <Button asChild variant="outline" size="icon" className="shrink-0">
                     <Link href="/livingspace/courts"><ChevronLeft className="h-4 w-4" /></Link>
                 </Button>
                 <div>

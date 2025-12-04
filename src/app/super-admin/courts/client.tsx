@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -17,7 +18,6 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { updateCourtStatus } from './actions';
@@ -51,9 +51,9 @@ export function CourtsClientPage({ courts, loading }: { courts: Court[], loading
   
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <PageHeader title="Courts" description="View and manage courts for the selected Living Space." />
-        <Button asChild className="h-8 text-xs">
+        <Button asChild className="h-8 text-xs w-full sm:w-auto">
             <Link href="/super-admin/courts/add">+ Add Court</Link>
         </Button>
       </div>

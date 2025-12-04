@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -35,9 +36,9 @@ export default function SuperAdminChatsPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>User</TableHead>
-                            <TableHead>Organization</TableHead>
+                            <TableHead className="hidden sm:table-cell">Organization</TableHead>
                             <TableHead>Last Message</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead className="hidden md:table-cell">Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -52,11 +53,11 @@ export default function SuperAdminChatsPage() {
                                         <span className="font-medium">{chat.userName}</span>
                                     </div>
                                 </TableCell>
-                                <TableCell>{chat.orgName}</TableCell>
+                                <TableCell className="hidden sm:table-cell">{chat.orgName}</TableCell>
                                 <TableCell>
-                                    <p className="max-w-xs truncate text-muted-foreground">{chat.lastMessage}</p>
+                                    <p className="max-w-[150px] sm:max-w-xs truncate text-muted-foreground">{chat.lastMessage}</p>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="hidden md:table-cell">
                                     <StatusBadge status={chat.status} />
                                 </TableCell>
                                 <TableCell className="text-right">

@@ -119,7 +119,7 @@ export default function SuperAdminDashboardPage() {
                   <Skeleton className="h-8 w-64" />
                   <Skeleton className="h-4 w-80 mt-2" />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
               </div>
           </div>
@@ -175,7 +175,7 @@ export default function SuperAdminDashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {livingSpaceStats.map((stat, i) => (
           <Link href={stat.href} key={i}>
             <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
@@ -196,7 +196,7 @@ export default function SuperAdminDashboardPage() {
           <p className="text-muted-foreground">An overview of all operational metrics.</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {operationalStats.map((stat, i) => (
           <Link href={stat.href} key={i}>
             <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
@@ -217,7 +217,7 @@ export default function SuperAdminDashboardPage() {
           <p className="text-muted-foreground">An overview of all platform-wide user roles.</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         {platformDataStats.map((stat, i) => (
           <Link href={stat.href} key={i}>
             <Card className="hover:bg-muted/50 transition-colors p-4 flex flex-col justify-between h-full">
@@ -236,21 +236,21 @@ export default function SuperAdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <div>
                         <CardTitle>Recent Platform Activity</CardTitle>
                         <CardDescription>The latest bookings from across all Living Spaces.</CardDescription>
                     </div>
-                    <Button asChild variant="outline" size="sm"><Link href="/super-admin/bookings">View All</Link></Button>
+                    <Button asChild variant="outline" size="sm" className="w-full sm:w-auto"><Link href="/super-admin/bookings">View All</Link></Button>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>User</TableHead>
-                                <TableHead>Court</TableHead>
-                                <TableHead>Living Space</TableHead>
-                                <TableHead>Date</TableHead>
+                                <TableHead className="hidden sm:table-cell">Court</TableHead>
+                                <TableHead className="hidden md:table-cell">Living Space</TableHead>
+                                <TableHead className="hidden lg:table-cell">Date</TableHead>
                                 <TableHead>Status</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -258,9 +258,9 @@ export default function SuperAdminDashboardPage() {
                             {recentBookings.length > 0 ? recentBookings.map((booking: any) => (
                                 <TableRow key={booking.id}>
                                     <TableCell className="font-medium">{booking.user?.name ?? 'N/A'}</TableCell>
-                                    <TableCell>{booking.courts?.name ?? 'N/A'}</TableCell>
-                                    <TableCell>{booking.courts?.organisations?.name ?? 'N/A'}</TableCell>
-                                    <TableCell>{booking.timeslots?.date ? format(parseISO(booking.timeslots.date), 'PP') : 'N/A'}</TableCell>
+                                    <TableCell className="hidden sm:table-cell">{booking.courts?.name ?? 'N/A'}</TableCell>
+                                    <TableCell className="hidden md:table-cell">{booking.courts?.organisations?.name ?? 'N/A'}</TableCell>
+                                    <TableCell className="hidden lg:table-cell">{booking.timeslots?.date ? format(parseISO(booking.timeslots.date), 'PP') : 'N/A'}</TableCell>
                                     <TableCell><StatusBadge status={bookingStatusMap[booking.booking_status] ?? 'Unknown'} /></TableCell>
                                 </TableRow>
                             )) : (

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -31,7 +32,7 @@ export default function CalendarPage() {
                         <p className="text-muted-foreground">View all scheduled classes and events.</p>
                     </div>
                 </div>
-                 <Button className="h-8 text-xs"><PlusCircle className="mr-2 h-4 w-4"/> Add New Entry</Button>
+                 <Button className="h-8 text-xs w-full sm:w-auto"><PlusCircle className="mr-2 h-4 w-4"/> Add New Entry</Button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -1,4 +1,5 @@
 
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -16,7 +17,7 @@ const mockTransactions = [
 export default function SuperAdminTransactionsPage() {
   return (
     <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
                 <ArrowRightLeft className="h-8 w-8 text-gray-500" />
                 <div>
@@ -24,7 +25,7 @@ export default function SuperAdminTransactionsPage() {
                     <p className="text-muted-foreground">Review all financial transactions across the platform.</p>
                 </div>
             </div>
-            <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export Report</Button>
+            <Button variant="outline" className="w-full sm:w-auto"><Download className="mr-2 h-4 w-4" /> Export Report</Button>
         </div>
 
         <Card>
@@ -38,7 +39,7 @@ export default function SuperAdminTransactionsPage() {
                         <TableRow>
                             <TableHead>Transaction ID</TableHead>
                             <TableHead>Date</TableHead>
-                            <TableHead>Description</TableHead>
+                            <TableHead className="hidden sm:table-cell">Description</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead className="text-right">Amount (₹)</TableHead>
                         </TableRow>
@@ -48,7 +49,7 @@ export default function SuperAdminTransactionsPage() {
                             <TableRow key={txn.id}>
                                 <TableCell className="font-mono">{txn.id}</TableCell>
                                 <TableCell>{txn.date}</TableCell>
-                                <TableCell>{txn.description}</TableCell>
+                                <TableCell className="hidden sm:table-cell">{txn.description}</TableCell>
                                 <TableCell>
                                     <Badge variant={txn.type === 'Credit' ? 'secondary' : 'outline'} className={txn.type === 'Credit' ? 'text-green-600' : 'text-red-600'}>
                                         {txn.type}

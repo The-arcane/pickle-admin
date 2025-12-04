@@ -73,7 +73,7 @@ export function ArenaClientPage({ orgs, users }: { orgs: ArenaOrg[], users: User
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <Shield className="h-8 w-8 text-gray-500" />
                     <div>
@@ -81,7 +81,7 @@ export function ArenaClientPage({ orgs, users }: { orgs: ArenaOrg[], users: User
                         <p className="text-muted-foreground">Manage Arena-type organizations.</p>
                     </div>
                 </div>
-                <Button onClick={() => setIsAddDialogOpen(true)} className="h-8 text-xs">
+                <Button onClick={() => setIsAddDialogOpen(true)} className="h-8 text-xs w-full sm:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Arena
                 </Button>
             </div>
@@ -91,7 +91,7 @@ export function ArenaClientPage({ orgs, users }: { orgs: ArenaOrg[], users: User
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Arena</TableHead>
-                                <TableHead>Admin</TableHead>
+                                <TableHead className="hidden sm:table-cell">Admin</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -112,7 +112,7 @@ export function ArenaClientPage({ orgs, users }: { orgs: ArenaOrg[], users: User
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className="hidden sm:table-cell">
                                             <div>
                                                 <p className="font-medium">{org.user?.name ?? 'Unassigned'}</p>
                                                 <p className="text-sm text-muted-foreground">{org.user?.email}</p>

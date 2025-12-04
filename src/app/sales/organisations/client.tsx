@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
@@ -28,7 +29,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MoreHorizontal, PlusCircle, Edit, Globe, Eye } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Edit, Globe, Eye, Building } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
@@ -67,12 +68,12 @@ export function SalesOrganisationsClientPage({ initialOrganizations, users }: { 
 
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
             <h1 className="text-2xl font-bold tracking-tight">Living Spaces</h1>
             <p className="text-muted-foreground">Manage inactive Living Spaces. Active spaces are hidden.</p>
         </div>
-        <Button size="sm" className="gap-1" onClick={openAddDialog}><PlusCircle className="h-4 w-4" /> Add Living Space</Button>
+        <Button size="sm" className="gap-1 w-full sm:w-auto" onClick={openAddDialog}><PlusCircle className="h-4 w-4" /> Add Living Space</Button>
       </div>
       <Card className="overflow-hidden">
         <Table>
@@ -80,7 +81,7 @@ export function SalesOrganisationsClientPage({ initialOrganizations, users }: { 
             <TableRow>
               <TableHead className="w-[80px]">Logo</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Address</TableHead>
+              <TableHead className="hidden md:table-cell">Address</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right"><span className="sr-only">Actions</span></TableHead>
             </TableRow>
@@ -95,7 +96,7 @@ export function SalesOrganisationsClientPage({ initialOrganizations, users }: { 
                   </Avatar>
                 </TableCell>
                 <TableCell className="font-medium">{org.name}</TableCell>
-                <TableCell>{org.address}</TableCell>
+                <TableCell className="hidden md:table-cell">{org.address}</TableCell>
                  <TableCell>
                     <StatusBadge status={org.is_active ? 'Active' : 'Inactive'} />
                 </TableCell>

@@ -66,8 +66,8 @@ export default function SuperAdminTicketsPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Subject</TableHead>
-                            <TableHead>Organization</TableHead>
-                            <TableHead>Submitted</TableHead>
+                            <TableHead className="hidden md:table-cell">Organization</TableHead>
+                            <TableHead className="hidden sm:table-cell">Submitted</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Priority</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
@@ -78,8 +78,8 @@ export default function SuperAdminTicketsPage() {
                             Array.from({length: 3}).map((_, i) => (
                                 <TableRow key={`skel-${i}`}>
                                     <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                                    <TableCell className="hidden sm:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
                                     <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
                                     <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
                                     <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
@@ -92,8 +92,8 @@ export default function SuperAdminTicketsPage() {
                                     <p className="font-medium">{ticket.subject}</p>
                                     <p className="text-xs text-muted-foreground font-mono">{ticket.id}</p>
                                 </TableCell>
-                                <TableCell>{ticket.organisation?.name ?? 'N/A'}</TableCell>
-                                <TableCell>{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</TableCell>
+                                <TableCell className="hidden md:table-cell">{ticket.organisation?.name ?? 'N/A'}</TableCell>
+                                <TableCell className="hidden sm:table-cell">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</TableCell>
                                 <TableCell>
                                     <StatusBadge status={ticket.status} />
                                 </TableCell>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -111,7 +112,7 @@ export function SalesClientPage({
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <TrendingUp className="h-8 w-8 text-green-500" />
                     <div>
@@ -119,7 +120,7 @@ export function SalesClientPage({
                         <p className="text-muted-foreground">Manage sales people in the system.</p>
                     </div>
                 </div>
-                <Button onClick={() => setIsInviteDialogOpen(true)} className="h-8 text-xs">
+                <Button onClick={() => setIsInviteDialogOpen(true)} className="h-8 text-xs w-full sm:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Sales Person
                 </Button>
             </div>
@@ -130,7 +131,7 @@ export function SalesClientPage({
                             <TableRow>
                                 <TableHead>User</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead>Joined At</TableHead>
+                                <TableHead className="hidden md:table-cell">Joined At</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -151,7 +152,7 @@ export function SalesClientPage({
                                             </div>
                                         </TableCell>
                                         <TableCell><StatusBadge status={user.is_deleted ? 'Inactive' : 'Active'} /></TableCell>
-                                        <TableCell>
+                                        <TableCell className="hidden md:table-cell">
                                             {isClient ? format(new Date(user.created_at), 'PPp') : <Skeleton className="h-5 w-32" />}
                                         </TableCell>
                                         <TableCell className="text-right">

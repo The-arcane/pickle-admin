@@ -114,7 +114,7 @@ export function SchoolsClientPage({ schools, users }: { schools: School[], users
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <School className="h-8 w-8 text-blue-500" />
                     <div>
@@ -122,11 +122,11 @@ export function SchoolsClientPage({ schools, users }: { schools: School[], users
                         <p className="text-muted-foreground">Manage school-type organizations.</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button onClick={() => setIsImportDialogOpen(true)} variant="outline" className="h-8 text-xs">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Button onClick={() => setIsImportDialogOpen(true)} variant="outline" className="h-8 text-xs flex-1">
                         <FileUp className="mr-2 h-4 w-4" /> Import via CSV
                     </Button>
-                    <Button onClick={() => setIsAddDialogOpen(true)} className="h-8 text-xs">
+                    <Button onClick={() => setIsAddDialogOpen(true)} className="h-8 text-xs flex-1">
                         <PlusCircle className="mr-2 h-4 w-4" /> Add School
                     </Button>
                 </div>
@@ -137,7 +137,7 @@ export function SchoolsClientPage({ schools, users }: { schools: School[], users
                         <TableHeader>
                             <TableRow>
                                 <TableHead>School</TableHead>
-                                <TableHead>Admin</TableHead>
+                                <TableHead className="hidden sm:table-cell">Admin</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -158,7 +158,7 @@ export function SchoolsClientPage({ schools, users }: { schools: School[], users
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className="hidden sm:table-cell">
                                             <div>
                                                 <p className="font-medium">{school.user?.name ?? 'Unassigned'}</p>
                                                 <p className="text-sm text-muted-foreground">{school.user?.email}</p>
@@ -194,7 +194,7 @@ export function SchoolsClientPage({ schools, users }: { schools: School[], users
             <OrganizationFormDialog 
                 isOpen={isAddDialogOpen} 
                 setIsOpen={setIsAddDialogOpen}
-                org={null}
+                org={null} // Always for adding new
                 users={users}
                 onFinished={onActionFinish}
                 orgType={2} // Education org type

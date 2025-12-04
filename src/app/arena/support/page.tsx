@@ -1,4 +1,5 @@
 
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LifeBuoy, Phone, MessageSquare } from "lucide-react";
@@ -14,7 +15,7 @@ export default function ArenaSupportPage() {
             </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
                 <CardHeader>
                     <div className="flex items-center gap-3">
@@ -26,12 +27,12 @@ export default function ArenaSupportPage() {
                 <CardContent className="space-y-4">
                     <div className="space-y-1">
                         <p className="font-semibold">General Inquiries</p>
-                        <p className="text-2xl font-mono text-primary">+1 (800) 555-0199</p>
+                        <p className="text-xl sm:text-2xl font-mono text-primary">+1 (800) 555-0199</p>
                         <p className="text-sm text-muted-foreground">Available 9am - 5pm, Mon-Fri</p>
                     </div>
                      <div className="space-y-1">
                         <p className="font-semibold">Emergency Line</p>
-                        <p className="text-2xl font-mono text-destructive">+1 (800) 555-0100</p>
+                        <p className="text-xl sm:text-2xl font-mono text-destructive">+1 (800) 555-0100</p>
                         <p className="text-sm text-muted-foreground">Available 24/7 for urgent issues</p>
                     </div>
                 </CardContent>
